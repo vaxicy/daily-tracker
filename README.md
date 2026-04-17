@@ -2,11 +2,12 @@
 
 > 全方位记录生活起居：吃、喝、拉、撒，养成健康好习惯。
 
-[![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue?logo=google-chrome)](https://chrome.google.com/webstore)
-[![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)](https://developer.chrome.com/docs/extensions/mv3/intro/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+|[![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)](https://developer.chrome.com/docs/extensions/mv3/intro/)
+|[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 一个简洁实用的 Chrome 浏览器扩展，帮助你记录和管理日常生活中的饮食、饮水、排便和排尿情况，培养健康的生活习惯。
+
+> **当前仅支持本地安装使用，未上架 Chrome 应用商店。**
 
 ---
 
@@ -38,19 +39,14 @@
 
 ---
 
-## 📦 安装方法
+## 📦 安装方法（本地加载）
 
-### 方式一：Chrome 应用商店（推荐）
-1. 访问 [Chrome Web Store](https://chrome.google.com/webstore)
-2. 搜索 "吃喝拉撒"
-3. 点击 "添加至 Chrome"
-
-### 方式二：开发者模式安装
-1. 下载本仓库代码并解压
-2. 打开 Chrome 浏览器，进入 `chrome://extensions/`
-3. 开启右上角的「开发者模式」
-4. 点击「加载已解压的扩展程序」
-5. 选择解压后的文件夹
+1. 下载/克隆本仓库代码
+2. 打开 Chrome 浏览器，在地址栏输入 `chrome://extensions/` 并回车
+3. 开启右上角的 **「开发者模式」**
+4. 点击 **「加载已解压的扩展程序」**
+5. 选择项目所在的文件夹即可完成安装
+6. 安装成功后，点击浏览器工具栏的扩展图标即可使用
 
 ---
 

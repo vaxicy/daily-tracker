@@ -1704,6 +1704,78 @@ chrome.runtime.onMessage.addListener((msg) => {
   }
 });
 
+// ==================== 功能开关侧边栏 ====================
+const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
+const sidebarPanel = document.getElementById("sidebarPanel");
+const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+
+function openSidebar() {
+  sidebarPanel.classList.add("open");
+  sidebarOverlay.classList.add("show");
+}
+function closeSidebar() {
+  sidebarPanel.classList.remove("open");
+  sidebarOverlay.classList.remove("show");
+}
+
+sidebarToggleBtn.addEventListener("click", openSidebar);
+sidebarCloseBtn.addEventListener("click", closeSidebar);
+sidebarOverlay.addEventListener("click", closeSidebar);
+
+// 功能模块映射
+const moduleMap = {
+  eat:   { page: "pageEat", nav: "navEat", switch: "sbEat" },
+  drink: { page: "pageDrink", nav: "navDrink", switch: "sbDrink" },
+  poop:  { page: "pagePoop", nav: "navPoop", switch: "sbPoop" },
+  pee:   { page: "pagePee", nav: "navPee", switch: "sbPee" }
+};
+
+function applyModuleVisibility() {
+  Object.keys(moduleMap).forEach(key => {
+    const m = moduleMap[key];
+    const isOn = document.getElementById(m.switch).checked;
+    const pageEl = document.getElementById(m.page);
+    const navEl = document.getElementById(m.nav);
+    
+    if (pageEl) pageEl.classList.toggle("hidden-module", !isOn);
+    if (navEl) navEl.classList.toggle("hidden-module", !isOn);
+  });
+  
+  // 如果当前 tab 被隐藏了，切换到第一个可见的 tab
+  if (document.getElementById(moduleMap[currentTab].page)?.classList.contains("hidden-module")) {
+    const visibleTab = Object.keys(moduleMap).find(k => 
+      document.getElementById(moduleMap[k].switch).checked
+    );
+    if (visibleTab) switchTab(visibleTab);
+  }
+}
+
+// 加载保存的状态
+function loadModuleStates() {
+  chrome.storage.local.get(["moduleStates"], (data) => {
+    const states = data.moduleStates || { eat: true, drink: true, poop: true, pee: true };
+    ["eat","drink","poop","pee"].forEach(key => {
+      document.getElementById(moduleMap[key].switch).checked = !!states[key];
+    });
+    applyModuleVisibility();
+  });
+}
+
+// 监听开关变化
+["eat","drink","poop","pee"].forEach(key => {
+  document.getElementById(moduleMap[key].switch).addEventListener("change", () => {
+    const states = {};
+    ["eat","drink","poop","pee"].forEach(k => { 
+      states[k] = document.getElementById(moduleMap[k].switch).checked; 
+    });
+    chrome.storage.local.set({ moduleStates: states }, () => {
+      applyModuleVisibility();
+      showToast(document.getElementById(moduleMap[key].switch).checked ? `${{eat:"饮食",drink:"喝水",poop:"排便",pee:"排尿"}[key]}已显示` : `${{eat:"饮食",drink:"喝水",poop:"排便",pee:"排尿"}[key]}已隐藏`);
+    });
+  });
+});
+
 // ==================== 初始化 ====================
 document.getElementById("navEat").addEventListener("click", () => switchTab("eat"));
 document.getElementById("navDrink").addEventListener("click", () => switchTab("drink"));
@@ -1714,3 +1786,4 @@ switchTab("drink"); // 默认显示喝水提醒页面
 
 initDrinkTimer();
 updateDrinkStats();
+loadModuleStates();

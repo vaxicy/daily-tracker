@@ -1077,6 +1077,149 @@
         color: var(--primary);
         font-weight: 600;
       }
+
+      /* ============ 功能开关侧边栏 ============ */
+      .sidebar-toggle-btn {
+        position: fixed;
+        top: 10px;
+        right: 8px;
+        z-index: 500;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255,255,255,0.85);
+        color: var(--muted);
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(12,42,77,0.12);
+        transition: all 0.25s;
+      }
+      .sidebar-toggle-btn:hover {
+        background: #fff;
+        color: var(--text);
+        transform: rotate(30deg);
+      }
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(12,42,77,0.15);
+        z-index: 590;
+      }
+      .sidebar-overlay.show { display: block; }
+      .sidebar-panel {
+        position: fixed;
+        top: 0; right: -260px;
+        width: 240px;
+        height: 100%;
+        background: rgba(255,255,255,0.96);
+        backdrop-filter: blur(16px);
+        z-index: 600;
+        transition: right 0.3s ease;
+        padding: 16px 14px;
+        overflow-y: auto;
+        box-shadow: -4px 0 20px rgba(12,42,77,0.1);
+      }
+      .sidebar-panel.open { right: 0; }
+      .sidebar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(12,42,77,0.08);
+      }
+      .sidebar-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .sidebar-close-btn {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(12,42,77,0.08);
+        color: var(--muted);
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+      .sidebar-close-btn:hover { background: rgba(12,42,77,0.15); color: var(--text); }
+      .sidebar-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 4px;
+        border-radius: 10px;
+        margin-bottom: 6px;
+        background: rgba(12,42,77,0.03);
+        transition: background 0.2s;
+      }
+      .sidebar-item:hover { background: rgba(12,42,77,0.06); }
+      .sidebar-item-left {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .sidebar-item-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 7px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        flex-shrink: 0;
+      }
+      .sidebar-item-icon.eat-icon { background: linear-gradient(135deg, var(--eat), var(--eat2)); }
+      .sidebar-item-icon.drink-icon { background: linear-gradient(135deg, var(--primary), var(--primary2)); }
+      .sidebar-item-icon.poop-icon { background: linear-gradient(135deg, var(--secondary), var(--secondary2)); }
+      .sidebar-item-icon.pee-icon { background: linear-gradient(135deg, var(--pee), var(--pee2)); }
+      .sidebar-item-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      /* 小型侧边栏开关 */
+      .sb-toggle {
+        position: relative;
+        width: 34px;
+        height: 19px;
+        flex-shrink: 0;
+      }
+      .sb-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+      .sb-track {
+        position: absolute;
+        inset: 0;
+        border-radius: 99px;
+        background: rgba(12,42,77,0.18);
+        transition: background 0.22s;
+        cursor: pointer;
+      }
+      .sb-toggle input:checked + .sb-track { background: var(--primary); }
+      .sb-thumb {
+        position: absolute;
+        top: 2.5px; left: 2.5px;
+        width: 14px; height: 14px;
+        border-radius: 50%;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        transition: transform 0.22s;
+        pointer-events: none;
+      }
+      .sb-toggle input:checked ~ .sb-thumb { transform: translateX(15px); }
+
+      /* 隐藏的模块样式 */
+      .page.hidden-module { display: none !important; }
+      .nav-dot.hidden-module { display: none !important; }
     </style>
   </head>
   <body>
@@ -1341,6 +1484,56 @@
         </div>
         <div class="stats-num pee-num" id="peeStatsCount">0</div>
         <div class="stats-label" id="peeStatsLabel">次</div>
+      </div>
+    </div>
+
+    <!-- 功能开关侧边栏 -->
+    <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="功能设置">⚙</button>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="sidebar-panel" id="sidebarPanel">
+      <div class="sidebar-header">
+        <span class="sidebar-title">功能设置</span>
+        <button class="sidebar-close-btn" id="sidebarCloseBtn">×</button>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">
+          <div class="sidebar-item-icon eat-icon">🍽️</div>
+          <span class="sidebar-item-name">饮食记录</span>
+        </div>
+        <label class="sb-toggle">
+          <input type="checkbox" id="sbEat" checked />
+          <div class="sb-track"></div><div class="sb-thumb"></div>
+        </label>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">
+          <div class="sidebar-item-icon drink-icon">🥤</div>
+          <span class="sidebar-item-name">喝水提醒</span>
+        </div>
+        <label class="sb-toggle">
+          <input type="checkbox" id="sbDrink" checked />
+          <div class="sb-track"></div><div class="sb-thumb"></div>
+        </label>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">
+          <div class="sidebar-item-icon poop-icon">💩</div>
+          <span class="sidebar-item-name">排便打卡</span>
+        </div>
+        <label class="sb-toggle">
+          <input type="checkbox" id="sbPoop" checked />
+          <div class="sb-track"></div><div class="sb-thumb"></div>
+        </label>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">
+          <div class="sidebar-item-icon pee-icon">💧</div>
+          <span class="sidebar-item-name">排尿打卡</span>
+        </div>
+        <label class="sb-toggle">
+          <input type="checkbox" id="sbPee" checked />
+          <div class="sb-track"></div><div class="sb-thumb"></div>
+        </label>
       </div>
     </div>
 
