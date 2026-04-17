@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD54F"/>
+      <stop offset="100%" stop-color="#FFA000"/>
+    </linearGradient>
+  </defs>
+  <!-- 黄色圆角背景填满整个画布 -->
+  <rect width="128" height="128" rx="24" fill="url(#bgGrad)"/>
+  <!-- 盘子外圈 -->
+  <circle cx="64" cy="64" r="44" fill="#FFFFFF"/>
+  <!-- 盘子内圈 -->
+  <circle cx="64" cy="64" r="34" fill="#F5F5F5"/>
+  <!-- 盘子内底 -->
+  <circle cx="64" cy="64" r="24" fill="#EEEEEE"/>
+  <!-- 食物点缀 -->
+  <circle cx="54" cy="58" r="6" fill="#EF5350"/>
+  <circle cx="74" cy="56" r="5" fill="#66BB6A"/>
+  <circle cx="62" cy="72" r="5" fill="#FFA726"/>
+</svg>
