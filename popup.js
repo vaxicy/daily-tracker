@@ -217,6 +217,9 @@ function showEatEditModal(dateStr, dayRecords) {
   
   // 如果没有记录，显示添加表单
   if (!dayRecords || dayRecords.length === 0) {
+    const now = new Date();
+    const defaultTimeStr = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+    
     editModalBody.innerHTML = `
       <div class="edit-empty" style="margin-bottom: 12px;">暂无饮食记录</div>
       <div class="edit-input-row">
@@ -228,20 +231,67 @@ function showEatEditModal(dateStr, dayRecords) {
         </select>
       </div>
       <div class="edit-input-row">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="radio" name="eatTimeMode" value="default" checked /> 默认时间
+        </label>
+        <span id="eatDefaultTimeDisplay" style="font-size:12px;color:#666;margin-left:4px;">${defaultTimeStr}</span>
+      </div>
+      <div class="edit-input-row" id="eatCustomTimeRow" style="display:none;">
+        <input type="time" class="edit-input" id="eatCustomTime" value="${defaultTimeStr}" />
+      </div>
+      <div class="edit-input-row">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="radio" name="eatTimeMode" value="custom" /> 自定义时间
+        </label>
+      </div>
+      <div class="edit-input-row">
         <input class="edit-input" type="text" id="eatAddContent" placeholder="吃了什么？" />
       </div>
       <button class="edit-save-btn" id="eatAddBtn" style="background: var(--eat);">+ 添加记录</button>
     `;
+    
+    // 切换时间模式
+    document.querySelectorAll('input[name="eatTimeMode"]').forEach(r => {
+      r.addEventListener("change", () => {
+        const isCustom = r.value === "custom";
+        document.getElementById("eatDefaultTimeRow").style.display = isCustom ? "none" : "flex";
+        document.getElementById("eatCustomTimeRow").style.display = isCustom ? "flex" : "none";
+      });
+    });
+    
+    // 更新默认时间显示
+    setInterval(() => {
+      if (!document.querySelector('input[name="eatTimeMode"]:checked')) return;
+      if (document.querySelector('input[name="eatTimeMode"]:checked').value === "default") {
+        const now2 = new Date();
+        document.getElementById("eatDefaultTimeDisplay").textContent =
+          `${String(now2.getHours()).padStart(2,"0")}:${String(now2.getMinutes()).padStart(2,"0")}`;
+      }
+    }, 30000);
+    
     document.getElementById("eatAddBtn").addEventListener("click", () => {
       const type = document.getElementById("eatAddType").value;
       const content = document.getElementById("eatAddContent").value.trim();
       if (!content) { showToast("请输入饮食内容"); return; }
       
+      // 获取时间
+      let recordTime;
+      const timeMode = document.querySelector('input[name="eatTimeMode"]:checked')?.value;
+      if (timeMode === "custom") {
+        const customVal = document.getElementById("eatCustomTime").value;
+        if (customVal) {
+          const [h, m] = customVal.split(":");
+          recordTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
+        } else {
+          recordTime = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+        }
+      } else {
+        recordTime = isToday ? new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) : "补打卡";
+      }
+      
       chrome.storage.local.get(["mealRecords"], (data) => {
         const records = data.mealRecords || {};
         if (!records[dateStr]) records[dateStr] = [];
-        // 如果不是今天，记录为手动添加的时间
-        const recordTime = isToday ? new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) : "补打卡";
         records[dateStr].push({ content, time: recordTime, type, timestamp: Date.now(), isBackfill: !isToday });
         chrome.storage.local.set({ mealRecords: records }, () => {
           showToast(isToday ? "🍽️ 饮食已记录" : "🍽️ 补打卡成功");
@@ -256,7 +306,17 @@ function showEatEditModal(dateStr, dayRecords) {
     return;
   }
   
-  editModalBody.innerHTML = dayRecords.map((rec, idx) => `
+  // 解析记录时间，用于时间选择器的默认值
+  function parseRecordTime(timeStr) {
+    if (!timeStr || timeStr === "补打卡") return "";
+    const match = timeStr.match(/(\d{1,2}):(\d{2})/);
+    if (match) return `${match[1].padStart(2,"0")}:${match[2]}`;
+    return "";
+  }
+
+  editModalBody.innerHTML = dayRecords.map((rec, idx) => {
+    const parsedTime = parseRecordTime(rec.time);
+    return `
     <div class="edit-record-item" data-index="${idx}">
       <div class="edit-record-header">
         <span class="edit-record-time">${typeLabel[rec.type] || ""} ${rec.time}</span>
@@ -273,11 +333,18 @@ function showEatEditModal(dateStr, dayRecords) {
           <option value="dinner" ${rec.type === 'dinner' ? 'selected' : ''}>🌙 晚餐</option>
           <option value="snack" ${rec.type === 'snack' ? 'selected' : ''}>🍪 加餐</option>
         </select>
+      </div>
+      <div class="edit-input-row" id="eatEditFormTime${idx}" style="display:none;align-items:center;">
+        <input type="time" class="edit-input" id="eatEditTime${idx}" value="${parsedTime}" placeholder="HH:mm" style="width:auto;flex:none;" />
+        <span style="font-size:11px;color:#999;white-space:nowrap;margin-left:12px;">修改记录时间</span>
+      </div>
+      <div class="edit-input-row" id="eatEditFormContent${idx}" style="display:none;">
         <input class="edit-input" type="text" id="eatEditContent${idx}" value="${rec.content}" />
         <button class="edit-save-btn" data-action="save-eat" data-index="${idx}">保存修改</button>
       </div>
     </div>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function openEatEditForm(idx) {
@@ -458,37 +525,9 @@ function applyRunningUI(running) {
 
 function startDisplayTicker(alarmStartTime) {
   if (tickHandle) clearInterval(tickHandle);
-  let lastNotifTime = 0;
   
   tickHandle = setInterval(() => {
     const remaining = calcRemaining(alarmStartTime, intervalMinutes);
-    
-    // 当倒计时即将结束时（剩余 <= 1 秒），触发通知
-    // 这是 Service Worker alarm 的后备机制
-    if (remaining <= 1 && remaining > 0 && isRunning && Date.now() - lastNotifTime > 5000) {
-      lastNotifTime = Date.now();
-      console.log("[popup] 倒计时结束，尝试发送通知...");
-      
-      chrome.storage.local.get(["notifEnabled"], (data) => {
-        if (!data.notifEnabled || !chrome.notifications) return;
-        
-        chrome.notifications.create("drinkReminder-popup-" + Date.now(), {
-          type: "basic",
-          iconUrl: "icon128.png",
-          title: "喝水提醒 💧",
-          message: "该喝水啦！记得保持水分，状态更好。",
-          priority: 2,
-          requireInteraction: true,
-          buttons: [
-            { title: "我喝了 ✓" },
-            { title: "没喝" }
-          ]
-        });
-        
-        console.log("[popup] 已从 popup 发送通知");
-      });
-    }
-    
     render(remaining);
   }, 1000);
 }
@@ -625,9 +664,8 @@ notifToggle.addEventListener("change", async () => {
     chrome.notifications.create("perm-test-" + Date.now(), {
       type: "basic",
       iconUrl: "icon128.png",
-      title: "✓",
-      message: "通知已启用",
-      priority: -2,
+      title: "喝水提醒",
+      message: "通知已启用 ✓"
     }, () => {
       if (chrome.runtime.lastError) {
         applyNotifUI(false);
@@ -797,20 +835,59 @@ function showPoopEditModal(dateStr, dayRecords) {
   
   // 如果没有记录，显示添加表单（补打卡）
   if (!dayRecords || dayRecords.length === 0) {
+    const now = new Date();
+    const defaultTimeStr = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+    
     editModalBody.innerHTML = `
       <div class="edit-empty" style="margin-bottom: 12px;">暂无排便记录</div>
+      <div class="edit-input-row">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="radio" name="poopTimeMode" value="default" checked /> 默认时间
+        </label>
+        <span id="poopDefaultTimeDisplay" style="font-size:12px;color:#666;margin-left:4px;">${defaultTimeStr}</span>
+      </div>
+      <div class="edit-input-row" id="poopCustomTimeRow" style="display:none;">
+        <input type="time" class="edit-input" id="poopCustomTime" value="${defaultTimeStr}" />
+      </div>
+      <div class="edit-input-row">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="radio" name="poopTimeMode" value="custom" /> 自定义时间
+        </label>
+      </div>
       <div class="edit-input-row">
         <input class="edit-input" type="text" id="poopAddRemark" placeholder="添加备注（可选）" />
       </div>
       <button class="edit-save-btn" id="poopAddBtn" style="background: var(--secondary);">+ 补打卡</button>
     `;
+    
+    // 切换时间模式
+    document.querySelectorAll('input[name="poopTimeMode"]').forEach(r => {
+      r.addEventListener("change", () => {
+        const isCustom = r.value === "custom";
+        document.getElementById("poopCustomTimeRow").style.display = isCustom ? "flex" : "none";
+      });
+    });
+    
     document.getElementById("poopAddBtn").addEventListener("click", () => {
       const remark = document.getElementById("poopAddRemark").value.trim();
+      
+      let recordTime;
+      const timeMode = document.querySelector('input[name="poopTimeMode"]:checked')?.value;
+      if (timeMode === "custom") {
+        const customVal = document.getElementById("poopCustomTime").value;
+        if (customVal) {
+          const [h, m] = customVal.split(":");
+          recordTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
+        } else {
+          recordTime = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+        }
+      } else {
+        recordTime = isToday ? new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) : "补打卡";
+      }
       
       chrome.storage.local.get(["poopRecords"], (data) => {
         const records = data.poopRecords || {};
         if (!records[dateStr]) records[dateStr] = [];
-        const recordTime = isToday ? new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) : "补打卡";
         records[dateStr].push({ time: recordTime, remark, timestamp: Date.now(), isBackfill: !isToday });
         chrome.storage.local.set({ poopRecords: records }, () => {
           showToast(isToday ? "💩 打卡成功" : "💩 补打卡成功");
@@ -826,7 +903,17 @@ function showPoopEditModal(dateStr, dayRecords) {
     return;
   }
   
-  editModalBody.innerHTML = dayRecords.map((rec, idx) => `
+  // 解析记录时间
+  function parseRecordTimePoop(timeStr) {
+    if (!timeStr || timeStr === "补打卡") return "";
+    const match = timeStr.match(/(\d{1,2}):(\d{2})/);
+    if (match) return `${match[1].padStart(2,"0")}:${match[2]}`;
+    return "";
+  }
+
+  editModalBody.innerHTML = dayRecords.map((rec, idx) => {
+    const parsedTime = parseRecordTimePoop(rec.time);
+    return `
     <div class="edit-record-item" data-index="${idx}">
       <div class="edit-record-header">
         <span class="edit-record-time">第${idx + 1}次 ${rec.time}</span>
@@ -836,12 +923,17 @@ function showPoopEditModal(dateStr, dayRecords) {
         </div>
       </div>
       <div class="edit-record-content" id="poopContent${idx}">${rec.remark || "无备注"}</div>
+      <div class="edit-input-row" id="poopEditFormTime${idx}" style="display:none;align-items:center;">
+        <input type="time" class="edit-input" id="poopEditTime${idx}" value="${parsedTime}" placeholder="HH:mm" style="width:auto;flex:none;" />
+        <span style="font-size:11px;color:#999;white-space:nowrap;margin-left:12px;">修改记录时间</span>
+      </div>
       <div class="edit-input-row" id="poopEditForm${idx}" style="display:none;">
         <input class="edit-input" type="text" id="poopEditContent${idx}" value="${rec.remark || ""}" placeholder="修改备注（可选）" />
         <button class="edit-save-btn" data-action="save-poop" data-index="${idx}">保存修改</button>
       </div>
     </div>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function openPoopEditForm(idx) {
@@ -1133,20 +1225,58 @@ function showPeeEditModal(dateStr, dayRecords) {
   
   // 如果没有记录，显示添加表单（补打卡）
   if (!dayRecords || dayRecords.length === 0) {
+    const now = new Date();
+    const defaultTimeStr = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+    
     editModalBody.innerHTML = `
       <div class="edit-empty" style="margin-bottom: 12px;">暂无排尿记录</div>
+      <div class="edit-input-row">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="radio" name="peeTimeMode" value="default" checked /> 默认时间
+        </label>
+        <span id="peeDefaultTimeDisplay" style="font-size:12px;color:#666;margin-left:4px;">${defaultTimeStr}</span>
+      </div>
+      <div class="edit-input-row" id="peeCustomTimeRow" style="display:none;">
+        <input type="time" class="edit-input" id="peeCustomTime" value="${defaultTimeStr}" />
+      </div>
+      <div class="edit-input-row">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="radio" name="peeTimeMode" value="custom" /> 自定义时间
+        </label>
+      </div>
       <div class="edit-input-row">
         <input class="edit-input" type="text" id="peeAddRemark" placeholder="添加备注（可选）" />
       </div>
       <button class="edit-save-btn" id="peeAddBtn" style="background: var(--pee);">+ 补打卡</button>
     `;
+    
+    // 切换时间模式
+    document.querySelectorAll('input[name="peeTimeMode"]').forEach(r => {
+      r.addEventListener("change", () => {
+        document.getElementById("peeCustomTimeRow").style.display = r.value === "custom" ? "flex" : "none";
+      });
+    });
+    
     document.getElementById("peeAddBtn").addEventListener("click", () => {
       const remark = document.getElementById("peeAddRemark").value.trim();
+      
+      let recordTime;
+      const timeMode = document.querySelector('input[name="peeTimeMode"]:checked')?.value;
+      if (timeMode === "custom") {
+        const customVal = document.getElementById("peeCustomTime").value;
+        if (customVal) {
+          const [h, m] = customVal.split(":");
+          recordTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
+        } else {
+          recordTime = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+        }
+      } else {
+        recordTime = isToday ? new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) : "补打卡";
+      }
       
       chrome.storage.local.get(["peeRecords"], (data) => {
         const records = data.peeRecords || {};
         if (!records[dateStr]) records[dateStr] = [];
-        const recordTime = isToday ? new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) : "补打卡";
         records[dateStr].push({ time: recordTime, remark, timestamp: Date.now(), isBackfill: !isToday });
         chrome.storage.local.set({ peeRecords: records }, () => {
           showToast(isToday ? "💧 打卡成功" : "💧 补打卡成功");
@@ -1162,7 +1292,17 @@ function showPeeEditModal(dateStr, dayRecords) {
     return;
   }
   
-  editModalBody.innerHTML = dayRecords.map((rec, idx) => `
+  // 解析记录时间
+  function parseRecordTimePee(timeStr) {
+    if (!timeStr || timeStr === "补打卡") return "";
+    const match = timeStr.match(/(\d{1,2}):(\d{2})/);
+    if (match) return `${match[1].padStart(2,"0")}:${match[2]}`;
+    return "";
+  }
+
+  editModalBody.innerHTML = dayRecords.map((rec, idx) => {
+    const parsedTime = parseRecordTimePee(rec.time);
+    return `
     <div class="edit-record-item" data-index="${idx}">
       <div class="edit-record-header">
         <span class="edit-record-time">第${idx + 1}次 ${rec.time}</span>
@@ -1172,12 +1312,17 @@ function showPeeEditModal(dateStr, dayRecords) {
         </div>
       </div>
       <div class="edit-record-content" id="peeContent${idx}">${rec.remark || "无备注"}</div>
+      <div class="edit-input-row" id="peeEditFormTime${idx}" style="display:none;align-items:center;">
+        <input type="time" class="edit-input" id="peeEditTime${idx}" value="${parsedTime}" placeholder="HH:mm" style="width:auto;flex:none;" />
+        <span style="font-size:11px;color:#999;white-space:nowrap;margin-left:12px;">修改记录时间</span>
+      </div>
       <div class="edit-input-row" id="peeEditForm${idx}" style="display:none;">
         <input class="edit-input" type="text" id="peeEditContent${idx}" value="${rec.remark || ""}" placeholder="修改备注（可选）" />
         <button class="edit-save-btn" data-action="save-pee" data-index="${idx}">保存修改</button>
       </div>
     </div>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function openPeeEditForm(idx) {
@@ -1402,16 +1547,26 @@ editModalBody.addEventListener("click", (e) => {
   // 饮食编辑
   if (action === "edit-eat") {
     document.getElementById("eatEditForm" + idx).style.display = "block";
+    document.getElementById("eatEditFormTime" + idx).style.display = "flex";
+    document.getElementById("eatEditFormContent" + idx).style.display = "block";
     document.getElementById("eatContent" + idx).style.display = "none";
   } else if (action === "save-eat") {
     const newType = document.getElementById("eatEditType" + idx).value;
     const newContent = document.getElementById("eatEditContent" + idx).value.trim();
     if (!newContent) { showToast("内容不能为空"); return; }
+    // 获取编辑后的时间
+    let newTime = null;
+    const editTimeEl = document.getElementById("eatEditTime" + idx);
+    if (editTimeEl && editTimeEl.value) {
+      const [h, m] = editTimeEl.value.split(":");
+      newTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
+    }
     chrome.storage.local.get(["mealRecords"], (data) => {
       const records = data.mealRecords || {};
       if (records[currentEditDate] && records[currentEditDate][idx]) {
         records[currentEditDate][idx].type = newType;
         records[currentEditDate][idx].content = newContent;
+        if (newTime) records[currentEditDate][idx].time = newTime;
         chrome.storage.local.set({ mealRecords: records }, () => {
           showToast("修改成功");
           renderEatCalendar();
@@ -1443,13 +1598,22 @@ editModalBody.addEventListener("click", (e) => {
   
   // 排便编辑
   else if (action === "edit-poop") {
+    document.getElementById("poopEditFormTime" + idx).style.display = "flex";
     document.getElementById("poopEditForm" + idx).style.display = "block";
     document.getElementById("poopContent" + idx).style.display = "none";
   } else if (action === "save-poop") {
     const newRemark = document.getElementById("poopEditContent" + idx).value.trim();
+    // 获取编辑后的时间
+    let newTime = null;
+    const editTimeEl = document.getElementById("poopEditTime" + idx);
+    if (editTimeEl && editTimeEl.value) {
+      const [h, m] = editTimeEl.value.split(":");
+      newTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
+    }
     chrome.storage.local.get(["poopRecords"], (data) => {
       const records = data.poopRecords || {};
       if (records[currentEditDate] && records[currentEditDate][idx]) {
+        if (newTime) records[currentEditDate][idx].time = newTime;
         records[currentEditDate][idx].remark = newRemark;
         chrome.storage.local.set({ poopRecords: records }, () => {
           showToast("修改成功");
@@ -1484,13 +1648,22 @@ editModalBody.addEventListener("click", (e) => {
   
   // 排尿编辑
   else if (action === "edit-pee") {
+    document.getElementById("peeEditFormTime" + idx).style.display = "flex";
     document.getElementById("peeEditForm" + idx).style.display = "block";
     document.getElementById("peeContent" + idx).style.display = "none";
   } else if (action === "save-pee") {
     const newRemark = document.getElementById("peeEditContent" + idx).value.trim();
+    // 获取编辑后的时间
+    let newTime = null;
+    const editTimeEl = document.getElementById("peeEditTime" + idx);
+    if (editTimeEl && editTimeEl.value) {
+      const [h, m] = editTimeEl.value.split(":");
+      newTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
+    }
     chrome.storage.local.get(["peeRecords"], (data) => {
       const records = data.peeRecords || {};
       if (records[currentEditDate] && records[currentEditDate][idx]) {
+        if (newTime) records[currentEditDate][idx].time = newTime;
         records[currentEditDate][idx].remark = newRemark;
         chrome.storage.local.set({ peeRecords: records }, () => {
           showToast("修改成功");
@@ -1521,6 +1694,13 @@ editModalBody.addEventListener("click", (e) => {
         });
       }
     });
+  }
+});
+
+// ==================== 监听来自后台脚本的消息 ====================
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type === "DRINK_RECORDED") {
+    updateDrinkStats();
   }
 });
 

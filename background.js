@@ -238,7 +238,13 @@ chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) =
   
   if (notificationId.startsWith("drinkReminder")) {
     if (buttonIndex === 0) {
+      // 我喝了 ✓ — 记录喝水数据
       recordDrink();
+      // 通知 popup 刷新统计数据
+      chrome.runtime.sendMessage({ type: "DRINK_RECORDED" }).catch(() => {});
+    } else if (buttonIndex === 1) {
+      // 没喝 — 不记录，仅关闭通知
+      logInfo("用户选择「没喝」，不记录");
     }
     chrome.notifications.clear(notificationId);
   }
