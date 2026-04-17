@@ -1,4 +1,7 @@
 // ==================== 全局工具函数 ====================
+
+// 注意：Chrome Extension 使用 chrome.notifications API（由 manifest.json 声明）
+// 不需要使用 Web Notification API (window.Notification)
 let toastTimer = null;
 function showToast(msg) {
   const toast = document.getElementById("toast");
@@ -455,8 +458,37 @@ function applyRunningUI(running) {
 
 function startDisplayTicker(alarmStartTime) {
   if (tickHandle) clearInterval(tickHandle);
+  let lastNotifTime = 0;
+  
   tickHandle = setInterval(() => {
     const remaining = calcRemaining(alarmStartTime, intervalMinutes);
+    
+    // 当倒计时即将结束时（剩余 <= 1 秒），触发通知
+    // 这是 Service Worker alarm 的后备机制
+    if (remaining <= 1 && remaining > 0 && isRunning && Date.now() - lastNotifTime > 5000) {
+      lastNotifTime = Date.now();
+      console.log("[popup] 倒计时结束，尝试发送通知...");
+      
+      chrome.storage.local.get(["notifEnabled"], (data) => {
+        if (!data.notifEnabled || !chrome.notifications) return;
+        
+        chrome.notifications.create("drinkReminder-popup-" + Date.now(), {
+          type: "basic",
+          iconUrl: "icon128.png",
+          title: "喝水提醒 💧",
+          message: "该喝水啦！记得保持水分，状态更好。",
+          priority: 2,
+          requireInteraction: true,
+          buttons: [
+            { title: "我喝了 ✓" },
+            { title: "没喝" }
+          ]
+        });
+        
+        console.log("[popup] 已从 popup 发送通知");
+      });
+    }
+    
     render(remaining);
   }, 1000);
 }
@@ -493,10 +525,12 @@ function syncCustomInputsFromMinutes(mins) {
 }
 
 async function requestNotifPermission() {
-  if (!("Notification" in window)) return false;
-  if (Notification.permission === "granted") return true;
-  const p = await Notification.requestPermission();
-  return p === "granted";
+  // Chrome Extension 不需要请求通知权限
+  // 权限已在 manifest.json 中声明
+  if (chrome.notifications) {
+    return true;
+  }
+  return false;
 }
 
 function initDrinkTimer() {
@@ -581,16 +615,29 @@ timerToggle.addEventListener("change", () => {
 
 notifToggle.addEventListener("change", async () => {
   if (notifToggle.checked) {
-    const granted = await requestNotifPermission();
-    if (granted) {
-      chrome.storage.local.set({ notifEnabled: true });
-      applyNotifUI(true);
-      showToast("通知已开启 ✓");
-    } else {
+    // Chrome Extension 不需要请求权限，直接开启
+    if (!chrome.notifications) {
+      showToast("通知 API 不可用");
       applyNotifUI(false);
-      chrome.storage.local.set({ notifEnabled: false });
-      showToast("浏览器拒绝了通知权限");
+      return;
     }
+    // 验证通知功能可用
+    chrome.notifications.create("perm-test-" + Date.now(), {
+      type: "basic",
+      iconUrl: "icon128.png",
+      title: "✓",
+      message: "通知已启用",
+      priority: -2,
+    }, () => {
+      if (chrome.runtime.lastError) {
+        applyNotifUI(false);
+        showToast("通知不可用: " + chrome.runtime.lastError.message);
+      } else {
+        chrome.storage.local.set({ notifEnabled: true });
+        applyNotifUI(true);
+        showToast("通知已开启 ✓");
+      }
+    });
   } else {
     chrome.storage.local.set({ notifEnabled: false });
     applyNotifUI(false);
