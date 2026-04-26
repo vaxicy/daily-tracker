@@ -230,11 +230,11 @@ function showEatEditModal(dateStr, dayRecords) {
           <option value="snack">🍪 加餐</option>
         </select>
       </div>
-      <div class="edit-input-row">
-        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;">
           <input type="radio" name="eatTimeMode" value="default" checked /> 默认时间
         </label>
-        <span id="eatDefaultTimeDisplay" style="font-size:12px;color:#666;margin-left:4px;">${defaultTimeStr}</span>
+        <span id="eatDefaultTimeDisplay" style="font-size:12px;color:#999;font-weight:500;">${defaultTimeStr}</span>
       </div>
       <div class="edit-input-row" id="eatCustomTimeRow" style="display:none;">
         <input type="time" class="edit-input" id="eatCustomTime" value="${defaultTimeStr}" />
@@ -344,7 +344,82 @@ function showEatEditModal(dateStr, dayRecords) {
       </div>
     </div>
   `;
-  }).join("");
+  }).join("") + `
+    <!-- 追加新记录区域 -->
+    <div class="edit-add-new-section" style="margin-top:12px;padding-top:12px;border-top:1px dashed rgba(245,158,11,0.25);">
+      <div style="font-size:12px;font-weight:600;color:var(--eat);margin-bottom:8px;display:flex;align-items:center;gap:4px;">
+        ➕ 追加记录
+      </div>
+      <div class="edit-input-row">
+        <select class="edit-type-select" id="eatAppendType">
+          <option value="breakfast">🌅 早餐</option>
+          <option value="lunch">☀️ 午餐</option>
+          <option value="dinner">🌙 晚餐</option>
+          <option value="snack">🍪 加餐</option>
+        </select>
+      </div>
+      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;">
+          <input type="radio" name="eatAppendTimeMode" value="default" checked /> 默认时间
+        </label>
+        <span id="eatAppendDefaultTimeDisplay" style="font-size:12px;color:#999;font-weight:500;">${new Date().getHours().toString().padStart(2,"0")}:${new Date().getMinutes().toString().padStart(2,"0")}</span>
+      </div>
+      <div class="edit-input-row" id="eatAppendCustomTimeRow" style="display:none;">
+        <input type="time" class="edit-input" id="eatAppendCustomTime" value="" placeholder="HH:mm" />
+      </div>
+      <div class="edit-input-row">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="radio" name="eatAppendTimeMode" value="custom" /> 自定义时间
+        </label>
+      </div>
+      <div class="edit-input-row">
+        <input class="edit-input" type="text" id="eatAppendContent" placeholder="吃了什么？" />
+      </div>
+      <button class="edit-save-btn" id="eatAppendBtn" style="background:var(--eat);">+ 添加此记录</button>
+    </div>
+  `;
+
+  // 追加时间模式切换
+  document.querySelectorAll('input[name="eatAppendTimeMode"]').forEach(r => {
+    r.addEventListener("change", () => {
+      document.getElementById("eatAppendCustomTimeRow").style.display = r.value === "custom" ? "flex" : "none";
+    });
+  });
+
+  // 追加按钮事件
+  document.getElementById("eatAppendBtn").addEventListener("click", () => {
+    const type = document.getElementById("eatAppendType").value;
+    const content = document.getElementById("eatAppendContent").value.trim();
+    if (!content) { showToast("请输入饮食内容"); return; }
+
+    let recordTime;
+    const timeMode = document.querySelector('input[name="eatAppendTimeMode"]:checked')?.value;
+    if (timeMode === "custom") {
+      const customVal = document.getElementById("eatAppendCustomTime").value;
+      if (customVal) {
+        const [h, m] = customVal.split(":");
+        recordTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
+      } else {
+        recordTime = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+      }
+    } else {
+      recordTime = isToday ? new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) : "补打卡";
+    }
+
+    chrome.storage.local.get(["mealRecords"], (data) => {
+      const records = data.mealRecords || {};
+      if (!records[dateStr]) records[dateStr] = [];
+      records[dateStr].push({ content, time: recordTime, type, timestamp: Date.now(), isBackfill: !isToday });
+      chrome.storage.local.set({ mealRecords: records }, () => {
+        showToast(isToday ? "🍽️ 饮食已记录" : "🍽️ 补打卡成功");
+        renderEatCalendar();
+        updateMealRecords();
+        chrome.storage.local.get(["mealRecords"], (d) => {
+          showEatEditModal(dateStr, d.mealRecords[dateStr] || []);
+        });
+      });
+    });
+  });
 }
 
 function openEatEditForm(idx) {
@@ -840,11 +915,11 @@ function showPoopEditModal(dateStr, dayRecords) {
     
     editModalBody.innerHTML = `
       <div class="edit-empty" style="margin-bottom: 12px;">暂无排便记录</div>
-      <div class="edit-input-row">
-        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;">
           <input type="radio" name="poopTimeMode" value="default" checked /> 默认时间
         </label>
-        <span id="poopDefaultTimeDisplay" style="font-size:12px;color:#666;margin-left:4px;">${defaultTimeStr}</span>
+        <span id="poopDefaultTimeDisplay" style="font-size:12px;color:#999;font-weight:500;">${defaultTimeStr}</span>
       </div>
       <div class="edit-input-row" id="poopCustomTimeRow" style="display:none;">
         <input type="time" class="edit-input" id="poopCustomTime" value="${defaultTimeStr}" />
@@ -1230,11 +1305,11 @@ function showPeeEditModal(dateStr, dayRecords) {
     
     editModalBody.innerHTML = `
       <div class="edit-empty" style="margin-bottom: 12px;">暂无排尿记录</div>
-      <div class="edit-input-row">
-        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;">
           <input type="radio" name="peeTimeMode" value="default" checked /> 默认时间
         </label>
-        <span id="peeDefaultTimeDisplay" style="font-size:12px;color:#666;margin-left:4px;">${defaultTimeStr}</span>
+        <span id="peeDefaultTimeDisplay" style="font-size:12px;color:#999;font-weight:500;">${defaultTimeStr}</span>
       </div>
       <div class="edit-input-row" id="peeCustomTimeRow" style="display:none;">
         <input type="time" class="edit-input" id="peeCustomTime" value="${defaultTimeStr}" />
