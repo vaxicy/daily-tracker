@@ -61,7 +61,7 @@ function switchTab(tab) {
   
   // 初始化对应页面
   if (tab === "eat") initEatPage();
-  if (tab === "drink") { updateDrinkUI(); updateDrinkStats(); }
+  if (tab === "drink") { updateDrinkUI(); updateDrinkStats(); renderDrinkCalendar(); }
   if (tab === "poop") { renderPoopCalendar(); updatePoopTodayStatus(); updatePoopStats(); }
   if (tab === "pee") { renderPeeCalendar(); updatePeeTodayStatus(); updatePeeStats(); }
 }
@@ -490,6 +490,10 @@ function showEatTooltip(e, dateStr) {
       countEl.classList.remove("pee-count");
       countEl.classList.add("eat-count");
       
+      // 恢复tooltip主题色
+      const headerEl = document.querySelector(".tooltip-header");
+      if (headerEl) headerEl.style.borderBottomColor = "rgba(245,158,11,0.2)";
+      
       if (dayRecords.length > 0) {
         const typeLabel = { breakfast: "🌅 早餐", lunch: "☀️ 午餐", dinner: "🌙 晚餐", snack: "🍪 加餐" };
         document.getElementById("tooltipRecords").innerHTML = dayRecords.map((rec, i) => `
@@ -508,9 +512,12 @@ function showEatTooltip(e, dateStr) {
   }, 100);
 }
 
-function hideEatTooltip() {
+function hideEatTooltip(e) {
   clearTimeout(eatTooltipTimeout);
-  document.getElementById("tooltip").classList.remove("show");
+  if (e && tooltipEl.contains(e.relatedTarget)) return;
+  tooltipHideTimeout = setTimeout(() => {
+    document.getElementById("tooltip").classList.remove("show");
+  }, 200);
 }
 
 document.getElementById("eatPrevMonth").addEventListener("click", () => {
@@ -685,6 +692,7 @@ function updateDrinkUI() {
     }
   });
   updateDrinkStats();
+  renderDrinkCalendar();
 }
 
 function updateDrinkStats() {
@@ -706,6 +714,136 @@ function updateDrinkStats() {
     document.getElementById("drinkWeekCount").textContent = weekCount;
   });
 }
+
+// ==================== 喝 - 喝水日历 ====================
+let drinkCalYear = new Date().getFullYear();
+let drinkCalMonth = new Date().getMonth();
+let drinkTooltipTimeout = null;
+
+const drinkCalendarDays = document.getElementById("drinkCalendarDays");
+const drinkCalendarTitle = document.getElementById("drinkCalendarTitle");
+
+function getDrinkLevel(count) {
+  if (count === 0) return 0;
+  if (count <= 3) return 1;
+  if (count <= 6) return 2;
+  if (count <= 10) return 3;
+  return 4;
+}
+
+function getDrinkColor(count) {
+  const lv = getDrinkLevel(count);
+  if (lv === 0) return "rgba(11,107,255,0.06)";
+  if (lv === 1) return "rgba(11,107,255,0.25)";
+  if (lv === 2) return "rgba(11,107,255,0.45)";
+  if (lv === 3) return "rgba(11,107,255,0.7)";
+  return "linear-gradient(135deg, var(--primary), var(--primary2))";
+}
+
+function renderDrinkCalendar() {
+  const firstDay = new Date(drinkCalYear, drinkCalMonth, 1);
+  const lastDay = new Date(drinkCalYear, drinkCalMonth + 1, 0);
+  const startWeekday = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+  drinkCalendarTitle.textContent = `${drinkCalYear}年${drinkCalMonth + 1}月`;
+  
+  chrome.storage.local.get(["drinkRecords"], (data) => {
+    const records = data.drinkRecords || {};
+    const today = getToday();
+    
+    // 清空后重新渲染
+    drinkCalendarDays.innerHTML = "";
+    
+    // 统计最大值用于颜色映射
+    let maxCount = 1;
+    Object.keys(records).forEach(k => { 
+      const d = records[k];
+      if (Array.isArray(d) && d.length > maxCount) maxCount = d.length; 
+    });
+    
+    for (let i = 0; i < startWeekday; i++) {
+      const emptyCell = document.createElement("div");
+      emptyCell.className = "day-cell empty";
+      emptyCell.style.width = "36px";
+      emptyCell.style.height = "36px";
+      drinkCalendarDays.appendChild(emptyCell);
+    }
+    
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      const cell = document.createElement("div");
+      const dateStr = `${drinkCalYear}-${String(drinkCalMonth + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      cell.textContent = day;
+      cell.className = "day-cell";
+      cell.dataset.date = dateStr;
+      
+      const dayRecords = records[dateStr] || [];
+      const count = dayRecords.length;
+      
+      if (dateStr === today) cell.classList.add("today");
+      
+      // 颜色深浅反映饮水量
+      const bg = getDrinkColor(count);
+      cell.style.background = bg;
+      if (count > 0) {
+        cell.style.fontWeight = "600";
+        cell.style.color = count >= 6 ? "#fff" : "var(--text)";
+      }
+      
+      cell.addEventListener("mouseenter", (e) => showDrinkTooltip(e, dateStr, dayRecords));
+      cell.addEventListener("mouseleave", hideDrinkTooltip);
+      drinkCalendarDays.appendChild(cell);
+    }
+  });
+}
+
+function showDrinkTooltip(e, dateStr, dayRecords) {
+  clearTimeout(drinkTooltipTimeout);
+  drinkTooltipTimeout = setTimeout(() => {
+    document.getElementById("tooltipDate").textContent = formatDateDisplay(dateStr);
+    const countEl = document.getElementById("tooltipCount");
+    countEl.textContent = `💧 ${dayRecords.length}次`;
+    countEl.className = "tooltip-poop-count drink-count";
+    
+    // 切换tooltip主题色为蓝色
+    const headerEl = document.querySelector(".tooltip-header");
+    if (headerEl) {
+      headerEl.style.borderBottomColor = "rgba(11,107,255,0.2)";
+    }
+    
+    if (dayRecords.length > 0) {
+      document.getElementById("tooltipRecords").innerHTML = dayRecords.map((rec, i) => `
+        <div class="tooltip-record">
+          <div class="tooltip-record-time">第${i + 1}杯 · ${rec.time}</div>
+        </div>
+      `).join("");
+    } else {
+      document.getElementById("tooltipRecords").innerHTML = '<div class="tooltip-empty">当天无喝水记录</div>';
+    }
+    
+    positionTooltip(e);
+    document.getElementById("tooltip").classList.add("show");
+  }, 100);
+}
+
+function hideDrinkTooltip(e) {
+  clearTimeout(drinkTooltipTimeout);
+  if (e && tooltipEl.contains(e.relatedTarget)) return;
+  tooltipHideTimeout = setTimeout(() => {
+    document.getElementById("tooltip").classList.remove("show");
+  }, 200);
+}
+
+document.getElementById("drinkPrevMonth").addEventListener("click", () => {
+  drinkCalMonth--;
+  if (drinkCalMonth < 0) { drinkCalMonth = 11; drinkCalYear--; }
+  renderDrinkCalendar();
+});
+
+document.getElementById("drinkNextMonth").addEventListener("click", () => {
+  drinkCalMonth++;
+  if (drinkCalMonth > 11) { drinkCalMonth = 0; drinkCalYear++; }
+  renderDrinkCalendar();
+});
 
 timerToggle.addEventListener("change", () => {
   if (timerToggle.checked) {
@@ -1090,10 +1228,28 @@ function showPoopTooltip(e, dateStr) {
   }, 100);
 }
 
-function hidePoopTooltip() {
+function hidePoopTooltip(e) {
   clearTimeout(poopTooltipTimeout);
-  document.getElementById("tooltip").classList.remove("show");
+  if (e && tooltipEl.contains(e.relatedTarget)) return;
+  tooltipHideTimeout = setTimeout(() => {
+    document.getElementById("tooltip").classList.remove("show");
+  }, 200);
 }
+
+// === tooltip 自身 hover 保持显示 ===
+let tooltipHideTimeout = null;
+const tooltipEl = document.getElementById("tooltip");
+tooltipEl.addEventListener("mouseenter", () => {
+  clearTimeout(tooltipHideTimeout);
+  clearTimeout(eatTooltipTimeout);
+  clearTimeout(drinkTooltipTimeout);
+  clearTimeout(poopTooltipTimeout);
+});
+tooltipEl.addEventListener("mouseleave", () => {
+  tooltipHideTimeout = setTimeout(() => {
+    tooltipEl.classList.remove("show");
+  }, 200);
+});
 
 function positionTooltip(e) {
   const rect = e.target.getBoundingClientRect();
@@ -1479,9 +1635,12 @@ function showPeeTooltip(e, dateStr) {
   }, 100);
 }
 
-function hidePeeTooltip() {
+function hidePeeTooltip(e) {
   clearTimeout(peeTooltipTimeout);
-  document.getElementById("tooltip").classList.remove("show");
+  if (e && tooltipEl.contains(e.relatedTarget)) return;
+  tooltipHideTimeout = setTimeout(() => {
+    document.getElementById("tooltip").classList.remove("show");
+  }, 200);
 }
 
 peeToggleBtn.addEventListener("click", () => {
