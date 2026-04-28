@@ -1938,6 +1938,84 @@ chrome.runtime.onMessage.addListener((msg) => {
   }
 });
 
+// ==================== 主题系统 ====================
+const THEME_PRESETS = {
+  default: {
+    name: "默认蓝调",
+    vars: {
+      "--text": "#0c2a4d",
+      "--muted": "rgba(12,42,77,0.6)",
+      "--primary": "#0b6bff",
+      "--primary2": "#20c6ff",
+      "--secondary": "#8B5CF6",
+      "--secondary2": "#A78BFA",
+      "--eat": "#F59E0B",
+      "--eat2": "#FBBF24",
+      "--pee": "#10B981",
+      "--pee2": "#34D399"
+    },
+    bgGradient: "linear-gradient(150deg, #eaf5ff 0%, #daeaff 100%)"
+  },
+  pink: {
+    name: "少女粉",
+    vars: {
+      "--text": "#4a1a3d",
+      "--muted": "rgba(74,26,61,0.6)",
+      "--primary": "#EC4899",
+      "--primary2": "#F472B6",
+      "--secondary": "#DB2777",
+      "--secondary2": "#F9A8D4",
+      "--eat": "#F472B6",
+      "--eat2": "#FBCFE8",
+      "--pee": "#C084FC",
+      "--pee2": "#E9D5FF"
+    },
+    bgGradient: "linear-gradient(150deg, #fce7f3 0%, #fbcfe8 100%)"
+  }
+};
+
+const root = document.documentElement;
+const bodyEl = document.body;
+
+function applyTheme(themeId) {
+  const preset = THEME_PRESETS[themeId];
+  if (!preset) return;
+
+  // 应用 CSS 变量
+  Object.entries(preset.vars).forEach(([k, v]) => {
+    root.style.setProperty(k, v);
+  });
+
+  // 背景渐变
+  bodyEl.style.background = preset.bgGradient;
+
+  // 更新按钮选中态
+  document.querySelectorAll(".theme-opt").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.theme === themeId);
+  });
+}
+
+function loadTheme() {
+  chrome.storage.local.get(["selectedTheme"], (data) => {
+    const themeId = data.selectedTheme || "default";
+    applyTheme(themeId);
+  });
+}
+
+// 绑定主题切换事件
+document.querySelectorAll(".theme-opt").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const themeId = btn.dataset.theme;
+    applyTheme(themeId);
+    chrome.storage.local.set({ selectedTheme: themeId }, () => {
+      showToast(`已切换为「${THEME_PRESETS[themeId].name}」主题`);
+    });
+  });
+});
+
+// 页面加载时恢复主题
+loadTheme();
+
 // ==================== 功能开关侧边栏 ====================
 const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
 const sidebarOverlay = document.getElementById("sidebarOverlay");

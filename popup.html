@@ -1227,6 +1227,48 @@
       }
       .sb-toggle input:checked ~ .sb-thumb { transform: translateX(15px); }
 
+      /* 主题选择器 */
+      .theme-divider {
+        height: 1px;
+        background: rgba(12,42,77,0.08);
+        margin: 12px 0 4px;
+      }
+      .theme-options {
+        display: flex;
+        gap: 8px;
+      }
+      .theme-opt {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 8px 6px;
+        border-radius: 10px;
+        border: 2px solid transparent;
+        background: rgba(12,42,77,0.04);
+        color: var(--muted);
+        font-size: 11.5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .theme-opt:hover {
+        background: rgba(12,42,77,0.08);
+      }
+      .theme-opt.active {
+        border-color: var(--primary);
+        background: color-mix(in srgb, var(--primary) 8%, white);
+        color: var(--text);
+        box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 15%, transparent);
+      }
+      .theme-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
       /* 隐藏的模块样式 */
       .page.hidden-module { display: none !important; }
       .nav-dot.hidden-module { display: none !important; }
@@ -1656,6 +1698,24 @@
           <input type="checkbox" id="sbPee" checked />
           <div class="sb-track"></div><div class="sb-thumb"></div>
         </label>
+      </div>
+
+      <!-- 分隔线 -->
+      <div class="theme-divider"></div>
+
+      <!-- 主题选择 -->
+      <div class="sidebar-header" style="margin-top:4px;margin-bottom:12px;padding-bottom:10px;">
+        <span class="sidebar-title">🎨 主题风格</span>
+      </div>
+      <div class="theme-options" id="themeOptions">
+        <button class="theme-opt" data-theme="default" title="默认蓝调">
+          <span class="theme-dot" style="background:linear-gradient(135deg,#0b6bff,#20c6ff)"></span>
+          <span>默认</span>
+        </button>
+        <button class="theme-opt" data-theme="pink" title="少女粉">
+          <span class="theme-dot" style="background:linear-gradient(135deg,#EC4899,#F472B6)"></span>
+          <span>少女粉</span>
+        </button>
       </div>
     </div>
 
