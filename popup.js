@@ -507,6 +507,8 @@ function showEatTooltip(e, dateStr) {
       }
       
       positionTooltip(e);
+      activeTooltipDate = dateStr;
+      activeTooltipType = "eat";
       document.getElementById("tooltip").classList.add("show");
     });
   }, 100);
@@ -821,6 +823,8 @@ function showDrinkTooltip(e, dateStr, dayRecords) {
     }
     
     positionTooltip(e);
+    activeTooltipDate = dateStr;
+    activeTooltipType = "drink";
     document.getElementById("tooltip").classList.add("show");
   }, 100);
 }
@@ -1223,6 +1227,8 @@ function showPoopTooltip(e, dateStr) {
       }
       
       positionTooltip(e);
+      activeTooltipDate = dateStr;
+      activeTooltipType = "poop";
       document.getElementById("tooltip").classList.add("show");
     });
   }, 100);
@@ -1236,8 +1242,10 @@ function hidePoopTooltip(e) {
   }, 200);
 }
 
-// === tooltip 自身 hover 保持显示 ===
+// === tooltip 自身 hover 保持显示 + 点击编辑 ===
 let tooltipHideTimeout = null;
+let activeTooltipDate = null;   // 当前tooltip对应的日期
+let activeTooltipType = null;   // "eat" | "drink" | "poop" | "pee"
 const tooltipEl = document.getElementById("tooltip");
 tooltipEl.addEventListener("mouseenter", () => {
   clearTimeout(tooltipHideTimeout);
@@ -1249,6 +1257,25 @@ tooltipEl.addEventListener("mouseleave", () => {
   tooltipHideTimeout = setTimeout(() => {
     tooltipEl.classList.remove("show");
   }, 200);
+});
+// 点击 tooltip 进入编辑
+tooltipEl.addEventListener("click", () => {
+  if (!activeTooltipDate || !activeTooltipType) return;
+  tooltipEl.classList.remove("show");
+  const dateStr = activeTooltipDate;
+  if (activeTooltipType === "eat") {
+    chrome.storage.local.get(["mealRecords"], (data) => {
+      showEatEditModal(dateStr, data.mealRecords?.[dateStr] || []);
+    });
+  } else if (activeTooltipType === "poop") {
+    chrome.storage.local.get(["poopRecords"], (data) => {
+      showPoopEditModal(dateStr, data.poopRecords?.[dateStr] || []);
+    });
+  } else if (activeTooltipType === "pee") {
+    chrome.storage.local.get(["peeRecords"], (data) => {
+      showPeeEditModal(dateStr, data.peeRecords?.[dateStr] || []);
+    });
+  }
 });
 
 function positionTooltip(e) {
@@ -1630,6 +1657,8 @@ function showPeeTooltip(e, dateStr) {
       }
       
       positionTooltip(e);
+      activeTooltipDate = dateStr;
+      activeTooltipType = "pee";
       document.getElementById("tooltip").classList.add("show");
     });
   }, 100);
