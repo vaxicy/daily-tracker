@@ -700,20 +700,29 @@ function updateDrinkUI() {
 function updateDrinkStats() {
   chrome.storage.local.get(["drinkRecords"], (data) => {
     const records = data.drinkRecords || {};
-    const today = getToday();
-    const todayCount = records[today] ? records[today].length : 0;
-    
+
+    const todayCount = records[getToday()] ? records[getToday()].length : 0;
+
     let weekCount = 0;
-    const range = getWeekRange();
-    const cur = new Date(range.start);
-    while (cur <= range.end) {
-      const dateStr = formatDate(cur);
-      weekCount += (records[dateStr] || []).length;
-      cur.setDate(cur.getDate() + 1);
+    const wRange = getWeekRange();
+    let wc = new Date(wRange.start);
+    while (wc <= wRange.end) {
+      weekCount += (records[formatDate(wc)] || []).length;
+      wc.setDate(wc.getDate() + 1);
     }
-    
-    document.getElementById("drinkTodayCount").textContent = todayCount;
-    document.getElementById("drinkWeekCount").textContent = weekCount;
+
+    let monthCount = 0;
+    const mRange = getMonthRange();
+    let mc = new Date(mRange.start);
+    while (mc <= mRange.end) {
+      monthCount += (records[formatDate(mc)] || []).length;
+      mc.setDate(mc.getDate() + 1);
+    }
+
+    document.getElementById("drinkStatsRow").innerHTML =
+      `<div class="drink-stat-item"><div class="drink-stat-label">今日</div><div class="drink-stat-val">${todayCount}</div></div>` +
+      `<div class="drink-stat-item"><div class="drink-stat-label">本周</div><div class="drink-stat-val">${weekCount}</div></div>` +
+      `<div class="drink-stat-item"><div class="drink-stat-label">本月</div><div class="drink-stat-val">${monthCount}</div></div>`;
   });
 }
 

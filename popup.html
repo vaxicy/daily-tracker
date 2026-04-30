@@ -434,19 +434,38 @@
         gap: 8px;
       }
       .nav-btn {
-        width: 30px;
-        height: 30px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
         border: none;
-        background: rgba(139,92,246,0.1);
-        color: var(--secondary);
-        font-size: 16px;
+        background: rgba(11,107,255,0.06);
+        color: var(--primary);
+        font-size: 0;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s;
         padding: 0;
+      }
+      .nav-btn::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        box-sizing: border-box;
+        flex-shrink: 0;
+      }
+      .nav-btn[id*="Prev"]::before {
+        border-left: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        transform: rotate(45deg);
+        margin-right: 1px;
+      }
+      .nav-btn[id*="Next"]::before {
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        transform: rotate(-45deg);
+        margin-left: 1px;
       }
       .nav-btn:hover {
         background: rgba(139,92,246,0.2);
@@ -554,11 +573,11 @@
         font-weight: 700;
         color: var(--eat);
       }
-      #pageEat .nav-btn.eat-nav {
+      #pageEat .nav-btn {
         background: rgba(245,158,11,0.1);
         color: var(--eat);
       }
-      #pageEat .nav-btn.eat-nav:hover {
+      #pageEat .nav-btn:hover {
         background: rgba(245,158,11,0.2);
       }
 
@@ -803,6 +822,45 @@
       }
       .stats-toggle-btn.pee-toggle.active {
         background: linear-gradient(135deg, var(--pee), var(--pee2));
+      }
+      .stats-toggle-btn.drink-toggle.active {
+        background: linear-gradient(135deg, var(--primary), var(--primary2));
+      }
+      .stats-card.drink-stats {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        margin-bottom: 10px;
+      }
+      .drink-stats-row {
+        display: flex;
+        justify-content: space-around;
+        gap: 8px;
+      }
+      .drink-stat-item {
+        flex: 0 0 80px;
+        text-align: center;
+        padding: 8px 4px 6px;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.55);
+        box-sizing: border-box;
+      }
+      .drink-stat-label {
+        font-size: 10px;
+        color: var(--text);
+        opacity: 0.5;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .drink-stat-val {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--primary);
+        line-height: 1.25;
+      }
+      .stats-num.drink-num {
+        color: var(--primary);
       }
       .stats-num {
         font-size: 32px;
@@ -1279,13 +1337,14 @@
         border-color: rgba(11,107,255,0.12);
         box-shadow: 0 4px 16px rgba(11,107,255,0.08);
         margin-top: 12px;
+        padding: 14px;
       }
-      .drink-cal-nav {
-        background: rgba(11,107,255,0.1) !important;
-        color: var(--primary) !important;
+      #pageDrink .nav-btn {
+        background: rgba(11,107,255,0.08);
+        color: var(--primary);
       }
-      .drink-cal-nav:hover {
-        background: rgba(11,107,255,0.2) !important;
+      #pageDrink .nav-btn:hover {
+        background: rgba(11,107,255,0.2);
       }
       .drink-wd { color: var(--primary); }
 
@@ -1380,8 +1439,8 @@
         <div class="calendar-header">
           <div class="calendar-title" id="eatCalendarTitle">2024年1月</div>
           <div class="calendar-nav">
-            <button class="nav-btn eat-nav" id="eatPrevMonth">‹</button>
-            <button class="nav-btn eat-nav" id="eatNextMonth">›</button>
+            <button class="nav-btn eat-nav" id="eatPrevMonth"></button>
+            <button class="nav-btn eat-nav" id="eatNextMonth"></button>
           </div>
         </div>
         <div class="calendar-grid">
@@ -1498,8 +1557,8 @@
         <div class="calendar-header">
           <div class="calendar-title" id="drinkCalendarTitle" style="color:var(--primary);">2024年1月</div>
           <div class="calendar-nav">
-            <button class="nav-btn drink-cal-nav" id="drinkPrevMonth">‹</button>
-            <button class="nav-btn drink-cal-nav" id="drinkNextMonth">›</button>
+            <button class="nav-btn drink-cal-nav" id="drinkPrevMonth"></button>
+            <button class="nav-btn drink-cal-nav" id="drinkNextMonth"></button>
           </div>
         </div>
         <div class="drink-legend">
@@ -1513,6 +1572,12 @@
           </div>
           <span class="drink-legend-label">多</span>
         </div>
+
+        <!-- 喝水统计 -->
+        <div class="stats-card drink-stats">
+          <div class="drink-stats-row" id="drinkStatsRow"></div>
+        </div>
+
         <div class="calendar-grid">
           <div class="calendar-weekdays">
             <div class="weekday drink-wd">日</div>
@@ -1542,8 +1607,8 @@
         <div class="calendar-header">
           <div class="calendar-title" id="poopCalendarTitle">2024年1月</div>
           <div class="calendar-nav">
-            <button class="nav-btn poop-nav" id="poopPrevMonth">‹</button>
-            <button class="nav-btn poop-nav" id="poopNextMonth">›</button>
+            <button class="nav-btn poop-nav" id="poopPrevMonth"></button>
+            <button class="nav-btn poop-nav" id="poopNextMonth"></button>
           </div>
         </div>
         <div class="calendar-grid">
@@ -1604,8 +1669,8 @@
         <div class="calendar-header">
           <div class="calendar-title" id="peeCalendarTitle">2024年1月</div>
           <div class="calendar-nav">
-            <button class="nav-btn pee-nav" id="peePrevMonth">‹</button>
-            <button class="nav-btn pee-nav" id="peeNextMonth">›</button>
+            <button class="nav-btn pee-nav" id="peePrevMonth"></button>
+            <button class="nav-btn pee-nav" id="peeNextMonth"></button>
           </div>
         </div>
         <div class="calendar-grid">
