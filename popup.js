@@ -88,23 +88,77 @@ function updateMealRecords() {
   chrome.storage.local.get(["mealRecords"], (data) => {
     const records = data.mealRecords || {};
     const todayMeals = records[today] || [];
-    
+
     mealCount.textContent = todayMeals.length;
-    
+
     if (todayMeals.length === 0) {
       mealRecordsList.innerHTML = '<div class="record-empty" style="text-align:center;color:var(--muted);padding:10px;">暂无饮食记录</div>';
     } else {
-      mealRecordsList.innerHTML = todayMeals.map(meal => {
+      mealRecordsList.innerHTML = todayMeals.map((meal, index) => {
         const typeLabel = { breakfast: "🌅 早餐", lunch: "☀️ 午餐", dinner: "🌙 晚餐", snack: "🍪 加餐" };
         return `
-          <div class="meal-item">
+          <div class="meal-item" data-index="${index}">
             <span class="meal-type-tag ${meal.type}">${typeLabel[meal.type]}</span>
             <span class="meal-content">${meal.content}</span>
             <span class="meal-time">${meal.time}</span>
+            <div class="meal-actions">
+              <button class="meal-action-btn edit-meal" data-index="${index}" title="编辑">✏️</button>
+              <button class="meal-action-btn delete-meal" data-index="${index}" title="删除">🗑️</button>
+            </div>
           </div>
         `;
       }).join("");
+
+      // 添加编辑和删除按钮的事件监听
+      attachMealActionListeners();
     }
+  });
+}
+
+function attachMealActionListeners() {
+  // 编辑按钮 - 打开弹窗
+  document.querySelectorAll(".edit-meal").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const today = getToday();
+      chrome.storage.local.get(["mealRecords"], (data) => {
+        const records = data.mealRecords || {};
+        showEatEditModal(today, records[today] || []);
+      });
+    });
+  });
+
+  // 删除按钮
+  document.querySelectorAll(".delete-meal").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const index = parseInt(e.target.dataset.index);
+      deleteMealRecord(index);
+    });
+  });
+}
+
+function deleteMealRecord(index) {
+  if (!confirm("确定要删除这条饮食记录吗？")) return;
+
+  const today = getToday();
+  chrome.storage.local.get(["mealRecords"], (data) => {
+    const records = data.mealRecords || {};
+    if (!records[today]) return;
+
+    // 删除指定索引的记录
+    records[today].splice(index, 1);
+
+    // 如果当天没有记录了，删除该日期的键
+    if (records[today].length === 0) {
+      delete records[today];
+    }
+
+    chrome.storage.local.set({ mealRecords: records }, () => {
+      renderEatCalendar();
+      updateMealRecords();
+      showToast("🗑️ 饮食记录已删除");
+    });
   });
 }
 
@@ -114,17 +168,17 @@ addMealBtn.addEventListener("click", () => {
     showToast("请输入饮食内容");
     return;
   }
-  
+
   const today = getToday();
   const time = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
   const type = mealTypeSelect.value;
-  
+
   chrome.storage.local.get(["mealRecords"], (data) => {
     const records = data.mealRecords || {};
     if (!records[today]) records[today] = [];
-    
+
     records[today].push({ content, time, type, timestamp: Date.now() });
-    
+
     chrome.storage.local.set({ mealRecords: records }, () => {
       mealInput.value = "";
       renderEatCalendar();
@@ -1358,15 +1412,44 @@ function updatePoopTodayStatus() {
     if (todayRecord && todayRecord.length > 0) {
       poopTodaySection.style.display = "block";
       poopTodayCount.textContent = todayRecord.length;
-      poopRecordsList.innerHTML = todayRecord.map(rec => `
-        <div class="record-item">
+      poopRecordsList.innerHTML = todayRecord.map((rec, idx) => `
+        <div class="record-item" data-index="${idx}">
           <span class="record-time">${rec.time}</span>
           <span class="record-remark">${rec.remark || "无备注"}</span>
+          <div class="record-actions">
+            <button class="record-action-btn edit-poop-record" data-index="${idx}" title="编辑">✏️</button>
+            <button class="record-action-btn delete-poop-record" data-index="${idx}" title="删除">🗑️</button>
+          </div>
         </div>
       `).join("");
+
+      // 添加编辑和删除按钮的事件监听
+      attachPoopRecordActions();
     } else {
       poopTodaySection.style.display = "none";
     }
+  });
+}
+
+function attachPoopRecordActions() {
+  // 编辑按钮 - 打开弹窗
+  document.querySelectorAll(".edit-poop-record").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const today = getToday();
+      chrome.storage.local.get(["poopRecords"], (data) => {
+        showPoopEditModal(today, data.poopRecords[today] || []);
+      });
+    });
+  });
+
+  // 删除按钮
+  document.querySelectorAll(".delete-poop-record").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const idx = parseInt(e.target.dataset.index);
+      deletePoopRecord(idx);
+    });
   });
 }
 
@@ -1740,15 +1823,44 @@ function updatePeeTodayStatus() {
     if (todayRecord && todayRecord.length > 0) {
       peeTodaySection.style.display = "block";
       peeTodayCount.textContent = todayRecord.length;
-      peeRecordsList.innerHTML = todayRecord.map(rec => `
-        <div class="record-item">
+      peeRecordsList.innerHTML = todayRecord.map((rec, idx) => `
+        <div class="record-item" data-index="${idx}">
           <span class="record-time pee-time">${rec.time}</span>
           <span class="record-remark">${rec.remark || "无备注"}</span>
+          <div class="record-actions">
+            <button class="record-action-btn edit-pee-record" data-index="${idx}" title="编辑">✏️</button>
+            <button class="record-action-btn delete-pee-record" data-index="${idx}" title="删除">🗑️</button>
+          </div>
         </div>
       `).join("");
+
+      // 添加编辑和删除按钮的事件监听
+      attachPeeRecordActions();
     } else {
       peeTodaySection.style.display = "none";
     }
+  });
+}
+
+function attachPeeRecordActions() {
+  // 编辑按钮 - 打开弹窗
+  document.querySelectorAll(".edit-pee-record").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const today = getToday();
+      chrome.storage.local.get(["peeRecords"], (data) => {
+        showPeeEditModal(today, data.peeRecords[today] || []);
+      });
+    });
+  });
+
+  // 删除按钮
+  document.querySelectorAll(".delete-pee-record").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const idx = parseInt(e.target.dataset.index);
+      deletePeeRecord(idx);
+    });
   });
 }
 
