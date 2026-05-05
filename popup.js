@@ -2188,6 +2188,22 @@ const THEME_PRESETS = {
       "--scrollbar-thumb": "rgba(148,163,184,0.3)"
     },
     bgGradient: "linear-gradient(150deg, #0f172a 0%, #1e293b 100%)"
+  },
+  forest: {
+    name: "森林绿",
+    vars: {
+      "--text": "#0a2923",
+      "--muted": "rgba(10,41,35,0.6)",
+      "--primary": "#059669",
+      "--primary2": "#34d399",
+      "--secondary": "#065f46",
+      "--secondary2": "#6ee7b7",
+      "--eat": "#F59E0B",
+      "--eat2": "#FBBF24",
+      "--pee": "#10B981",
+      "--pee2": "#34D399"
+    },
+    bgGradient: "linear-gradient(150deg, #ecfdf5 0%, #d1fae5 100%)"
   }
 };
 
