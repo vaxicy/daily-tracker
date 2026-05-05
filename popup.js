@@ -46,19 +46,58 @@ function formatDateDisplay(dateStr) {
 // ==================== 页面切换 ====================
 let currentTab = "eat";
 
+let isFirstTabSwitch = true;
+let isSwitching = false;
+
 function switchTab(tab) {
+  if (tab === currentTab) return;
+  if (isSwitching) return; // 防止动画期间重复切换
+  isSwitching = true;
+  const oldTab = currentTab;
   currentTab = tab;
-  
+
   // 导航高亮
   ["eat", "drink", "poop", "pee"].forEach(t => {
     document.getElementById(`nav${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.toggle("active", t === tab);
   });
-  
-  // 页面切换
-  ["eat", "drink", "poop", "pee"].forEach(t => {
-    document.getElementById(`page${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.toggle("active", t === tab);
-  });
-  
+
+  const oldPage = document.getElementById(`page${oldTab.charAt(0).toUpperCase() + oldTab.slice(1)}`);
+  const newPage = document.getElementById(`page${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
+
+  if (isFirstTabSwitch) {
+    // 首次加载：无动画
+    isFirstTabSwitch = false;
+    oldPage.classList.remove("active");
+    newPage.classList.add("active");
+    isSwitching = false;
+  } else {
+    // 添加退出动画
+    oldPage.style.transition = "opacity 0.15s ease, transform 0.15s ease";
+    oldPage.style.opacity = "0";
+    oldPage.style.transform = "translateX(-12px)";
+
+    setTimeout(() => {
+      oldPage.classList.remove("active");
+      oldPage.style.opacity = "";
+      oldPage.style.transform = "";
+      oldPage.style.transition = "";
+
+      // 显示新页面并添加进入动画
+      newPage.classList.add("active");
+      newPage.style.opacity = "0";
+      newPage.style.transform = "translateX(12px)";
+      newPage.style.transition = "none";
+
+      requestAnimationFrame(() => {
+        newPage.style.transition = "opacity 0.2s ease, transform 0.2s ease";
+        newPage.style.opacity = "1";
+        newPage.style.transform = "translateX(0)";
+        // 动画完成后重置标志
+        setTimeout(() => { isSwitching = false; }, 200);
+      });
+    }, 140);
+  }
+
   // 初始化对应页面
   if (tab === "eat") initEatPage();
   if (tab === "drink") { updateDrinkUI(); updateDrinkStats(); renderDrinkCalendar(); }
@@ -2121,6 +2160,34 @@ const THEME_PRESETS = {
       "--pee2": "#E9D5FF"
     },
     bgGradient: "linear-gradient(150deg, #fce7f3 0%, #fbcfe8 100%)"
+  },
+  dark: {
+    name: "暗色模式",
+    vars: {
+      "--text": "#e2e8f0",
+      "--muted": "rgba(226,232,240,0.55)",
+      "--primary": "#3b82f6",
+      "--primary2": "#06b6d4",
+      "--secondary": "#a78bfa",
+      "--secondary2": "#c4b5fd",
+      "--eat": "#fbbf24",
+      "--eat2": "#f59e0b",
+      "--pee": "#34d399",
+      "--pee2": "#10b981",
+      "--card-bg": "rgba(30,41,59,0.85)",
+      "--card-border": "rgba(148,163,184,0.15)",
+      "--input-bg": "rgba(15,23,42,0.7)",
+      "--modal-bg": "#1e293b",
+      "--tooltip-bg": "#1e293b",
+      "--toast-bg": "rgba(226,232,240,0.9)",
+      "--toast-text": "#0f172a",
+      "--sidebar-bg": "rgba(15,23,42,0.97)",
+      "--hover-bg": "rgba(148,163,184,0.1)",
+      "--day-hover": "rgba(148,163,184,0.2)",
+      "--day-today": "rgba(51,65,85,0.8)",
+      "--scrollbar-thumb": "rgba(148,163,184,0.3)"
+    },
+    bgGradient: "linear-gradient(150deg, #0f172a 0%, #1e293b 100%)"
   }
 };
 
@@ -2130,6 +2197,9 @@ const bodyEl = document.body;
 function applyTheme(themeId) {
   const preset = THEME_PRESETS[themeId];
   if (!preset) return;
+
+  // 设置 data-theme 属性（用于 CSS 选择器）
+  document.body.setAttribute("data-theme", themeId);
 
   // 应用 CSS 变量
   Object.entries(preset.vars).forEach(([k, v]) => {
