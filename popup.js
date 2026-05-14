@@ -101,8 +101,20 @@ function switchTab(tab) {
   // 初始化对应页面
   if (tab === "eat") initEatPage();
   if (tab === "drink") { updateDrinkUI(); updateDrinkStats(); renderDrinkCalendar(); }
-  if (tab === "poop") { renderPoopCalendar(); updatePoopTodayStatus(); updatePoopStats(); }
-  if (tab === "pee") { renderPeeCalendar(); updatePeeTodayStatus(); updatePeeStats(); }
+  if (tab === "poop") { 
+    renderPoopCalendar(); 
+    updatePoopTodayStatus(); 
+    updatePoopStats(); 
+    // 自动同步饮食备注
+    setTimeout(() => syncMealRemarkToPoop(), 100);
+  }
+  if (tab === "pee") { 
+    renderPeeCalendar(); 
+    updatePeeTodayStatus(); 
+    updatePeeStats(); 
+    // 自动同步饮食备注
+    setTimeout(() => syncMealRemarkToPee(), 100);
+  }
 }
 
 // ==================== 吃 - 饮食记录 ====================
@@ -113,8 +125,52 @@ const mealRecordsList = document.getElementById("mealRecordsList");
 const mealRecordsHeader = document.getElementById("mealRecordsHeader");
 const mealToggle = document.getElementById("mealToggle");
 const mealCount = document.getElementById("mealCount");
+const mealRemarkInput = document.getElementById("mealRemarkInput");
+const mealRating = document.getElementById("mealRating");
+const mealRatingText = document.getElementById("mealRatingText");
 
 let isMealExpanded = true;
+let currentMealRating = 0; // 当前选中的评分
+
+// 评价文本映射
+const ratingTextMap = {
+  0: "未评价",
+  1: "😞 很差",
+  2: "😐 一般",
+  3: "😊 不错",
+  4: "😄 很好",
+  5: "🤩 完美"
+};
+
+// 星级评分事件处理
+if (mealRating) {
+  const stars = mealRating.querySelectorAll(".star");
+  stars.forEach(star => {
+    star.addEventListener("click", () => {
+      const rating = parseInt(star.dataset.rating);
+      currentMealRating = currentMealRating === rating ? 0 : rating; // 点击已选中的星星则取消
+      
+      stars.forEach((s, idx) => {
+        s.classList.toggle("active", idx < currentMealRating);
+      });
+      
+      mealRatingText.textContent = ratingTextMap[currentMealRating];
+    });
+    
+    star.addEventListener("mouseenter", () => {
+      const rating = parseInt(star.dataset.rating);
+      stars.forEach((s, idx) => {
+        if (idx < rating) s.style.opacity = "0.8";
+      });
+    });
+    
+    star.addEventListener("mouseleave", () => {
+      stars.forEach((s, idx) => {
+        s.style.opacity = idx < currentMealRating ? "1" : "0.3";
+      });
+    });
+  });
+}
 
 mealRecordsHeader.addEventListener("click", () => {
   isMealExpanded = !isMealExpanded;
@@ -135,10 +191,18 @@ function updateMealRecords() {
     } else {
       mealRecordsList.innerHTML = todayMeals.map((meal, index) => {
         const typeLabel = { breakfast: "🌅 早餐", lunch: "☀️ 午餐", dinner: "🌙 晚餐", snack: "🍪 加餐" };
+        const ratingStars = meal.rating ? "⭐".repeat(meal.rating) : "";
+        const remarkHtml = meal.remark ? `<div class="meal-remark" style="font-size:10px;color:var(--muted);margin-top:2px;">📝 ${meal.remark}</div>` : "";
+        const ratingHtml = meal.rating ? `<div class="meal-rating-display" style="font-size:10px;margin-top:2px;">${ratingStars} ${ratingTextMap[meal.rating] || ""}</div>` : "";
+        
         return `
           <div class="meal-item" data-index="${index}">
             <span class="meal-type-tag ${meal.type}">${typeLabel[meal.type]}</span>
-            <span class="meal-content">${meal.content}</span>
+            <div style="flex:1;min-width:0;">
+              <span class="meal-content">${meal.content}</span>
+              ${remarkHtml}
+              ${ratingHtml}
+            </div>
             <span class="meal-time">${meal.time}</span>
             <div class="meal-actions">
               <button class="meal-action-btn edit-meal" data-index="${index}" title="编辑">✏️</button>
@@ -211,15 +275,31 @@ addMealBtn.addEventListener("click", () => {
   const today = getToday();
   const time = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
   const type = mealTypeSelect.value;
+  const remark = mealRemarkInput ? mealRemarkInput.value.trim() : "";
+  const rating = currentMealRating;
 
   chrome.storage.local.get(["mealRecords"], (data) => {
     const records = data.mealRecords || {};
     if (!records[today]) records[today] = [];
 
-    records[today].push({ content, time, type, timestamp: Date.now() });
+    records[today].push({ 
+      content, 
+      time, 
+      type, 
+      remark, 
+      rating, 
+      timestamp: Date.now() 
+    });
 
     chrome.storage.local.set({ mealRecords: records }, () => {
       mealInput.value = "";
+      if (mealRemarkInput) mealRemarkInput.value = "";
+      currentMealRating = 0;
+      if (mealRating) {
+        mealRating.querySelectorAll(".star").forEach(s => s.classList.remove("active"));
+      }
+      if (mealRatingText) mealRatingText.textContent = "未评价";
+      
       renderEatCalendar();
       updateMealRecords();
       showToast("🍽️ 饮食已记录");
@@ -340,8 +420,39 @@ function showEatEditModal(dateStr, dayRecords) {
       <div class="edit-input-row">
         <input class="edit-input" type="text" id="eatAddContent" placeholder="吃了什么？" />
       </div>
+      <div class="edit-input-row">
+        <input class="edit-input" type="text" id="eatAddRemark" placeholder="添加备注（可选）" maxlength="50" />
+      </div>
+      <div class="edit-input-row" style="align-items:center;gap:8px;">
+        <span style="font-size:11px;color:var(--muted);">评价：</span>
+        <div class="rating-stars" id="eatAddRating" style="display:flex;gap:2px;">
+          <span class="star" data-rating="1" style="cursor:pointer;font-size:16px;opacity:0.3;">⭐</span>
+          <span class="star" data-rating="2" style="cursor:pointer;font-size:16px;opacity:0.3;">⭐</span>
+          <span class="star" data-rating="3" style="cursor:pointer;font-size:16px;opacity:0.3;">⭐</span>
+          <span class="star" data-rating="4" style="cursor:pointer;font-size:16px;opacity:0.3;">⭐</span>
+          <span class="star" data-rating="5" style="cursor:pointer;font-size:16px;opacity:0.3;">⭐</span>
+        </div>
+        <span class="rating-text" id="eatAddRatingText" style="font-size:10px;color:var(--eat);font-weight:600;">未评价</span>
+      </div>
       <button class="edit-save-btn" id="eatAddBtn" style="background: var(--eat);">+ 添加记录</button>
     `;
+    
+    // 评价星级交互
+    const addRatingStars = document.querySelectorAll("#eatAddRating .star");
+    let addRating = 0;
+    if (addRatingStars.length > 0) {
+      addRatingStars.forEach(star => {
+        star.addEventListener("click", () => {
+          const rating = parseInt(star.dataset.rating);
+          addRating = addRating === rating ? 0 : rating;
+          addRatingStars.forEach((s, idx) => {
+            s.classList.toggle("active", idx < addRating);
+            s.style.opacity = idx < addRating ? "1" : "0.3";
+          });
+          document.getElementById("eatAddRatingText").textContent = ratingTextMap[addRating] || "未评价";
+        });
+      });
+    }
     
     // 切换时间模式
     document.querySelectorAll('input[name="eatTimeMode"]').forEach(r => {
@@ -382,10 +493,26 @@ function showEatEditModal(dateStr, dayRecords) {
         recordTime = isToday ? new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) : "补打卡";
       }
       
+      // 获取备注和评价
+      const remark = document.getElementById("eatAddRemark") ? document.getElementById("eatAddRemark").value.trim() : "";
+      let rating = 0;
+      if (document.getElementById("eatAddRating")) {
+        const activeStars = document.getElementById("eatAddRating").querySelectorAll(".star.active");
+        rating = activeStars.length;
+      }
+      
       chrome.storage.local.get(["mealRecords"], (data) => {
         const records = data.mealRecords || {};
         if (!records[dateStr]) records[dateStr] = [];
-        records[dateStr].push({ content, time: recordTime, type, timestamp: Date.now(), isBackfill: !isToday });
+        records[dateStr].push({ 
+          content, 
+          time: recordTime, 
+          type, 
+          remark, 
+          rating, 
+          timestamp: Date.now(), 
+          isBackfill: !isToday 
+        });
         chrome.storage.local.set({ mealRecords: records }, () => {
           showToast(isToday ? "🍽️ 饮食已记录" : "🍽️ 补打卡成功");
           renderEatCalendar();
@@ -409,6 +536,8 @@ function showEatEditModal(dateStr, dayRecords) {
 
   editModalBody.innerHTML = dayRecords.map((rec, idx) => {
     const parsedTime = parseRecordTime(rec.time);
+    const ratingStars = rec.rating ? "⭐".repeat(rec.rating) : "无";
+    const remarkHtml = rec.remark ? `📝 ${rec.remark}` : "无备注";
     return `
     <div class="edit-record-item" data-index="${idx}">
       <div class="edit-record-header">
@@ -418,7 +547,13 @@ function showEatEditModal(dateStr, dayRecords) {
           <button class="edit-btn-delete" data-action="delete-eat" data-index="${idx}">删除</button>
         </div>
       </div>
-      <div class="edit-record-content" id="eatContent${idx}">${rec.content}</div>
+      <div class="edit-record-content" id="eatContent${idx}">
+        ${rec.content}
+        <div style="font-size:10px;color:var(--muted);margin-top:4px;">
+          <div>📝 备注：${remarkHtml}</div>
+          <div>⭐ 评价：${ratingStars}</div>
+        </div>
+      </div>
       <div class="edit-input-row" id="eatEditForm${idx}" style="display:none;">
         <select class="edit-type-select" id="eatEditType${idx}">
           <option value="breakfast" ${rec.type === 'breakfast' ? 'selected' : ''}>🌅 早餐</option>
@@ -432,7 +567,23 @@ function showEatEditModal(dateStr, dayRecords) {
         <span style="font-size:11px;color:#999;white-space:nowrap;margin-left:12px;">修改记录时间</span>
       </div>
       <div class="edit-input-row" id="eatEditFormContent${idx}" style="display:none;">
-        <input class="edit-input" type="text" id="eatEditContent${idx}" value="${rec.content}" />
+        <input class="edit-input" type="text" id="eatEditContent${idx}" value="${rec.content}" placeholder="修改内容" />
+      </div>
+      <div class="edit-input-row" id="eatEditFormRemark${idx}" style="display:none;">
+        <input class="edit-input" type="text" id="eatEditRemark${idx}" value="${rec.remark || ''}" placeholder="修改备注（可选）" maxlength="50" />
+      </div>
+      <div class="edit-input-row" id="eatEditFormRating${idx}" style="display:none;align-items:center;gap:8px;">
+        <span style="font-size:11px;color:var(--muted);">评价：</span>
+        <select id="eatEditRating${idx}" class="edit-type-select" style="width:auto;">
+          <option value="0" ${!rec.rating ? 'selected' : ''}>无</option>
+          <option value="1" ${rec.rating === 1 ? 'selected' : ''}>⭐ 很差</option>
+          <option value="2" ${rec.rating === 2 ? 'selected' : ''}>⭐⭐ 一般</option>
+          <option value="3" ${rec.rating === 3 ? 'selected' : ''}>⭐⭐⭐ 不错</option>
+          <option value="4" ${rec.rating === 4 ? 'selected' : ''}>⭐⭐⭐⭐ 很好</option>
+          <option value="5" ${rec.rating === 5 ? 'selected' : ''}>⭐⭐⭐⭐⭐ 完美</option>
+        </select>
+      </div>
+      <div class="edit-input-row" id="eatEditFormButtons${idx}" style="display:none;">
         <button class="edit-save-btn" data-action="save-eat" data-index="${idx}">保存修改</button>
       </div>
     </div>
@@ -1443,6 +1594,41 @@ poopCheckinBtn.addEventListener("click", () => {
   });
 });
 
+// 拉屎页面：自动同步当天的饮食备注
+function syncMealRemarkToPoop() {
+  const today = getToday();
+  chrome.storage.local.get(["mealRecords"], (data) => {
+    const mealRecords = data.mealRecords || {};
+    const todayMeals = mealRecords[today] || [];
+    
+    if (todayMeals.length > 0) {
+      // 收集所有饮食备注和评价
+      const remarks = todayMeals
+        .filter(m => m.remark)
+        .map(m => m.remark);
+      const ratings = todayMeals
+        .filter(m => m.rating)
+        .map(m => `${"⭐".repeat(m.rating)}`);
+      
+      let syncText = "";
+      if (remarks.length > 0) {
+        syncText += `饮食备注: ${remarks.join("; ")}`;
+      }
+      if (ratings.length > 0) {
+        syncText += (syncText ? " | " : "") + `评价: ${ratings.join(", ")}`;
+      }
+      
+      if (syncText && poopRemarkInput) {
+        // 如果备注框为空，自动填充；否则追加
+        if (!poopRemarkInput.value.trim()) {
+          poopRemarkInput.value = syncText;
+          showToast("📝 已自动填充饮食备注");
+        }
+      }
+    }
+  });
+}
+
 function updatePoopTodayStatus() {
   const today = getToday();
   chrome.storage.local.get(["poopRecords"], (data) => {
@@ -1854,6 +2040,41 @@ peeCheckinBtn.addEventListener("click", () => {
   });
 });
 
+// 撒尿页面：自动同步当天的饮食备注
+function syncMealRemarkToPee() {
+  const today = getToday();
+  chrome.storage.local.get(["mealRecords"], (data) => {
+    const mealRecords = data.mealRecords || {};
+    const todayMeals = mealRecords[today] || [];
+    
+    if (todayMeals.length > 0) {
+      // 收集所有饮食备注和评价
+      const remarks = todayMeals
+        .filter(m => m.remark)
+        .map(m => m.remark);
+      const ratings = todayMeals
+        .filter(m => m.rating)
+        .map(m => `${"⭐".repeat(m.rating)}`);
+      
+      let syncText = "";
+      if (remarks.length > 0) {
+        syncText += `饮食备注: ${remarks.join("; ")}`;
+      }
+      if (ratings.length > 0) {
+        syncText += (syncText ? " | " : "") + `评价: ${ratings.join(", ")}`;
+      }
+      
+      if (syncText && peeRemarkInput) {
+        // 如果备注框为空，自动填充；否则追加
+        if (!peeRemarkInput.value.trim()) {
+          peeRemarkInput.value = syncText;
+          showToast("📝 已自动填充饮食备注");
+        }
+      }
+    }
+  });
+}
+
 function updatePeeTodayStatus() {
   const today = getToday();
   chrome.storage.local.get(["peeRecords"], (data) => {
@@ -1972,6 +2193,9 @@ editModalBody.addEventListener("click", (e) => {
     document.getElementById("eatEditForm" + idx).style.display = "block";
     document.getElementById("eatEditFormTime" + idx).style.display = "flex";
     document.getElementById("eatEditFormContent" + idx).style.display = "block";
+    document.getElementById("eatEditFormRemark" + idx).style.display = "block";
+    document.getElementById("eatEditFormRating" + idx).style.display = "flex";
+    document.getElementById("eatEditFormButtons" + idx).style.display = "block";
     document.getElementById("eatContent" + idx).style.display = "none";
   } else if (action === "save-eat") {
     const newType = document.getElementById("eatEditType" + idx).value;
@@ -1984,11 +2208,17 @@ editModalBody.addEventListener("click", (e) => {
       const [h, m] = editTimeEl.value.split(":");
       newTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
     }
+    // 获取编辑后的备注和评价
+    const newRemark = document.getElementById("eatEditRemark" + idx) ? document.getElementById("eatEditRemark" + idx).value.trim() : "";
+    const newRating = document.getElementById("eatEditRating" + idx) ? parseInt(document.getElementById("eatEditRating" + idx).value) : 0;
+    
     chrome.storage.local.get(["mealRecords"], (data) => {
       const records = data.mealRecords || {};
       if (records[currentEditDate] && records[currentEditDate][idx]) {
         records[currentEditDate][idx].type = newType;
         records[currentEditDate][idx].content = newContent;
+        records[currentEditDate][idx].remark = newRemark;
+        records[currentEditDate][idx].rating = newRating;
         if (newTime) records[currentEditDate][idx].time = newTime;
         chrome.storage.local.set({ mealRecords: records }, () => {
           showToast("修改成功");

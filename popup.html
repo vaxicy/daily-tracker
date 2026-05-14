@@ -273,6 +273,62 @@
       .meal-content { flex: 1; color: var(--text); word-break: break-all; }
       .meal-time { font-size: 10px; color: var(--muted); margin-left: 8px; flex-shrink: 0; }
 
+      /* 评价星级样式 */
+      .meal-rating-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 10px 0 14px;
+        padding: 8px 14px;
+        background: rgba(245,158,11,0.05);
+        border-radius: 8px;
+        min-height: 32px;
+      }
+      .rating-label {
+        font-size: 12px;
+        color: var(--muted);
+        white-space: nowrap;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        height: 20px;
+      }
+      .rating-stars {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        height: 20px;
+      }
+      .rating-stars .star {
+        cursor: pointer;
+        font-size: 16px;
+        opacity: 0.3;
+        transition: all 0.2s;
+        user-select: none;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 20px;
+        width: 20px;
+      }
+      .rating-stars .star.active {
+        opacity: 1;
+      }
+      .rating-stars .star:hover {
+        opacity: 0.8;
+      }
+      .rating-text {
+        font-size: 11px;
+        color: var(--eat);
+        font-weight: 600;
+        margin-left: 4px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        height: 20px;
+      }
+
       .eat-stats {
         display: flex;
         gap: 10px;
@@ -1874,6 +1930,25 @@
           </select>
           <input class="meal-input" id="mealInput" type="text" placeholder="今天吃了什么？" maxlength="100" />
         </div>
+        
+        <!-- 备注输入框 -->
+        <div class="meal-input-row" style="margin-top: 8px;">
+          <input class="meal-input" id="mealRemarkInput" type="text" placeholder="添加备注（可选）" maxlength="50" style="font-size: 12px;" />
+        </div>
+        
+        <!-- 评价功能 -->
+        <div class="meal-rating-row">
+          <span class="rating-label">评价今天的菜：</span>
+          <div class="rating-stars" id="mealRating">
+            <span class="star" data-rating="1">⭐</span>
+            <span class="star" data-rating="2">⭐</span>
+            <span class="star" data-rating="3">⭐</span>
+            <span class="star" data-rating="4">⭐</span>
+            <span class="star" data-rating="5">⭐</span>
+          </div>
+          <span class="rating-text" id="mealRatingText">未评价</span>
+        </div>
+        
         <button class="btn-eat" id="addMealBtn">🍽️ 记录饮食</button>
 
         <div class="meal-records" id="mealRecords">
