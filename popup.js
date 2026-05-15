@@ -50,7 +50,7 @@ let isFirstTabSwitch = true;
 let isSwitching = false;
 
 function switchTab(tab) {
-  if (tab === currentTab) return;
+  if (!isFirstTabSwitch && tab === currentTab) return;
   if (isSwitching) return; // 防止动画期间重复切换
   isSwitching = true;
   const oldTab = currentTab;
@@ -192,8 +192,8 @@ function updateMealRecords() {
       mealRecordsList.innerHTML = todayMeals.map((meal, index) => {
         const typeLabel = { breakfast: "🌅 早餐", lunch: "☀️ 午餐", dinner: "🌙 晚餐", snack: "🍪 加餐" };
         const ratingStars = meal.rating ? "⭐".repeat(meal.rating) : "";
-        const remarkHtml = meal.remark ? `<div class="meal-remark" style="font-size:10px;color:var(--muted);margin-top:2px;">📝 ${meal.remark}</div>` : "";
-        const ratingHtml = meal.rating ? `<div class="meal-rating-display" style="font-size:10px;margin-top:2px;">${ratingStars} ${ratingTextMap[meal.rating] || ""}</div>` : "";
+        const remarkHtml = meal.remark ? `<div class="meal-remark" style="font-size:10px;color:var(--muted);margin-top:3px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;"><span>📝</span><span>${meal.remark}</span></div>` : "";
+        const ratingHtml = meal.rating ? `<div class="meal-rating-display" style="font-size:10px;margin-top:3px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;"><span style="letter-spacing:2px;">${ratingStars}</span><span>${ratingTextMap[meal.rating] || ""}</span></div>` : "";
         
         return `
           <div class="meal-item" data-index="${index}">
@@ -2482,6 +2482,37 @@ document.querySelectorAll(".theme-opt").forEach(btn => {
 // 页面加载时恢复主题
 loadTheme();
 
+// ==================== 默认首页设置 ====================
+function applyDefaultTab(tabId) {
+  // 更新按钮选中态
+  document.querySelectorAll(".default-tab-opt").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tabId);
+  });
+}
+
+function loadDefaultTab(callback) {
+  chrome.storage.local.get(["defaultTab"], (data) => {
+    const tabId = data.defaultTab || "drink";
+    applyDefaultTab(tabId);
+    if (callback) callback(tabId);
+  });
+}
+
+// 绑定默认首页切换事件
+document.querySelectorAll(".default-tab-opt").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const tabId = btn.dataset.tab;
+    applyDefaultTab(tabId);
+    chrome.storage.local.set({ defaultTab: tabId }, () => {
+      const tabNames = { eat: "饮食", drink: "喝水", poop: "拉屎", pee: "撒尿" };
+      showToast(`默认首页已设为「${tabNames[tabId]}」`);
+    });
+  });
+});
+
+// 页面加载时恢复默认首页选中态
+loadDefaultTab();
+
 // ==================== 功能开关侧边栏 ====================
 const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
 const sidebarOverlay = document.getElementById("sidebarOverlay");
@@ -2560,7 +2591,11 @@ document.getElementById("navDrink").addEventListener("click", () => switchTab("d
 document.getElementById("navPoop").addEventListener("click", () => switchTab("poop"));
 document.getElementById("navPee").addEventListener("click", () => switchTab("pee"));
 
-switchTab("drink"); // 默认显示喝水提醒页面
+// 从存储读取默认首页，若无则默认喝水
+chrome.storage.local.get(["defaultTab"], (data) => {
+  const defaultTab = data.defaultTab || "drink";
+  switchTab(defaultTab);
+});
 
 initDrinkTimer();
 updateDrinkStats();
