@@ -1026,6 +1026,108 @@
         color: var(--primary);
         line-height: 1.25;
       }
+      .drink-stat-val.editable {
+        cursor: pointer;
+      }
+
+      /* 今日喝水编辑弹窗 */
+      .drink-edit-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.25);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+      .drink-edit-overlay.show {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .drink-edit-box {
+        background: var(--card-bg, #fff);
+        border-radius: 16px;
+        padding: 20px 24px;
+        width: 220px;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        transform: scale(0.9);
+        transition: transform 0.2s ease;
+      }
+      .drink-edit-overlay.show .drink-edit-box {
+        transform: scale(1);
+      }
+      .drink-edit-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 14px;
+      }
+      .drink-edit-counter {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+      .drink-edit-counter .counter-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(11,107,255,0.1);
+        color: var(--primary);
+        font-size: 22px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        line-height: 1;
+        transition: background 0.2s, transform 0.1s;
+      }
+      .drink-edit-counter .counter-btn span {
+        display: inline-block;
+        transform: translateY(-1px);
+      }
+      .drink-edit-counter .counter-btn:hover {
+        background: rgba(11,107,255,0.2);
+      }
+      .drink-edit-counter .counter-btn:active {
+        transform: scale(0.92);
+      }
+      .drink-edit-counter .counter-num {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--primary);
+        min-width: 40px;
+      }
+      .drink-edit-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .drink-edit-actions button {
+        flex: 1;
+        padding: 8px 0;
+        border-radius: 10px;
+        border: none;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .drink-edit-confirm {
+        background: linear-gradient(135deg, var(--primary), var(--primary2));
+        color: #fff;
+      }
+      .drink-edit-cancel {
+        background: rgba(12,42,77,0.06);
+        color: var(--muted);
+      }
       .stats-num.drink-num {
         color: var(--primary);
       }
@@ -2345,6 +2447,22 @@
         <span class="tooltip-poop-count" id="tooltipCount">💩 0次</span>
       </div>
       <div class="tooltip-records" id="tooltipRecords"></div>
+    </div>
+
+    <!-- 今日喝水数量编辑弹窗 -->
+    <div class="drink-edit-overlay" id="drinkEditOverlay">
+      <div class="drink-edit-box">
+        <div class="drink-edit-title">💧 调整今日喝水次数</div>
+        <div class="drink-edit-counter">
+          <button class="counter-btn" id="drinkCounterMinus" type="button"><span>−</span></button>
+          <div class="counter-num" id="drinkCounterNum">0</div>
+          <button class="counter-btn" id="drinkCounterPlus" type="button"><span>+</span></button>
+        </div>
+        <div class="drink-edit-actions">
+          <button class="drink-edit-cancel" id="drinkEditCancel" type="button">取消</button>
+          <button class="drink-edit-confirm" id="drinkEditConfirm" type="button">确认</button>
+        </div>
+      </div>
     </div>
 
     <!-- 编辑弹窗 -->

@@ -105,23 +105,27 @@ function createAlarm(minutes) {
 }
 
 // ==================== 发送通知 ====================
+let activeNotificationIds = new Set(); // 追踪当前活跃的喝水通知ID
+
 function sendDrinkReminder() {
   logInfo("准备发送喝水提醒...");
-  
+
   chrome.storage.local.get(["notifEnabled"], (data) => {
     logInfo("通知开关状态:", { notifEnabled: data.notifEnabled });
-    
+
     if (!data.notifEnabled) {
       logInfo("通知未开启，跳过");
       return;
     }
-    
+
     if (!chrome.notifications) {
       logError("chrome.notifications API 不可用!");
       return;
     }
-    
-    chrome.notifications.create("drinkReminder-" + Date.now(), {
+
+    const notificationId = "drinkReminder-" + Date.now();
+
+    chrome.notifications.create(notificationId, {
       type: "basic",
       iconUrl: "icon128.png",
       title: "喝水提醒 💧",
@@ -132,14 +136,23 @@ function sendDrinkReminder() {
         { title: "我喝了 ✓" },
         { title: "没喝" }
       ]
-    }, (notificationId) => {
+    }, (createdId) => {
       if (chrome.runtime.lastError) {
         logError("通知创建失败!", { error: chrome.runtime.lastError.message });
       } else {
-        logInfo("通知创建成功!", { notificationId });
+        logInfo("通知创建成功!", { notificationId: createdId });
+        activeNotificationIds.add(createdId || notificationId);
+        // 启动 keep-alive，防止 SW 在通知期间终止
+        startNotificationKeepAlive();
       }
     });
   });
+}
+
+// 通知 keep-alive：确保 SW 在通知未被处理前保持活跃
+let notifKeepAliveAlarm = null;
+function startNotificationKeepAlive() {
+  chrome.alarms.create("notificationKeepAlive", { delayInMinutes: 0.4 });
 }
 
 // ==================== 消息处理 ====================
@@ -215,6 +228,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 // ==================== 闹钟触发（核心）====================
 chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === "notificationKeepAlive") {
+    // 检查是否还有待处理的喝水通知
+    if (activeNotificationIds.size > 0) {
+      logInfo("[KeepAlive] 还有未处理的喝水通知，继续保持活跃", { count: activeNotificationIds.size });
+      chrome.alarms.create("notificationKeepAlive", { delayInMinutes: 0.4 });
+    } else {
+      logInfo("[KeepAlive] 所有通知已处理，停止 keep-alive");
+    }
+    return;
+  }
+
   logInfo("========== 闹钟触发! ==========", {
     name: alarm.name,
     scheduledTime: new Date(alarm.scheduledTime).toLocaleString(),
@@ -235,13 +259,12 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 // ==================== 通知事件 ====================
 chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
   logInfo("通知按钮点击", { notificationId, buttonIndex });
-  
+
   if (notificationId.startsWith("drinkReminder")) {
+    activeNotificationIds.delete(notificationId);
     if (buttonIndex === 0) {
       // 我喝了 ✓ — 记录喝水数据
       recordDrink();
-      // 通知 popup 刷新统计数据
-      chrome.runtime.sendMessage({ type: "DRINK_RECORDED" }).catch(() => {});
     } else if (buttonIndex === 1) {
       // 没喝 — 不记录，仅关闭通知
       logInfo("用户选择「没喝」，不记录");
@@ -252,24 +275,54 @@ chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) =
 
 chrome.notifications.onClosed.addListener((notificationId, byUser) => {
   logInfo("通知关闭", { notificationId, byUser });
+  activeNotificationIds.delete(notificationId);
 });
 
 chrome.notifications.onClicked.addListener((notificationId) => {
   logInfo("通知被点击", { notificationId });
+
+  // Windows 兜底：如果按钮点击事件未触发，点击通知主体也记录喝水
+  if (notificationId.startsWith("drinkReminder")) {
+    activeNotificationIds.delete(notificationId);
+    recordDrink();
+    chrome.notifications.clear(notificationId);
+  }
+
+  // 打开 popup
   chrome.action.openPopup?.().catch(() => {});
 });
 
 // ==================== 记录喝水 ====================
+function getLocalDateStr() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
 function recordDrink() {
-  const today = new Date().toISOString().split("T")[0];
-  const time = `${String(new Date().getHours()).padStart(2,"0")}:${String(new Date().getMinutes()).padStart(2,"0")}`;
-  
+  const today = getLocalDateStr();
+  const now = new Date();
+  const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
   chrome.storage.local.get(["drinkRecords"], (data) => {
+    if (chrome.runtime.lastError) {
+      logError("读取喝水记录失败", { error: chrome.runtime.lastError.message });
+      return;
+    }
+
     const records = data.drinkRecords || {};
     if (!records[today]) records[today] = [];
     records[today].push({ time, timestamp: Date.now() });
-    chrome.storage.local.set({ drinkRecords: records });
-    logInfo("喝水已记录", { today, time });
+
+    chrome.storage.local.set({ drinkRecords: records }, () => {
+      if (chrome.runtime.lastError) {
+        logError("保存喝水记录失败", { error: chrome.runtime.lastError.message });
+      } else {
+        logInfo("喝水已记录", { today, time, total: records[today].length });
+      }
+    });
+
+    // 通知 popup 刷新统计数据（popup 可能未打开，忽略发送失败）
+    chrome.runtime.sendMessage({ type: "DRINK_RECORDED" }).catch(() => {});
   });
 }
 

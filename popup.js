@@ -16,6 +16,13 @@ function getToday() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
+const CN_NUMS = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+function toChineseNum(n) {
+  if (n <= 10) return CN_NUMS[n];
+  if (n < 20) return "十" + (n % 10 === 0 ? "" : CN_NUMS[n % 10]);
+  return CN_NUMS[Math.floor(n / 10)] + "十" + (n % 10 === 0 ? "" : CN_NUMS[n % 10]);
+}
+
 function getWeekRange() {
   const now = new Date();
   const dayOfWeek = now.getDay();
@@ -964,11 +971,103 @@ function updateDrinkStats() {
     }
 
     document.getElementById("drinkStatsRow").innerHTML =
-      `<div class="drink-stat-item"><div class="drink-stat-label">今日</div><div class="drink-stat-val">${todayCount}</div></div>` +
+      `<div class="drink-stat-item"><div class="drink-stat-label">今日</div><div class="drink-stat-val editable" id="drinkTodayCount" title="点击调整">${todayCount}</div></div>` +
       `<div class="drink-stat-item"><div class="drink-stat-label">本周</div><div class="drink-stat-val">${weekCount}</div></div>` +
       `<div class="drink-stat-item"><div class="drink-stat-label">本月</div><div class="drink-stat-val">${monthCount}</div></div>`;
+
+    // 绑定今日数字点击事件
+    const todayEl = document.getElementById("drinkTodayCount");
+    if (todayEl) {
+      todayEl.addEventListener("click", openDrinkCounter);
+    }
   });
 }
+
+// ==================== 今日喝水计数编辑器 ====================
+const drinkEditOverlay = document.getElementById("drinkEditOverlay");
+const drinkCounterNum  = document.getElementById("drinkCounterNum");
+const drinkCounterMinus = document.getElementById("drinkCounterMinus");
+const drinkCounterPlus  = document.getElementById("drinkCounterPlus");
+const drinkEditConfirm  = document.getElementById("drinkEditConfirm");
+const drinkEditCancel   = document.getElementById("drinkEditCancel");
+
+let drinkCounterTarget = 0;
+let drinkCounterOriginal = 0;
+
+function openDrinkCounter() {
+  chrome.storage.local.get(["drinkRecords"], (data) => {
+    const records = data.drinkRecords || {};
+    const today = getToday();
+    const current = records[today] ? records[today].length : 0;
+    drinkCounterOriginal = current;
+    drinkCounterTarget = current;
+    drinkCounterNum.textContent = current;
+    drinkEditOverlay.classList.add("show");
+  });
+}
+
+function closeDrinkCounter() {
+  drinkEditOverlay.classList.remove("show");
+}
+
+function updateDrinkCounterDisplay() {
+  drinkCounterNum.textContent = drinkCounterTarget;
+  drinkCounterMinus.disabled = drinkCounterTarget <= 0;
+}
+
+drinkCounterMinus.addEventListener("click", () => {
+  if (drinkCounterTarget > 0) {
+    drinkCounterTarget--;
+    updateDrinkCounterDisplay();
+  }
+});
+
+drinkCounterPlus.addEventListener("click", () => {
+  drinkCounterTarget++;
+  updateDrinkCounterDisplay();
+});
+
+drinkEditConfirm.addEventListener("click", () => {
+  const diff = drinkCounterTarget - drinkCounterOriginal;
+  if (diff === 0) {
+    closeDrinkCounter();
+    return;
+  }
+
+  const today = getToday();
+  chrome.storage.local.get(["drinkRecords"], (data) => {
+    const records = data.drinkRecords || {};
+    if (!records[today]) records[today] = [];
+
+    if (diff > 0) {
+      // 增加：追加 diff 条记录（时间为当前时间）
+      const time = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+      for (let i = 0; i < diff; i++) {
+        records[today].push({ time, timestamp: Date.now() + i }); // +i 避免时间戳完全相同
+      }
+    } else {
+      // 减少：从尾部删除
+      records[today].splice(drinkCounterTarget);
+      if (records[today].length === 0) {
+        delete records[today];
+      }
+    }
+
+    chrome.storage.local.set({ drinkRecords: records }, () => {
+      updateDrinkStats();
+      renderDrinkCalendar();
+      showToast(diff > 0 ? `已增加 ${diff} 次喝水记录` : `已减少 ${Math.abs(diff)} 次喝水记录`);
+      closeDrinkCounter();
+    });
+  });
+});
+
+drinkEditCancel.addEventListener("click", closeDrinkCounter);
+
+// 点击遮罩关闭
+drinkEditOverlay.addEventListener("click", (e) => {
+  if (e.target === drinkEditOverlay) closeDrinkCounter();
+});
 
 // ==================== 喝 - 喝水日历 ====================
 let drinkCalYear = new Date().getFullYear();
@@ -1068,7 +1167,7 @@ function showDrinkTooltip(e, dateStr, dayRecords) {
     if (dayRecords.length > 0) {
       document.getElementById("tooltipRecords").innerHTML = dayRecords.map((rec, i) => `
         <div class="tooltip-record">
-          <div class="tooltip-record-time">第${i + 1}杯 · ${rec.time}</div>
+          <div class="tooltip-record-time">第${toChineseNum(i + 1)}口 · ${rec.time}</div>
         </div>
       `).join("");
     } else {
@@ -2353,6 +2452,13 @@ editModalBody.addEventListener("click", (e) => {
 // ==================== 监听来自后台脚本的消息 ====================
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === "DRINK_RECORDED") {
+    updateDrinkStats();
+  }
+});
+
+// 兜底：监听 storage 变化，确保数据同步（sendMessage 可能因 popup 未打开而失败）
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.drinkRecords) {
     updateDrinkStats();
   }
 });
