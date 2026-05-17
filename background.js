@@ -1,5 +1,40 @@
 const DEFAULT_MINUTES = 30;
 
+// ==================== 后台 i18n ====================
+const BG_I18N = {
+  zh: {
+    notifTitle: "喝水提醒 💧",
+    notifBody: "该喝水啦！记得保持水分，状态更好。",
+    notifDrank: "我喝了 ✓",
+    notifSkip: "没喝",
+    testNotifTitle: "测试通知 🔔",
+    testNotifBody: "这是一条测试通知，用于验证功能是否正常。",
+  },
+  en: {
+    notifTitle: "Drink Reminder 💧",
+    notifBody: "Time to drink water! Stay hydrated for better health.",
+    notifDrank: "I drank ✓",
+    notifSkip: "Skip",
+    testNotifTitle: "Test Notification 🔔",
+    testNotifBody: "This is a test notification to verify everything works.",
+  }
+};
+
+function bgT(key) {
+  const lang = (typeof currentBgLang !== 'undefined') ? currentBgLang : 'zh';
+  return (BG_I18N[lang] && BG_I18N[lang][key]) || key;
+}
+
+let currentBgLang = "zh";
+chrome.storage.local.get(["language"], (data) => {
+  currentBgLang = data.language || "zh";
+});
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.language) {
+    currentBgLang = changes.language.newValue;
+  }
+});
+
 // ==================== 日志工具 ====================
 const LOG_PREFIX = "[喝水提醒] ";
 
@@ -128,13 +163,13 @@ function sendDrinkReminder() {
     chrome.notifications.create(notificationId, {
       type: "basic",
       iconUrl: "icon128.png",
-      title: "喝水提醒 💧",
-      message: "该喝水啦！记得保持水分，状态更好。",
+      title: bgT("notifTitle"),
+      message: bgT("notifBody"),
       priority: 2,
       requireInteraction: true, // 保持通知直到用户操作
       buttons: [
-        { title: "我喝了 ✓" },
-        { title: "没喝" }
+        { title: bgT("notifDrank") },
+        { title: bgT("notifSkip") }
       ]
     }, (createdId) => {
       if (chrome.runtime.lastError) {
@@ -198,8 +233,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     chrome.notifications.create("test-" + Date.now(), {
       type: "basic",
       iconUrl: "icon128.png",
-      title: "测试通知 🔔",
-      message: "这是一条测试通知，用于验证功能是否正常。",
+      title: bgT("testNotifTitle"),
+      message: bgT("testNotifBody"),
       priority: 2,
     }, (id) => {
       sendResponse({
