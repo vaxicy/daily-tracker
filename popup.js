@@ -159,7 +159,7 @@ if (mealRating) {
         s.classList.toggle("active", idx < currentMealRating);
       });
       
-      mealRatingText.textContent = ratingTextMap[currentMealRating];
+      mealRatingText.textContent = getRatingTextMap()[currentMealRating];
     });
     
     star.addEventListener("mouseenter", () => {
@@ -198,7 +198,7 @@ function updateMealRecords() {
         const typeLabel = { breakfast: t("breakfast"), lunch: t("lunch"), dinner: t("dinner"), snack: t("snack") };
         const ratingStars = meal.rating ? "⭐".repeat(meal.rating) : "";
         const remarkHtml = meal.remark ? `<div class="meal-remark" style="font-size:10px;color:var(--muted);margin-top:3px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;"><span>📝</span><span>${meal.remark}</span></div>` : "";
-        const ratingHtml = meal.rating ? `<div class="meal-rating-display" style="font-size:10px;margin-top:3px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;"><span style="letter-spacing:2px;">${ratingStars}</span><span>${ratingTextMap[meal.rating] || ""}</span></div>` : "";
+        const ratingHtml = meal.rating ? `<div class="meal-rating-display" style="font-size:10px;margin-top:3px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;"><span style="letter-spacing:2px;">${ratingStars}</span><span>${getRatingTextMap()[meal.rating] || ""}</span></div>` : "";
         
         return `
           <div class="meal-item" data-index="${index}">
