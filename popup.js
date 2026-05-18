@@ -108,15 +108,16 @@ function switchTab(tab) {
   // 初始化对应页面
   if (tab === "eat") initEatPage();
   if (tab === "drink") { updateDrinkUI(); updateDrinkStats(); renderDrinkCalendar(); }
-  if (tab === "poop") { 
-    renderPoopCalendar(); 
-    updatePoopTodayStatus(); 
-    updatePoopStats(); 
+  if (tab === "poop") {
+    renderBristolMainSelector();
+    renderPoopCalendar();
+    updatePoopTodayStatus();
+    updatePoopStats();
   }
-  if (tab === "pee") { 
-    renderPeeCalendar(); 
-    updatePeeTodayStatus(); 
-    updatePeeStats(); 
+  if (tab === "pee") {
+    renderPeeCalendar();
+    updatePeeTodayStatus();
+    updatePeeStats();
   }
 }
 
@@ -134,6 +135,102 @@ const mealRatingText = document.getElementById("mealRatingText");
 
 let isMealExpanded = true;
 let currentMealRating = 0; // 当前选中的评分
+
+// 饱腹感选择器
+const fullnessBtns = document.getElementById("fullnessBtns");
+let selectedFullness = 0; // 0=未选, 1=饿, 2=刚好, 3=撑
+
+// 饮食快速标签
+const mealTagsRow = document.getElementById("mealTagsRow");
+let selectedMealTags = [];
+
+// 饮食统计模式
+let eatStatsMode = "week";
+
+// 渲染饱腹感选择器
+function renderFullnessSelector() {
+  const levels = t("fullnessLevels") || [];
+  if (!fullnessBtns) return;
+  fullnessBtns.innerHTML = levels.map((label, i) =>
+    `<button class="fullness-btn" data-level="${i+1}">${label}</button>`
+  ).join("");
+
+  fullnessBtns.querySelectorAll(".fullness-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const level = parseInt(btn.dataset.level);
+      if (selectedFullness === level) {
+        selectedFullness = 0;
+        btn.classList.remove("active");
+      } else {
+        selectedFullness = level;
+        fullnessBtns.querySelectorAll(".fullness-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+    });
+  });
+}
+
+// 渲染饮食快速标签
+function renderMealTags() {
+  const tags = t("mealTags") || [];
+  const emojis = t("mealTagEmojis") || [];
+  if (!mealTagsRow) return;
+  mealTagsRow.innerHTML = tags.map((tag, i) =>
+    `<button class="meal-tag-btn" data-tag="${tag}" data-idx="${i}">${emojis[i] || ''} ${tag}</button>`
+  ).join("");
+
+  mealTagsRow.querySelectorAll(".meal-tag-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tag = btn.dataset.tag;
+      const idx = selectedMealTags.indexOf(tag);
+      if (idx >= 0) {
+        selectedMealTags.splice(idx, 1);
+        btn.classList.remove("active");
+      } else {
+        selectedMealTags.push(tag);
+        btn.classList.add("active");
+      }
+    });
+  });
+}
+
+function clearMealTags() {
+  selectedMealTags = [];
+  mealTagsRow?.querySelectorAll(".meal-tag-btn").forEach(b => b.classList.remove("active"));
+}
+
+// 备注关键词自动识别标签
+function autoDetectTags(remark) {
+  if (!remark) return [];
+  const kwMap = {
+    "中式": ["米饭", "面条", "馒头", "炒菜", "中餐", "家常"],
+    "西式": ["汉堡", "披萨", "牛排", "意面", "沙拉", "三明治"],
+    "日式": ["寿司", "拉面", "刺身", "日料", "天妇罗"],
+    "清淡": ["粥", "清汤", "蒸", "煮", "清淡"],
+    "油腻": ["炸", "煎", "红烧", "油腻", "火锅"],
+    "偏咸": ["咸", "腌", "酱", "腊肉"],
+    "偏甜": ["甜", "蛋糕", "糖水", "蜜"],
+    "外卖": ["外卖", "美团", "饿了么", "配送"],
+    "自炊": ["自己做的", "在家做", "自制"]
+  };
+  const autoTags = [];
+  const lowerRemark = remark.toLowerCase();
+  Object.keys(kwMap).forEach(tag => {
+    if (kwMap[tag].some(kw => lowerRemark.includes(kw))) {
+      autoTags.push(tag);
+    }
+  });
+  return autoTags;
+}
+
+// 初始化饮食页面
+function initEatPage() {
+  renderFullnessSelector();
+  renderMealTags();
+  renderEatCalendar();
+  updateMealRecords();
+  renderEatStats();
+}
 
 // 评价文本映射
 function getRatingTextMap() {
@@ -199,6 +296,13 @@ function updateMealRecords() {
         const ratingStars = meal.rating ? "⭐".repeat(meal.rating) : "";
         const remarkHtml = meal.remark ? `<div class="meal-remark" style="font-size:10px;color:var(--muted);margin-top:3px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;"><span>📝</span><span>${meal.remark}</span></div>` : "";
         const ratingHtml = meal.rating ? `<div class="meal-rating-display" style="font-size:10px;margin-top:3px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;"><span style="letter-spacing:2px;">${ratingStars}</span><span>${getRatingTextMap()[meal.rating] || ""}</span></div>` : "";
+
+        // 饱腹感显示
+        const fullnessLevels = t("fullnessLevels") || [];
+        const fullnessHtml = meal.fullness ? `<div style="font-size:10px;color:var(--muted);margin-top:3px;">🍽️ ${fullnessLevels[meal.fullness - 1] || ""}</div>` : "";
+
+        // 标签显示（手动 + 自动识别）
+        const tagsHtml = meal.tags && meal.tags.length > 0 ? `<div style="font-size:10px;margin-top:3px;">${meal.tags.map(t => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--eat);font-size:10px;margin-right:3px;">${t}</span>`).join("")}</div>` : "";
         
         return `
           <div class="meal-item" data-index="${index}">
@@ -207,6 +311,8 @@ function updateMealRecords() {
               <span class="meal-content">${meal.content}</span>
               ${remarkHtml}
               ${ratingHtml}
+              ${fullnessHtml}
+              ${tagsHtml}
             </div>
             <span class="meal-time">${meal.time}</span>
             <div class="meal-actions">
@@ -220,6 +326,101 @@ function updateMealRecords() {
       // 添加编辑和删除按钮的事件监听
       attachMealActionListeners();
     }
+  });
+}
+
+// 渲染饮食统计
+function renderEatStats() {
+  chrome.storage.local.get(["mealRecords"], (data) => {
+    const records = data.mealRecords || {};
+    const today = getToday();
+    let count = 0;
+    let ratingSum = 0;
+    let ratingCount = 0;
+    const typeDist = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
+    let streak = 0;
+
+    if (eatStatsMode === "week") {
+      const range = getWeekRange();
+      const cur = new Date(range.start);
+      const end = new Date(range.end);
+      while (cur <= end) {
+        const dateStr = formatDate(cur);
+        const dayRecords = records[dateStr] || [];
+        count += dayRecords.length;
+        dayRecords.forEach(rec => {
+          if (rec.rating) { ratingSum += rec.rating; ratingCount++; }
+          if (rec.type) typeDist[rec.type] = (typeDist[rec.type] || 0) + 1;
+        });
+        cur.setDate(cur.getDate() + 1);
+      }
+      document.getElementById("eatStatsLabel").textContent = t('eatWeek');
+    } else {
+      const range = getMonthRange();
+      const cur = new Date(range.start);
+      const end = new Date(range.end);
+      while (cur <= end) {
+        const dateStr = formatDate(cur);
+        const dayRecords = records[dateStr] || [];
+        count += dayRecords.length;
+        dayRecords.forEach(rec => {
+          if (rec.rating) { ratingSum += rec.rating; ratingCount++; }
+          if (rec.type) typeDist[rec.type] = (typeDist[rec.type] || 0) + 1;
+        });
+        cur.setDate(cur.getDate() + 1);
+      }
+      document.getElementById("eatStatsLabel").textContent = t('eatMonth');
+    }
+
+    document.getElementById("eatStatsCount").textContent = count;
+
+    // 平均评分
+    const avgRating = ratingCount > 0 ? (ratingSum / ratingCount).toFixed(1) : "--";
+    const typeLabel = { breakfast: t("breakfast"), lunch: t("lunch"), dinner: t("dinner"), snack: t("snack") };
+    const typeStr = Object.keys(typeDist).filter(k => typeDist[k] > 0).map(k => `${typeLabel[k]}:${typeDist[k]}`).join(" | ");
+
+    // 连续记录天数
+    const d = new Date(today);
+    while (true) {
+      const ds = formatDate(d);
+      if (records[ds] && records[ds].length > 0) {
+        streak++;
+        d.setDate(d.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    const detailEl = document.getElementById("eatStatsDetail");
+    if (detailEl) {
+      let detail = "";
+      if (ratingCount > 0) detail += t('eatStatAvgRating') + ": " + avgRating + " ";
+      if (typeStr) detail += " | " + t('eatStatTypeDist') + ": " + typeStr;
+      if (streak > 0) detail += " | " + t('eatStatStreak') + ": " + streak + " " + t('eatStatDays');
+      detailEl.textContent = detail;
+    }
+  });
+}
+
+// 饮食统计切换
+const eatWeekBtn = document.getElementById("eatWeekBtn");
+const eatMonthBtn = document.getElementById("eatMonthBtn");
+
+if (eatWeekBtn) {
+  eatWeekBtn.addEventListener("click", () => {
+    eatStatsMode = "week";
+    eatWeekBtn.classList.add("active");
+    eatMonthBtn.classList.remove("active");
+    renderEatStats();
+  });
+}
+
+if (eatMonthBtn) {
+  eatMonthBtn.addEventListener("click", () => {
+    eatStatsMode = "month";
+    eatMonthBtn.classList.add("active");
+    eatWeekBtn.classList.remove("active");
+    renderEatStats();
   });
 }
 
@@ -287,13 +488,19 @@ addMealBtn.addEventListener("click", () => {
     const records = data.mealRecords || {};
     if (!records[today]) records[today] = [];
 
-    records[today].push({ 
-      content, 
-      time, 
-      type, 
-      remark, 
-      rating, 
-      timestamp: Date.now() 
+    // 自动识别标签 + 手动选中的标签
+    const autoTags = autoDetectTags(remark);
+    const allTags = [...new Set([...selectedMealTags, ...autoTags])];
+
+    records[today].push({
+      content,
+      time,
+      type,
+      remark,
+      rating,
+      fullness: selectedFullness || undefined,
+      tags: allTags.length > 0 ? allTags : undefined,
+      timestamp: Date.now()
     });
 
     chrome.storage.local.set({ mealRecords: records }, () => {
@@ -304,9 +511,14 @@ addMealBtn.addEventListener("click", () => {
         mealRating.querySelectorAll(".star").forEach(s => s.classList.remove("active"));
       }
       if (mealRatingText) mealRatingText.textContent = t('ratingNone');
+
+      selectedFullness = 0;
+      clearMealTags();
+      if (fullnessBtns) fullnessBtns.querySelectorAll(".fullness-btn").forEach(b => b.classList.remove("active"));
       
       renderEatCalendar();
       updateMealRecords();
+      renderEatStats();
       showToast(t("toastMealAdded"));
     });
   });
@@ -376,7 +588,16 @@ function renderEatCalendar() {
       cell.className = "day-cell";
       cell.dataset.date = dateStr;
       if (dateStr === today) cell.classList.add("today");
-      if (records[dateStr] && records[dateStr].length > 0) cell.classList.add("has-eat");
+      if (records[dateStr] && records[dateStr].length > 0) {
+        cell.classList.add("has-eat");
+        // 按餐次添加着色类
+        const types = [...new Set(records[dateStr].map(r => r.type))];
+        if (types.length === 1) {
+          cell.classList.add("meal-type-" + types[0]);
+        } else if (types.length > 1) {
+          cell.classList.add("meal-type-multi");
+        }
+      }
       cell.addEventListener("mouseenter", (e) => showEatTooltip(e, dateStr));
       cell.addEventListener("mouseleave", hideEatTooltip);
       cell.addEventListener("click", () => {
@@ -557,6 +778,8 @@ function showEatEditModal(dateStr, dayRecords) {
         <div style="font-size:10px;color:var(--muted);margin-top:4px;">
           <div>📝 ${t('remarkLabel')}: ${remarkHtml}</div>
           <div>⭐ ${t('rateLabelShort')}: ${ratingStars}</div>
+          ${rec.fullness ? `<div>🍽️ ${t('fullnessLabel')}: ${t('fullnessLevels')[rec.fullness - 1] || ""}</div>` : ''}
+          ${rec.tags && rec.tags.length > 0 ? `<div>🏷 ${t('autoTagHint')}: ${rec.tags.map(t => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--eat);font-size:10px;margin-right:3px;">${t}</span>`).join("")}</div>` : ''}
         </div>
       </div>
       <div class="edit-input-row" id="eatEditForm${idx}" style="display:none;">
@@ -782,11 +1005,6 @@ document.getElementById("eatNextMonth").addEventListener("click", () => {
   if (eatMonth > 11) { eatMonth = 0; eatYear++; }
   renderEatCalendar();
 });
-
-function initEatPage() {
-  renderEatCalendar();
-  updateMealRecords();
-}
 
 // ==================== 喝 - 喝水提醒 ====================
 const DEFAULT_MINUTES = 30;
@@ -1349,8 +1567,60 @@ const poopTodaySection = document.getElementById("poopTodaySection");
 const poopRecordsHeader = document.getElementById("poopRecordsHeader");
 const poopRecordsList = document.getElementById("poopRecordsList");
 const poopToggleBtn = document.getElementById("poopToggleBtn");
-const poopUndoBtn = document.getElementById("poopUndoBtn");
 const poopTodayCount = document.getElementById("poopTodayCount");
+const bristolMainSelector = document.getElementById("bristolMainSelector");
+const bristolMainLabel = document.getElementById("bristolMainLabel");
+const bristolMainDesc = document.getElementById("bristolMainDesc");
+
+// 主界面布里斯托分类选择
+let selectedBristolType = 0; // 0表示未选择
+
+function renderBristolMainSelector() {
+  const types = t("bristolTypes") || [];
+  const descs = t("bristolDescs") || [];
+  if (!bristolMainSelector) return;
+
+  bristolMainLabel.textContent = currentLang === "en" ? "Bristol Stool Scale" : "大便类型（可选）";
+  bristolMainSelector.innerHTML = types.map((label, i) => {
+    const isActive = selectedBristolType === (i + 1);
+    return `<button class="bristol-main-btn ${isActive ? 'active' : ''}" data-type="${i+1}" title="${label} (${descs[i] || ''})">${i+1}</button>`;
+  }).join("");
+
+  bristolMainSelector.querySelectorAll(".bristol-main-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const type = parseInt(btn.dataset.type);
+      if (selectedBristolType === type) {
+        selectedBristolType = 0;
+        btn.classList.remove("active");
+      } else {
+        selectedBristolType = type;
+        bristolMainSelector.querySelectorAll(".bristol-main-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+      updateBristolMainDesc();
+    });
+  });
+
+  updateBristolMainDesc();
+}
+
+function updateBristolMainDesc() {
+  if (!bristolMainDesc) return;
+  if (selectedBristolType === 0) {
+    bristolMainDesc.textContent = currentLang === "en" ? "optional" : "未选择";
+    return;
+  }
+  const types = t("bristolTypes") || [];
+  const descs = t("bristolDescs") || [];
+  bristolMainDesc.textContent = `${types[selectedBristolType-1] || ''} (${descs[selectedBristolType-1] || ''})`;
+}
+
+function clearBristolSelection() {
+  selectedBristolType = 0;
+  bristolMainSelector?.querySelectorAll(".bristol-main-btn").forEach(b => b.classList.remove("active"));
+  updateBristolMainDesc();
+}
+
 const poopWeekBtn = document.getElementById("poopWeekBtn");
 const poopMonthBtn = document.getElementById("poopMonthBtn");
 const poopStatsCount = document.getElementById("poopStatsCount");
@@ -1384,7 +1654,13 @@ function renderPoopCalendar() {
       cell.className = "day-cell";
       cell.dataset.date = dateStr;
       if (dateStr === today) cell.classList.add("today");
-      if (records[dateStr]) cell.classList.add("has-poop");
+      if (records[dateStr]) {
+        cell.classList.add("has-poop");
+        const firstRec = records[dateStr][0];
+        if (firstRec && firstRec.bristolType) {
+          cell.classList.add("bristol-" + firstRec.bristolType);
+        }
+      }
       cell.addEventListener("mouseenter", (e) => showPoopTooltip(e, dateStr));
       cell.addEventListener("mouseleave", hidePoopTooltip);
       cell.addEventListener("click", () => {
@@ -1478,8 +1754,17 @@ function showPoopEditModal(dateStr, dayRecords) {
     return "";
   }
 
+  const bristolTypes = t("bristolTypes") || [];
+  const bristolDescs = t("bristolDescs") || [];
+
   editModalBody.innerHTML = dayRecords.map((rec, idx) => {
     const parsedTime = parseRecordTimePoop(rec.time);
+    const bristolBtns = bristolTypes.map((label, i) => {
+      const isActive = rec.bristolType === (i + 1);
+      return `<button class="bristol-btn ${isActive ? 'active' : ''}" data-idx="${idx}" data-type="${i+1}" title="${label}(${bristolDescs[i] || ''})">${i+1}</button>`;
+    }).join("");
+    const bristolLabel = rec.bristolType ? `${bristolTypes[rec.bristolType-1] || ''}(${t('bristolPrefix') || 'Bristol '}${rec.bristolType})` : "";
+
     return `
     <div class="edit-record-item" data-index="${idx}">
       <div class="edit-record-header">
@@ -1490,6 +1775,8 @@ function showPoopEditModal(dateStr, dayRecords) {
         </div>
       </div>
       <div class="edit-record-content" id="poopContent${idx}">${rec.remark || t('noRemark')}</div>
+      <div class="bristol-selector" data-record-idx="${idx}">${bristolBtns}</div>
+      <div class="bristol-type-label" id="bristolLabel${idx}">${bristolLabel}</div>
       <div class="edit-input-row" id="poopEditFormTime${idx}" style="display:none;align-items:center;">
         <input type="time" class="edit-input" id="poopEditTime${idx}" value="${parsedTime}" placeholder="HH:mm" style="width:auto;flex:none;" />
         <span style="font-size:11px;color:#999;white-space:nowrap;margin-left:12px;">${t('modifyRecordTime')}</span>
@@ -1501,6 +1788,30 @@ function showPoopEditModal(dateStr, dayRecords) {
     </div>
   `;
   }).join("");
+
+  // Bristol 按钮点击事件（事件委托）
+  editModalBody.querySelectorAll(".bristol-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const idx = Number(btn.dataset.idx);
+      const type = Number(btn.dataset.type);
+      chrome.storage.local.get(["poopRecords"], (data) => {
+        const records = data.poopRecords || {};
+        if (records[currentEditDate] && records[currentEditDate][idx]) {
+          // 切换：再次点击同一类型则取消
+          const cur = records[currentEditDate][idx].bristolType;
+          records[currentEditDate][idx].bristolType = (cur === type) ? null : type;
+          chrome.storage.local.set({ poopRecords: records }, () => {
+            // 刷新弹窗
+            chrome.storage.local.get(["poopRecords"], (d) => {
+              if (d.poopRecords && d.poopRecords[currentEditDate]) {
+                showPoopEditModal(currentEditDate, d.poopRecords[currentEditDate]);
+              }
+            });
+          });
+        }
+      });
+    });
+  });
 }
 
 function openPoopEditForm(idx) {
@@ -1560,22 +1871,28 @@ function showPoopTooltip(e, dateStr) {
     chrome.storage.local.get(["poopRecords"], (data) => {
       const records = data.poopRecords || {};
       const dayRecords = records[dateStr] || [];
+      const bristolTypes = t("bristolTypes") || [];
       document.getElementById("tooltipDate").textContent = formatDateDisplay(dateStr);
       const countEl = document.getElementById("tooltipCount");
       countEl.textContent = '💩 ' + dayRecords.length + t('times');
       countEl.classList.remove("pee-count");
-      
+
       if (dayRecords.length > 0) {
-        document.getElementById("tooltipRecords").innerHTML = dayRecords.map((rec, i) => `
-          <div class="tooltip-record">
-            <div class="tooltip-record-time">${t('poopRecord', { num: i + 1, time: rec.time })}</div>
-            ${rec.remark ? `<div class="tooltip-record-remark">${rec.remark}</div>` : ""}
-          </div>
-        `).join("");
+        document.getElementById("tooltipRecords").innerHTML = dayRecords.map((rec, i) => {
+          let bristolInfo = "";
+          if (rec.bristolType) {
+            const bt = bristolTypes[rec.bristolType - 1] || "";
+            bristolInfo = `<span style="color:var(--secondary);font-weight:600;margin-left:4px;">Bristol ${rec.bristolType}: ${bt}</span>`;
+          }
+          return '<div class="tooltip-record">' +
+            '<div class="tooltip-record-time">' + t('poopRecord', { num: i + 1, time: rec.time }) + ' ' + bristolInfo + '</div>' +
+            (rec.remark ? '<div class="tooltip-record-remark">' + rec.remark + '</div>' : '') +
+            '</div>';
+        }).join("");
       } else {
         document.getElementById("tooltipRecords").innerHTML = '<div class="tooltip-empty">' + t('tooltipEmptyRecord') + '</div>';
       }
-      
+
       positionTooltip(e);
       activeTooltipDate = dateStr;
       activeTooltipType = "poop";
@@ -1647,42 +1964,28 @@ poopToggleBtn.addEventListener("click", () => {
 });
 
 poopRecordsHeader.addEventListener("click", (e) => {
-  if (e.target === poopToggleBtn || e.target.closest(".btn-undo")) return;
+  if (e.target === poopToggleBtn) return;
   poopIsExpanded = !poopIsExpanded;
   poopToggleBtn.classList.toggle("collapsed", !poopIsExpanded);
   poopRecordsList.classList.toggle("collapsed", !poopIsExpanded);
-});
-
-poopUndoBtn.addEventListener("click", () => {
-  const today = getToday();
-  chrome.storage.local.get(["poopRecords"], (data) => {
-    const records = data.poopRecords || {};
-    if (!records[today] || records[today].length === 0) {
-      showToast(t("toastNoRecordToday"));
-      return;
-    }
-    records[today].pop();
-    if (records[today].length === 0) delete records[today];
-    chrome.storage.local.set({ poopRecords: records }, () => {
-      renderPoopCalendar();
-      updatePoopTodayStatus();
-      updatePoopStats();
-      showToast(t("toastUndoSuccess"));
-    });
-  });
 });
 
 poopCheckinBtn.addEventListener("click", () => {
   const today = getToday();
   const time = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
   const remark = poopRemarkInput.value.trim();
-  
+
   chrome.storage.local.get(["poopRecords"], (data) => {
     const records = data.poopRecords || {};
     if (!records[today]) records[today] = [];
-    records[today].push({ time, remark, timestamp: Date.now() });
+    const record = { time, remark, timestamp: Date.now() };
+    if (selectedBristolType > 0) {
+      record.bristolType = selectedBristolType;
+    }
+    records[today].push(record);
     chrome.storage.local.set({ poopRecords: records }, () => {
       poopRemarkInput.value = "";
+      clearBristolSelection();
       renderPoopCalendar();
       updatePoopTodayStatus();
       updatePoopStats();
@@ -1779,13 +2082,29 @@ function updatePoopStats() {
   chrome.storage.local.get(["poopRecords"], (data) => {
     const records = data.poopRecords || {};
     let count = 0;
+    let normalCount = 0;
+    let abnormalCount = 0;
+    let totalWithBristol = 0;
+    const today = getToday();
+
     if (poopStatsMode === "week") {
       const range = getWeekRange();
       const cur = new Date(range.start);
       const end = new Date(range.end);
       while (cur <= end) {
         const dateStr = formatDate(cur);
-        count += (records[dateStr] || []).length;
+        const dayRecords = records[dateStr] || [];
+        count += dayRecords.length;
+        dayRecords.forEach(rec => {
+          if (rec.bristolType) {
+            totalWithBristol++;
+            if (rec.bristolType >= 3 && rec.bristolType <= 4) {
+              normalCount++;
+            } else {
+              abnormalCount++;
+            }
+          }
+        });
         cur.setDate(cur.getDate() + 1);
       }
       poopStatsLabel.textContent = t('weekTotal');
@@ -1795,12 +2114,57 @@ function updatePoopStats() {
       const end = new Date(range.end);
       while (cur <= end) {
         const dateStr = formatDate(cur);
-        count += (records[dateStr] || []).length;
+        const dayRecords = records[dateStr] || [];
+        count += dayRecords.length;
+        dayRecords.forEach(rec => {
+          if (rec.bristolType) {
+            totalWithBristol++;
+            if (rec.bristolType >= 3 && rec.bristolType <= 4) {
+              normalCount++;
+            } else {
+              abnormalCount++;
+            }
+          }
+        });
         cur.setDate(cur.getDate() + 1);
       }
       poopStatsLabel.textContent = t('monthTotal');
     }
     poopStatsCount.textContent = count;
+
+    // 显示详细统计
+    const detailEl = document.getElementById("poopStatsDetail");
+    if (detailEl) {
+      let html = "";
+      if (totalWithBristol > 0) {
+        const ratio = Math.round(normalCount / totalWithBristol * 100);
+        html += `<span class="stats-detail-item">${t('normalCount', { n: normalCount }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
+        html += `<span class="stats-detail-item">${t('abnormalCount', { n: abnormalCount }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
+        html += `<span class="stats-detail-item">${t('normalRatio', { r: ratio }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
+      }
+      // 连续正常天数
+      let streak = 0;
+      const d = new Date(today);
+      while (true) {
+        const ds = formatDate(d);
+        const dayRecords = records[ds] || [];
+        const hasNormal = dayRecords.some(rec => rec.bristolType && rec.bristolType >= 3 && rec.bristolType <= 4);
+        const hasAny = dayRecords.length > 0;
+        if (hasNormal) {
+          streak++;
+          d.setDate(d.getDate() - 1);
+        } else if (!hasAny) {
+          d.setDate(d.getDate() - 1);
+          continue;
+        } else {
+          break;
+        }
+      }
+      if (streak > 0) {
+        html += `<span class="stats-detail-item">${t('consecutiveNormal', { n: streak }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
+      }
+      detailEl.innerHTML = html;
+    }
   });
 }
 
@@ -1844,7 +2208,6 @@ const peeTodaySection = document.getElementById("peeTodaySection");
 const peeRecordsHeader = document.getElementById("peeRecordsHeader");
 const peeRecordsList = document.getElementById("peeRecordsList");
 const peeToggleBtn = document.getElementById("peeToggleBtn");
-const peeUndoBtn = document.getElementById("peeUndoBtn");
 const peeTodayCount = document.getElementById("peeTodayCount");
 const peeWeekBtn = document.getElementById("peeWeekBtn");
 const peeMonthBtn = document.getElementById("peeMonthBtn");
@@ -2093,29 +2456,10 @@ peeToggleBtn.addEventListener("click", () => {
 });
 
 peeRecordsHeader.addEventListener("click", (e) => {
-  if (e.target === peeToggleBtn || e.target.closest(".btn-undo")) return;
+  if (e.target === peeToggleBtn) return;
   peeIsExpanded = !peeIsExpanded;
   peeToggleBtn.classList.toggle("collapsed", !peeIsExpanded);
   peeRecordsList.classList.toggle("collapsed", !peeIsExpanded);
-});
-
-peeUndoBtn.addEventListener("click", () => {
-  const today = getToday();
-  chrome.storage.local.get(["peeRecords"], (data) => {
-    const records = data.peeRecords || {};
-    if (!records[today] || records[today].length === 0) {
-      showToast(t("toastNoRecordToday"));
-      return;
-    }
-    records[today].pop();
-    if (records[today].length === 0) delete records[today];
-    chrome.storage.local.set({ peeRecords: records }, () => {
-      renderPeeCalendar();
-      updatePeeTodayStatus();
-      updatePeeStats();
-      showToast(t("toastUndoSuccess"));
-    });
-  });
 });
 
 peeCheckinBtn.addEventListener("click", () => {

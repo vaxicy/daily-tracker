@@ -337,6 +337,82 @@
         gap: 3px;
       }
 
+      /* 饱腹感选择器 */
+      .fullness-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 6px 0 10px;
+        padding: 6px 14px;
+        background: rgba(245,158,11,0.04);
+        border-radius: 8px;
+      }
+      .fullness-label {
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .fullness-btns {
+        display: flex;
+        gap: 4px;
+      }
+      .fullness-btn {
+        padding: 3px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(245,158,11,0.2);
+        background: rgba(255,255,255,0.8);
+        color: var(--muted);
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+        white-space: nowrap;
+      }
+      .fullness-btn:hover {
+        border-color: var(--eat);
+        color: var(--eat);
+      }
+      .fullness-btn.active {
+        background: var(--eat);
+        color: #fff;
+        border-color: var(--eat);
+        font-weight: 600;
+      }
+
+      /* 饮食快速标签 */
+      .meal-tags-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 12px;
+        margin-bottom: 12px;
+      }
+      .meal-tag-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        border: 1px solid rgba(245,158,11,0.2);
+        background: rgba(245,158,11,0.06);
+        color: var(--text);
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+        white-space: nowrap;
+      }
+      .meal-tag-btn:hover {
+        background: rgba(245,158,11,0.15);
+        border-color: rgba(245,158,11,0.5);
+      }
+      .meal-tag-btn.active {
+        background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,191,36,0.1));
+        border-color: var(--eat);
+        color: var(--eat);
+        font-weight: 600;
+      }
+
       .eat-stats {
         display: flex;
         gap: 10px;
@@ -350,6 +426,60 @@
       }
       .eat-stat-num { font-size: 20px; font-weight: 800; color: var(--eat); }
       .eat-stat-label { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+      /* 饮食日历：按餐次着色 */
+      #pageEat .day-cell.meal-type-breakfast {
+        background: rgba(251,191,36,0.22);
+        border-color: rgba(251,191,36,0.45);
+        color: #b45309;
+      }
+      #pageEat .day-cell.meal-type-lunch {
+        background: rgba(245,158,11,0.22);
+        border-color: rgba(245,158,11,0.45);
+        color: #92400e;
+      }
+      #pageEat .day-cell.meal-type-dinner {
+        background: rgba(217,119,6,0.22);
+        border-color: rgba(217,119,6,0.45);
+        color: #78350f;
+      }
+      #pageEat .day-cell.meal-type-snack {
+        background: rgba(180,83,9,0.18);
+        border-color: rgba(180,83,9,0.35);
+        color: #92400e;
+      }
+      #pageEat .day-cell.meal-type-multi {
+        background: linear-gradient(135deg, rgba(251,191,36,0.18), rgba(245,158,11,0.18));
+        border-color: rgba(245,158,11,0.4);
+        color: #92400e;
+      }
+
+      /* 饮食统计卡片增强 */
+      .eat-stats-card {
+        background: rgba(255,255,255,0.7);
+        border: 1px solid rgba(245,158,11,0.15);
+        border-radius: 14px;
+        padding: 14px;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 4px 16px rgba(245,158,11,0.1);
+        margin-bottom: 12px;
+      }
+      .eat-stats-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        margin-bottom: 10px;
+      }
+      .eat-stats-detail {
+        margin-top: 8px;
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.8;
+      }
+      .eat-stats-detail span {
+        color: var(--eat);
+        font-weight: 600;
+      }
 
       /* ============ 喝 - 喝水提醒 ============ */
       .header {
@@ -745,6 +875,31 @@
         color: var(--pee);
       }
 
+      /* Bristol 分类型着色 */
+      #pagePoop .day-cell.bristol-1,
+      #pagePoop .day-cell.bristol-2 {
+        background: rgba(239,68,68,0.16);
+        border-color: rgba(239,68,68,0.35);
+        color: #dc2626;
+      }
+      #pagePoop .day-cell.bristol-3,
+      #pagePoop .day-cell.bristol-4 {
+        background: rgba(34,197,94,0.16);
+        border-color: rgba(34,197,94,0.35);
+        color: #16a34a;
+      }
+      #pagePoop .day-cell.bristol-5 {
+        background: rgba(249,115,22,0.16);
+        border-color: rgba(249,115,22,0.35);
+        color: #ea580c;
+      }
+      #pagePoop .day-cell.bristol-6,
+      #pagePoop .day-cell.bristol-7 {
+        background: rgba(59,130,246,0.16);
+        border-color: rgba(59,130,246,0.35);
+        color: #2563eb;
+      }
+
       /* 打卡卡片 */
       .checkin-card {
         background: rgba(255,255,255,0.7);
@@ -796,43 +951,78 @@
       }
       .btn-poop:hover { transform: translateY(-1px); }
       .btn-poop:active { transform: translateY(1px); }
-      .btn-pee {
-        background: linear-gradient(135deg, var(--pee), var(--pee2));
-        box-shadow: 0 4px 14px rgba(16,185,129,0.3);
+
+      /* 布里斯托大便分类 - 主界面选择器 */
+      .bristol-main-row {
+        margin-top: 10px;
+        margin-bottom: 2px;
       }
-      .btn-undo {
+      .bristol-main-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+      }
+      .bristol-main-label {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .bristol-main-desc {
+        font-size: 11px;
+        color: var(--muted);
+        min-height: 16px;
+        line-height: 1.4;
+      }
+      .bristol-main-selector {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .bristol-main-btn {
         width: 28px;
         height: 28px;
         border-radius: 50%;
-        border: none;
-        background: rgba(139,92,246,0.1);
-        color: var(--secondary);
-        font-size: 0;
+        border: 2px solid #e5e7eb;
+        background: #f9fafb;
+        color: #374151;
+        font-size: 11px;
+        font-weight: 700;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        line-height: 1;
         transition: all 0.2s;
+        padding: 0;
+        line-height: 1;
         flex-shrink: 0;
-        margin-left: 0;
       }
-      .btn-undo::after {
-        content: "";
-        width: 0;
-        height: 0;
-        border-top: 4px solid transparent;
-        border-bottom: 4px solid transparent;
-        border-right: 5px solid currentColor;
+      .bristol-main-btn:hover {
+        transform: scale(1.1);
       }
-      .btn-undo:hover {
-        background: rgba(139,92,246,0.2);
+      .bristol-main-btn.active {
+        color: #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        border-color: transparent;
       }
-      .btn-undo.pee-btn {
-        background: rgba(16,185,129,0.1);
-      }
-      .btn-undo.pee-btn:hover {
-        background: rgba(16,185,129,0.2);
+      /* Bristol 颜色：便秘(红) -> 正常(绿) -> 腹泻(蓝) */
+      .bristol-main-btn[data-type="1"] { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
+      .bristol-main-btn[data-type="2"] { background: #fff7ed; border-color: #fdba74; color: #ea580c; }
+      .bristol-main-btn[data-type="3"] { background: #fefce8; border-color: #fde047; color: #ca8a04; }
+      .bristol-main-btn[data-type="4"] { background: #f0fdf4; border-color: #86efac; color: #16a34a; }
+      .bristol-main-btn[data-type="5"] { background: #ecfccb; border-color: #bef264; color: #65a30d; }
+      .bristol-main-btn[data-type="6"] { background: #eff6ff; border-color: #93c5fd; color: #2563eb; }
+      .bristol-main-btn[data-type="7"] { background: #eff6ff; border-color: #60a5fa; color: #1d4ed8; }
+      .bristol-main-btn[data-type="1"].active { background: #dc2626; }
+      .bristol-main-btn[data-type="2"].active { background: #ea580c; }
+      .bristol-main-btn[data-type="3"].active { background: #ca8a04; }
+      .bristol-main-btn[data-type="4"].active { background: #16a34a; }
+      .bristol-main-btn[data-type="5"].active { background: #65a30d; }
+      .bristol-main-btn[data-type="6"].active { background: #2563eb; }
+      .bristol-main-btn[data-type="7"].active { background: #1d4ed8; }
+      .btn-pee {
+        background: linear-gradient(135deg, var(--pee), var(--pee2));
+        box-shadow: 0 4px 14px rgba(16,185,129,0.3);
       }
       .btn-toggle {
         width: 28px;
@@ -987,6 +1177,55 @@
       .stats-card.pee-stats {
         border-color: rgba(16,185,129,0.15);
         box-shadow: 0 4px 16px rgba(16,185,129,0.08);
+      }
+      .stats-card.poop-stats {
+        border-color: rgba(219,39,119,0.15);
+        box-shadow: 0 4px 16px rgba(219,39,119,0.08);
+      }
+      .poop-stats-body {
+        background: rgba(255,255,255,0.5);
+        border-radius: 12px;
+        padding: 14px 0 10px;
+        margin: 10px 0;
+        text-align: center;
+      }
+      .stats-card.poop-stats .stats-num {
+        color: var(--poop);
+        font-size: 36px;
+      }
+      .stats-card.poop-stats .stats-label {
+        margin-top: 6px;
+        font-size: 12px;
+      }
+      .stats-detail {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+        justify-content: center;
+      }
+      .stats-detail-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 12px;
+        border-radius: 14px;
+        background: rgba(139,92,246,0.06);
+        border: 1px solid rgba(139,92,246,0.12);
+        font-size: 12px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .stats-detail-item .detail-val {
+        color: var(--secondary);
+        font-weight: 700;
+      }
+      .stats-card.poop-stats .stats-detail-item {
+        background: rgba(219,39,119,0.06);
+        border-color: rgba(219,39,119,0.12);
+      }
+      .stats-card.poop-stats .stats-detail-item .detail-val {
+        color: var(--poop);
       }
       .stats-title {
         font-size: 11px;
@@ -1380,6 +1619,63 @@
         font-size: 12px;
         color: var(--muted);
         word-break: break-all;
+      }
+      .edit-record-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 6px;
+      }
+      .edit-tag.poop-tag-display {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        background: rgba(139,92,246,0.10);
+        border: 1px solid rgba(139,92,246,0.20);
+        color: var(--secondary);
+        font-size: 11px;
+        font-weight: 500;
+      }
+      /* Bristol 大便分类选择器 */
+      .bristol-selector {
+        display: flex;
+        gap: 3px;
+        margin-top: 6px;
+        flex-wrap: wrap;
+      }
+      .bristol-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid #e5e7eb;
+        background: #f9fafb;
+        color: #374151;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        padding: 0;
+        line-height: 1;
+      }
+      .bristol-btn:hover {
+        border-color: var(--secondary);
+        background: rgba(139,92,246,0.10);
+      }
+      .bristol-btn.active {
+        border-color: var(--secondary);
+        background: var(--secondary);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(139,92,246,0.3);
+      }
+      .bristol-type-label {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 2px;
+        min-height: 16px;
+        line-height: 1.4;
       }
       .edit-input-row {
         margin-bottom: 8px;
@@ -1799,7 +2095,7 @@
       body, .card, .checkin-card, .stats-card, .drink-card,
       .meal-item, .record-item, .edit-modal-content,
       .sidebar-panel, .tooltip, .toast,
-      .meal-action-btn, .record-action-btn, .btn-toggle, .btn-undo,
+      .meal-action-btn, .record-action-btn, .btn-toggle,
       .sb-track, .toggle-track,
       select, .meal-input, .checkin-input, .custom-input, .edit-input, .meal-type-select,
       .nav-dot, .btn-eat, .btn-poop, .btn-primary, .btn-secondary,
@@ -2154,8 +2450,17 @@
           </div>
           <span class="rating-text" id="mealRatingText" data-i18n="ratingNone">未评价</span>
         </div>
+
+        <!-- 饱腹感选择器 -->
+        <div class="fullness-row" id="fullnessRow">
+          <span class="fullness-label" data-i18n="fullnessLabel">饱腹感：</span>
+          <div class="fullness-btns" id="fullnessBtns"></div>
+        </div>
         
         <button class="btn-eat" id="addMealBtn" data-i18n="addMeal">🍽️ 记录饮食</button>
+
+        <!-- 饮食快速标签 -->
+        <div class="meal-tags-row" id="mealTagsRow"></div>
 
         <div class="meal-records" id="mealRecords">
           <div class="meal-records-header" id="mealRecordsHeader">
@@ -2166,6 +2471,18 @@
           </div>
           <div class="meal-records-list" id="mealRecordsList"></div>
         </div>
+      </div>
+
+      <!-- 饮食统计卡片 -->
+      <div class="eat-stats-card">
+        <div class="eat-stats-title" data-i18n="statsTitle">饮食统计</div>
+        <div class="stats-toggle">
+          <button class="stats-toggle-btn eat-stats-toggle active" id="eatWeekBtn" data-i18n="eatWeek">本周</button>
+          <button class="stats-toggle-btn eat-stats-toggle" id="eatMonthBtn" data-i18n="eatMonth">本月</button>
+        </div>
+        <div class="eat-stat-num" id="eatStatsCount">0</div>
+        <div class="eat-stat-label" id="eatStatsLabel" data-i18n="itemCount">条</div>
+        <div class="eat-stats-detail" id="eatStatsDetail"></div>
       </div>
     </div>
 
@@ -2318,6 +2635,16 @@
           <input class="checkin-input" id="poopRemarkInput" type="text" placeholder="添加备注（可选）" maxlength="50" data-i18n-placeholder="poopRemarkPlaceholder" />
           <button class="btn-poop" id="poopCheckinBtn" data-i18n="poopCheckin">💩 打卡</button>
         </div>
+
+        <!-- 排便快捷标签 -->
+        <!-- 布里斯托大便分类选择器 -->
+        <div class="bristol-main-row" id="bristolMainRow">
+          <div class="bristol-main-header">
+            <div class="bristol-main-label" id="bristolMainLabel"></div>
+            <div class="bristol-main-desc" id="bristolMainDesc"></div>
+          </div>
+          <div class="bristol-main-selector" id="bristolMainSelector"></div>
+        </div>
         
         <div class="today-records-section" id="poopTodaySection" style="display:none;">
           <div class="today-records-header" id="poopRecordsHeader">
@@ -2326,20 +2653,22 @@
               <span data-i18n="todayPoop">今日已打卡</span> <strong id="poopTodayCount">0</strong> <span data-i18n="times">次</span>
             </span>
             <button class="btn-toggle" id="poopToggleBtn"></button>
-            <button class="btn-undo" id="poopUndoBtn" title="撤销最近一次" data-i18n-title="undoLast"></button>
           </div>
           <div class="today-records-list" id="poopRecordsList"></div>
         </div>
       </div>
 
-      <div class="stats-card">
+      <div class="stats-card poop-stats">
         <div class="stats-title" data-i18n="statsTitle">累计统计</div>
         <div class="stats-toggle">
           <button class="stats-toggle-btn active" id="poopWeekBtn" data-i18n="poopWeek">本周</button>
           <button class="stats-toggle-btn" id="poopMonthBtn" data-i18n="poopMonth">本月</button>
         </div>
-        <div class="stats-num" id="poopStatsCount">0</div>
-        <div class="stats-label" id="poopStatsLabel" data-i18n="times">次</div>
+        <div class="poop-stats-body">
+          <div class="stats-num" id="poopStatsCount">0</div>
+          <div class="stats-label" id="poopStatsLabel" data-i18n="times">次</div>
+        </div>
+        <div class="stats-detail" id="poopStatsDetail"></div>
       </div>
     </div>
 
@@ -2388,7 +2717,6 @@
               <span data-i18n="todayPee">今日已打卡</span> <strong id="peeTodayCount" class="pee-count">0</strong> <span data-i18n="times">次</span>
             </span>
             <button class="btn-toggle" id="peeToggleBtn"></button>
-            <button class="btn-undo pee-btn" id="peeUndoBtn" title="撤销最近一次" data-i18n-title="undoLast"></button>
           </div>
           <div class="today-records-list" id="peeRecordsList"></div>
         </div>
