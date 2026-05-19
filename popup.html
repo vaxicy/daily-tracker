@@ -16,6 +16,7 @@
         --eat2: #FBBF24;
         --pee: #10B981;
         --pee2: #34D399;
+        --poop: #db2777;
       }
       * { box-sizing: border-box; margin: 0; padding: 0; }
       html, body {
@@ -955,7 +956,8 @@
       /* 布里斯托大便分类 - 主界面选择器 */
       .bristol-main-row {
         margin-top: 10px;
-        margin-bottom: 2px;
+        margin-bottom: 8px;
+        padding: 0 12px;
       }
       .bristol-main-header {
         display: flex;
@@ -1013,13 +1015,195 @@
       .bristol-main-btn[data-type="5"] { background: #ecfccb; border-color: #bef264; color: #65a30d; }
       .bristol-main-btn[data-type="6"] { background: #eff6ff; border-color: #93c5fd; color: #2563eb; }
       .bristol-main-btn[data-type="7"] { background: #eff6ff; border-color: #60a5fa; color: #1d4ed8; }
-      .bristol-main-btn[data-type="1"].active { background: #dc2626; }
-      .bristol-main-btn[data-type="2"].active { background: #ea580c; }
-      .bristol-main-btn[data-type="3"].active { background: #ca8a04; }
-      .bristol-main-btn[data-type="4"].active { background: #16a34a; }
-      .bristol-main-btn[data-type="5"].active { background: #65a30d; }
-      .bristol-main-btn[data-type="6"].active { background: #2563eb; }
-      .bristol-main-btn[data-type="7"].active { background: #1d4ed8; }
+      .bristol-main-btn[data-type="1"].active { background: #dc2626; color: #fff; }
+      .bristol-main-btn[data-type="2"].active { background: #ea580c; color: #fff; }
+      .bristol-main-btn[data-type="3"].active { background: #ca8a04; color: #fff; }
+      .bristol-main-btn[data-type="4"].active { background: #16a34a; color: #fff; }
+      .bristol-main-btn[data-type="5"].active { background: #65a30d; color: #fff; }
+      .bristol-main-btn[data-type="6"].active { background: #2563eb; color: #fff; }
+      .bristol-main-btn[data-type="7"].active { background: #1d4ed8; color: #fff; }
+      /* 排便量选择器 */
+      .poop-amount-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 10px 0 4px;
+        padding: 6px 12px;
+        background: rgba(219,39,119,0.04);
+        border-radius: 8px;
+      }
+      .poop-amount-label {
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .poop-amount-btns {
+        display: flex;
+        gap: 4px;
+      }
+      .poop-amount-btn {
+        padding: 3px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(219,39,119,0.2);
+        background: rgba(255,255,255,0.8);
+        color: var(--muted);
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+        white-space: nowrap;
+      }
+      .poop-amount-btn:hover {
+        border-color: var(--poop);
+        color: var(--poop);
+      }
+      .poop-amount-btn.active {
+        background: var(--poop);
+        color: #fff;
+        border-color: var(--poop);
+        font-weight: 600;
+      }
+      /* 编辑弹窗中的小号排便量按钮 */
+      .poop-amount-btn-sm {
+        padding: 2px 8px;
+        border-radius: 10px;
+        border: 1px solid rgba(219,39,119,0.2);
+        background: rgba(255,255,255,0.8);
+        color: var(--muted);
+        font-size: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+        white-space: nowrap;
+      }
+      .poop-amount-btn-sm:hover {
+        border-color: var(--poop);
+        color: var(--poop);
+      }
+      .poop-amount-btn-sm.active {
+        background: var(--poop);
+        color: #fff;
+        border-color: var(--poop);
+        font-weight: 600;
+      }
+      /* 尿量选择器 */
+      .pee-amount-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 10px 0 4px;
+        padding: 6px 12px;
+        background: rgba(16,185,129,0.04);
+        border-radius: 8px;
+      }
+      .pee-amount-label {
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .pee-amount-btns {
+        display: flex;
+        gap: 4px;
+      }
+      .pee-amount-btn {
+        padding: 3px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(16,185,129,0.2);
+        background: rgba(255,255,255,0.8);
+        color: var(--muted);
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+        white-space: nowrap;
+      }
+      .pee-amount-btn:hover {
+        border-color: var(--pee);
+        color: var(--pee);
+      }
+      .pee-amount-btn.active {
+        background: var(--pee);
+        color: #fff;
+        border-color: var(--pee);
+        font-weight: 600;
+      }
+      /* 编辑弹窗中的小号尿量按钮 */
+      .pee-amount-btn-sm {
+        padding: 2px 8px;
+        border-radius: 10px;
+        border: 1px solid rgba(16,185,129,0.2);
+        background: rgba(255,255,255,0.8);
+        color: var(--muted);
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+        white-space: nowrap;
+      }
+      .pee-amount-btn-sm:hover {
+        border-color: var(--pee);
+        color: var(--pee);
+      }
+      .pee-amount-btn-sm.active {
+        background: var(--pee);
+        color: #fff;
+        border-color: var(--pee);
+        font-weight: 600;
+      }
+      /* 尿液颜色选择器 */
+      .pee-color-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 6px 0 4px;
+        padding: 6px 0;
+      }
+      .pee-color-label {
+        font-size: 12px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .pee-color-btns {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .pee-color-btn {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 2px solid rgba(0,0,0,0.15);
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        overflow: hidden;
+      }
+      .pee-color-btn:hover {
+        transform: scale(1.15);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      }
+      .pee-color-btn.active {
+        border-color: var(--pee);
+        box-shadow: 0 0 0 2px rgba(16,185,129,0.3);
+        transform: scale(1.1);
+      }
+      .pee-color-btn-sm {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid rgba(0,0,0,0.15);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .pee-color-btn-sm:hover {
+        transform: scale(1.15);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      }
+      .pee-color-btn-sm.active {
+        border-color: var(--pee);
+        box-shadow: 0 0 0 2px rgba(16,185,129,0.3);
+        transform: scale(1.1);
+      }
       .btn-pee {
         background: linear-gradient(135deg, var(--pee), var(--pee2));
         box-shadow: 0 4px 14px rgba(16,185,129,0.3);
@@ -1068,6 +1252,7 @@
       .today-records-header {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         padding: 10px 14px;
         cursor: pointer;
       }
@@ -2645,6 +2830,12 @@
           </div>
           <div class="bristol-main-selector" id="bristolMainSelector"></div>
         </div>
+
+        <!-- 排便量选择器 -->
+        <div class="poop-amount-row" id="poopAmountRow">
+          <span class="poop-amount-label" data-i18n="poopAmountLabel">排便量：</span>
+          <div class="poop-amount-btns" id="poopAmountBtns"></div>
+        </div>
         
         <div class="today-records-section" id="poopTodaySection" style="display:none;">
           <div class="today-records-header" id="poopRecordsHeader">
@@ -2709,7 +2900,19 @@
           <input class="checkin-input pee-input" id="peeRemarkInput" type="text" placeholder="添加备注（可选）" maxlength="50" data-i18n-placeholder="peeRemarkPlaceholder" />
           <button class="btn-poop btn-pee" id="peeCheckinBtn" data-i18n="peeCheckin">💧 打卡</button>
         </div>
-        
+
+        <!-- 尿量选择器 -->
+        <div class="pee-amount-row" id="peeAmountRow">
+          <span class="pee-amount-label" data-i18n="peeAmountLabel">尿量：</span>
+          <div class="pee-amount-btns" id="peeAmountBtns"></div>
+        </div>
+
+        <!-- 尿液颜色选择器 -->
+        <div class="pee-color-row" id="peeColorRow">
+          <span class="pee-color-label" data-i18n="peeColorLabel">颜色：</span>
+          <div class="pee-color-btns" id="peeColorBtns"></div>
+        </div>
+
         <div class="today-records-section pee-section" id="peeTodaySection" style="display:none;">
           <div class="today-records-header" id="peeRecordsHeader">
             <span class="today-records-title">
@@ -2730,6 +2933,11 @@
         </div>
         <div class="stats-num pee-num" id="peeStatsCount">0</div>
         <div class="stats-label" id="peeStatsLabel" data-i18n="times">次</div>
+        <div class="stats-detail" id="peeStatsDetail" style="margin-top:8px;font-size:11px;color:var(--muted);line-height:1.8;">
+          <div><span data-i18n="dailyAvg">日均</span>: <strong id="peeDailyAvg" style="color:var(--pee);">0</strong> <span data-i18n="times">次</span></div>
+          <div><span data-i18n="maxInterval">最大间隔</span>: <strong id="peeMaxInterval" style="color:var(--pee);">--</strong></div>
+          <div><span data-i18n="minInterval">最小间隔</span>: <strong id="peeMinInterval" style="color:var(--pee);">--</strong></div>
+        </div>
       </div>
     </div>
 

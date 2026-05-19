@@ -118,6 +118,10 @@ function switchTab(tab) {
     renderPeeCalendar();
     updatePeeTodayStatus();
     updatePeeStats();
+    renderPeeAmountSelector();
+    clearPeeAmount();
+    renderPeeColorSelector();
+    clearPeeColor();
   }
 }
 
@@ -1865,6 +1869,24 @@ function deletePoopRecord(idx) {
   });
 }
 
+function deleteTodayPoopRecord(idx) {
+  if (!confirm(t("confirmDeleteRecord"))) return;
+  const today = getToday();
+  chrome.storage.local.get(["poopRecords"], (data) => {
+    const records = data.poopRecords || {};
+    if (records[today]) {
+      records[today].splice(idx, 1);
+      if (records[today].length === 0) delete records[today];
+      chrome.storage.local.set({ poopRecords: records }, () => {
+        showToast(t("toastDeleteSuccess"));
+        renderPoopCalendar();
+        updatePoopTodayStatus();
+        updatePoopStats();
+      });
+    }
+  });
+}
+
 function showPoopTooltip(e, dateStr) {
   clearTimeout(poopTooltipTimeout);
   poopTooltipTimeout = setTimeout(() => {
@@ -2073,7 +2095,7 @@ function attachPoopRecordActions() {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const idx = parseInt(e.target.dataset.index);
-      deletePoopRecord(idx);
+      deleteTodayPoopRecord(idx);
     });
   });
 }
@@ -2263,6 +2285,12 @@ function showPeeEditModal(dateStr, dayRecords) {
     const now = new Date();
     const defaultTimeStr = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
     
+    // 渲染颜色选择器（补打卡表单）
+    const peeColors = t("peeColors") || [];
+    const colorBtns = peeColors.map((label, i) =>
+      `<button class="pee-color-btn-sm" data-color="${i+1}" title="${label}" style="background:${PEE_COLOR_MAP[i] || '#eee'};border:2px solid rgba(0,0,0,0.15);"></button>`
+    ).join("");
+
     editModalBody.innerHTML = `
       <div class="edit-empty" style="margin-bottom: 12px;">${t('noPeeRecord')}</div>
       <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
@@ -2282,6 +2310,11 @@ function showPeeEditModal(dateStr, dayRecords) {
       <div class="edit-input-row">
         <input class="edit-input" type="text" id="peeAddRemark" placeholder="${t('remarkPlaceholder')}" />
       </div>
+      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--muted);">${t('peeColorLabel')}:</span>
+        ${colorBtns}
+        <span id="peeAddColorLabel" style="font-size:11px;color:var(--pee);font-weight:600;"></span>
+      </div>
       <button class="edit-save-btn" id="peeAddBtn" style="background: var(--pee);">${t('makeUpCheckinBtn')}</button>
     `;
     
@@ -2289,6 +2322,30 @@ function showPeeEditModal(dateStr, dayRecords) {
     document.querySelectorAll('input[name="peeTimeMode"]').forEach(r => {
       r.addEventListener("change", () => {
         document.getElementById("peeCustomTimeRow").style.display = r.value === "custom" ? "flex" : "none";
+      });
+    });
+
+    // 补打卡表单：颜色按钮点击事件
+    let addFormColor = 0;
+    editModalBody.querySelectorAll(".pee-color-btn-sm").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const color = parseInt(btn.dataset.color);
+        const label = btn.title;
+        if (addFormColor === color) {
+          addFormColor = 0;
+          btn.classList.remove("active");
+          btn.style.border = "2px solid rgba(0,0,0,0.15)";
+          document.getElementById("peeAddColorLabel").textContent = "";
+        } else {
+          addFormColor = color;
+          editModalBody.querySelectorAll(".pee-color-btn-sm").forEach(b => {
+            b.classList.remove("active");
+            b.style.border = "2px solid rgba(0,0,0,0.15)";
+          });
+          btn.classList.add("active");
+          btn.style.border = "2px solid var(--pee)";
+          document.getElementById("peeAddColorLabel").textContent = label;
+        }
       });
     });
     
@@ -2312,7 +2369,7 @@ function showPeeEditModal(dateStr, dayRecords) {
       chrome.storage.local.get(["peeRecords"], (data) => {
         const records = data.peeRecords || {};
         if (!records[dateStr]) records[dateStr] = [];
-        records[dateStr].push({ time: recordTime, remark, timestamp: Date.now(), isBackfill: !isToday });
+        records[dateStr].push({ time: recordTime, remark, amount: selectedPeeAmount, color: addFormColor, timestamp: Date.now(), isBackfill: !isToday });
         chrome.storage.local.set({ peeRecords: records }, () => {
           showToast(isToday ? "💧 " + t('checkinSuccess') : "💧 " + t('makeUpCheckinSuccess'));
           renderPeeCalendar();
@@ -2335,8 +2392,27 @@ function showPeeEditModal(dateStr, dayRecords) {
     return "";
   }
 
+  const peeAmounts = t("peeAmounts") || [];
+  const peeColors = t("peeColors") || [];
   editModalBody.innerHTML = dayRecords.map((rec, idx) => {
     const parsedTime = parseRecordTimePee(rec.time);
+
+    // 尿量按钮
+    const amountBtns = peeAmounts.map((label, i) => {
+      const isActive = rec.amount === (i + 1);
+      return `<button class="pee-amount-btn-sm ${isActive ? 'active' : ''}" data-idx="${idx}" data-amount="${i+1}">${label}</button>`;
+    }).join("");
+    const amountLabel = rec.amount ? peeAmounts[rec.amount - 1] || "" : "";
+
+    // 颜色按钮
+    const colorBtns = peeColors.map((label, i) => {
+      const colorNum = i + 1;
+      const isActive = rec.color === colorNum;
+      const bgColor = PEE_COLOR_MAP[i] || '#eee';
+      return `<button class="pee-color-btn-sm ${isActive ? 'active' : ''}" data-idx="${idx}" data-color="${colorNum}" title="${label}" style="background:${bgColor};border:2px solid ${isActive ? 'var(--pee)' : 'rgba(0,0,0,0.15)'};"></button>`;
+    }).join("");
+    const colorLabel = rec.color ? peeColors[rec.color - 1] || "" : "";
+
     return `
     <div class="edit-record-item" data-index="${idx}">
       <div class="edit-record-header">
@@ -2347,6 +2423,14 @@ function showPeeEditModal(dateStr, dayRecords) {
         </div>
       </div>
       <div class="edit-record-content" id="peeContent${idx}">${rec.remark || t('noRemark')}</div>
+      <div class="pee-amount-selector" data-record-idx="${idx}" style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('peeAmountLabel')}</span>
+        ${amountBtns}
+      </div>
+      <div class="pee-color-selector" data-record-idx="${idx}" style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('peeColorLabel')}</span>
+        ${colorBtns}
+      </div>
       <div class="edit-input-row" id="peeEditFormTime${idx}" style="display:none;align-items:center;">
         <input type="time" class="edit-input" id="peeEditTime${idx}" value="${parsedTime}" placeholder="HH:mm" style="width:auto;flex:none;" />
         <span style="font-size:11px;color:#999;white-space:nowrap;margin-left:12px;">${t('modifyRecordTime')}</span>
@@ -2358,6 +2442,50 @@ function showPeeEditModal(dateStr, dayRecords) {
     </div>
   `;
   }).join("");
+
+  // 尿量按钮点击事件（事件委托）
+  editModalBody.querySelectorAll(".pee-amount-btn-sm").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = Number(btn.dataset.idx);
+      const amount = Number(btn.dataset.amount);
+      chrome.storage.local.get(["peeRecords"], (data) => {
+        const records = data.peeRecords || {};
+        if (records[currentEditDate] && records[currentEditDate][idx]) {
+          const cur = records[currentEditDate][idx].amount;
+          records[currentEditDate][idx].amount = (cur === amount) ? null : amount;
+          chrome.storage.local.set({ peeRecords: records }, () => {
+            chrome.storage.local.get(["peeRecords"], (d) => {
+              if (d.peeRecords && d.peeRecords[currentEditDate]) {
+                showPeeEditModal(currentEditDate, d.peeRecords[currentEditDate]);
+              }
+            });
+          });
+        }
+      });
+    });
+  });
+
+  // 尿液颜色按钮点击事件（事件委托）
+  editModalBody.querySelectorAll(".pee-color-btn-sm").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = Number(btn.dataset.idx);
+      const color = Number(btn.dataset.color);
+      chrome.storage.local.get(["peeRecords"], (data) => {
+        const records = data.peeRecords || {};
+        if (records[currentEditDate] && records[currentEditDate][idx]) {
+          const cur = records[currentEditDate][idx].color;
+          records[currentEditDate][idx].color = (cur === color) ? null : color;
+          chrome.storage.local.set({ peeRecords: records }, () => {
+            chrome.storage.local.get(["peeRecords"], (d) => {
+              if (d.peeRecords && d.peeRecords[currentEditDate]) {
+                showPeeEditModal(currentEditDate, d.peeRecords[currentEditDate]);
+              }
+            });
+          });
+        }
+      });
+    });
+  });
 }
 
 function openPeeEditForm(idx) {
@@ -2411,6 +2539,24 @@ function deletePeeRecord(idx) {
   });
 }
 
+function deleteTodayPeeRecord(idx) {
+  if (!confirm(t("confirmDeleteRecord"))) return;
+  const today = getToday();
+  chrome.storage.local.get(["peeRecords"], (data) => {
+    const records = data.peeRecords || {};
+    if (records[today]) {
+      records[today].splice(idx, 1);
+      if (records[today].length === 0) delete records[today];
+      chrome.storage.local.set({ peeRecords: records }, () => {
+        showToast(t("toastDeleteSuccess"));
+        renderPeeCalendar();
+        updatePeeTodayStatus();
+        updatePeeStats();
+      });
+    }
+  });
+}
+
 function showPeeTooltip(e, dateStr) {
   clearTimeout(peeTooltipTimeout);
   peeTooltipTimeout = setTimeout(() => {
@@ -2421,18 +2567,32 @@ function showPeeTooltip(e, dateStr) {
       const countEl = document.getElementById("tooltipCount");
       countEl.textContent = '💧 ' + dayRecords.length + t('times');
       countEl.classList.add("pee-count");
-      
+
       if (dayRecords.length > 0) {
-        document.getElementById("tooltipRecords").innerHTML = dayRecords.map((rec, i) => `
+        const peeAmounts = t("peeAmounts") || [];
+        const peeColors = t("peeColors") || [];
+        document.getElementById("tooltipRecords").innerHTML = dayRecords.map((rec, i) => {
+          let amountInfo = "";
+          if (rec.amount) {
+            amountInfo = `<span style="color:var(--pee);font-weight:600;margin-left:4px;">${peeAmounts[rec.amount - 1] || ""}</span>`;
+          }
+          let colorInfo = "";
+          if (rec.color) {
+            const colorHex = PEE_COLOR_MAP[rec.color - 1] || '#eee';
+            const colorLabel = peeColors[rec.color - 1] || "";
+            colorInfo = ` <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorHex};vertical-align:middle;margin-left:4px;" title="${colorLabel}"></span>`;
+          }
+          return `
           <div class="tooltip-record">
-            <div class="tooltip-record-time">${t('peeRecord', { num: i + 1, time: rec.time })}</div>
+            <div class="tooltip-record-time">${t('peeRecord', { num: i + 1, time: rec.time })} ${amountInfo}${colorInfo}</div>
             ${rec.remark ? `<div class="tooltip-record-remark">${rec.remark}</div>` : ""}
           </div>
-        `).join("");
+        `;
+        }).join("");
       } else {
         document.getElementById("tooltipRecords").innerHTML = '<div class="tooltip-empty">' + t('tooltipEmptyRecord') + '</div>';
       }
-      
+
       positionTooltip(e);
       activeTooltipDate = dateStr;
       activeTooltipType = "pee";
@@ -2447,6 +2607,78 @@ function hidePeeTooltip(e) {
   tooltipHideTimeout = setTimeout(() => {
     document.getElementById("tooltip").classList.remove("show");
   }, 200);
+}
+
+// ==================== 尿量选择器 ====================
+let selectedPeeAmount = 0; // 0=未选, 1=少, 2=中, 3=多
+const peeAmountBtns = document.getElementById("peeAmountBtns");
+
+function renderPeeAmountSelector() {
+  const amounts = t("peeAmounts") || [];
+  if (!peeAmountBtns) return;
+  peeAmountBtns.innerHTML = amounts.map((label, i) =>
+    `<button class="pee-amount-btn" data-amount="${i+1}">${label}</button>`
+  ).join("");
+
+  peeAmountBtns.querySelectorAll(".pee-amount-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const amount = parseInt(btn.dataset.amount);
+      if (selectedPeeAmount === amount) {
+        selectedPeeAmount = 0;
+        btn.classList.remove("active");
+      } else {
+        selectedPeeAmount = amount;
+        peeAmountBtns.querySelectorAll(".pee-amount-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+    });
+  });
+}
+
+function clearPeeAmount() {
+  selectedPeeAmount = 0;
+  peeAmountBtns?.querySelectorAll(".pee-amount-btn").forEach(b => b.classList.remove("active"));
+}
+
+// ==================== 尿液颜色选择器 ====================
+const PEE_COLOR_MAP = [
+  "#e8f4f8",   // 1: 透明/极淡
+  "#ffffcc",   // 2: 淡黄
+  "#ffcc00",   // 3: 黄色
+  "#ff9900",   // 4: 深黄
+  "#c87533",   // 5: 茶色/琥珀
+  "#8b4513"    // 6: 异常深褐色
+];
+
+let selectedPeeColor = 0; // 0=未选, 1~6 对应颜色
+
+function renderPeeColorSelector() {
+  const colors = t("peeColors") || [];
+  const container = document.getElementById("peeColorBtns");
+  if (!container) return;
+  container.innerHTML = colors.map((label, i) =>
+    `<button class="pee-color-btn" data-color="${i+1}" title="${label}" style="background:${PEE_COLOR_MAP[i] || '#eee'};"></button>`
+  ).join("");
+
+  container.querySelectorAll(".pee-color-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const color = parseInt(btn.dataset.color);
+      if (selectedPeeColor === color) {
+        selectedPeeColor = 0;
+        btn.classList.remove("active");
+      } else {
+        selectedPeeColor = color;
+        container.querySelectorAll(".pee-color-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+    });
+  });
+}
+
+function clearPeeColor() {
+  selectedPeeColor = 0;
+  const container = document.getElementById("peeColorBtns");
+  container?.querySelectorAll(".pee-color-btn").forEach(b => b.classList.remove("active"));
 }
 
 peeToggleBtn.addEventListener("click", () => {
@@ -2466,17 +2698,19 @@ peeCheckinBtn.addEventListener("click", () => {
   const today = getToday();
   const time = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
   const remark = peeRemarkInput.value.trim();
-  
+
   chrome.storage.local.get(["peeRecords"], (data) => {
     const records = data.peeRecords || {};
     if (!records[today]) records[today] = [];
-    records[today].push({ time, remark, timestamp: Date.now() });
+    records[today].push({ time, remark, amount: selectedPeeAmount, color: selectedPeeColor, timestamp: Date.now() });
     chrome.storage.local.set({ peeRecords: records }, () => {
       peeRemarkInput.value = "";
       renderPeeCalendar();
       updatePeeTodayStatus();
       updatePeeStats();
       showToast(t("toastPeeRecorded"));
+      clearPeeAmount();
+      clearPeeColor();
     });
   });
 });
@@ -2524,16 +2758,22 @@ function updatePeeTodayStatus() {
     if (todayRecord && todayRecord.length > 0) {
       peeTodaySection.style.display = "block";
       peeTodayCount.textContent = todayRecord.length;
-      peeRecordsList.innerHTML = todayRecord.map((rec, idx) => `
+      const peeAmounts = t("peeAmounts") || [];
+      const peeColors = t("peeColors") || [];
+      peeRecordsList.innerHTML = todayRecord.map((rec, idx) => {
+        const amountText = rec.amount ? ` 💧${peeAmounts[rec.amount - 1] || ""}` : "";
+        const colorText = rec.color ? ` <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${PEE_COLOR_MAP[rec.color - 1] || '#eee'};vertical-align:middle;" title="${peeColors[rec.color - 1] || ""}"></span>` : "";
+        return `
         <div class="record-item" data-index="${idx}">
           <span class="record-time pee-time">${rec.time}</span>
-          <span class="record-remark">${rec.remark || t('noRemark')}</span>
+          <span class="record-remark">${rec.remark || t('noRemark')}${amountText}${colorText}</span>
           <div class="record-actions">
             <button class="record-action-btn edit-pee-record" data-index="${idx}" title="${t('editTitle')}">✏️</button>
             <button class="record-action-btn delete-pee-record" data-index="${idx}" title="${t('deleteTitle')}">🗑️</button>
           </div>
         </div>
-      `).join("");
+      `;
+      }).join("");
 
       // 添加编辑和删除按钮的事件监听
       attachPeeRecordActions();
@@ -2560,7 +2800,7 @@ function attachPeeRecordActions() {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const idx = parseInt(e.target.dataset.index);
-      deletePeeRecord(idx);
+      deleteTodayPeeRecord(idx);
     });
   });
 }
@@ -2569,13 +2809,21 @@ function updatePeeStats() {
   chrome.storage.local.get(["peeRecords"], (data) => {
     const records = data.peeRecords || {};
     let count = 0;
+    let dayCount = 0;
+    const allTimestamps = [];
+
     if (peeStatsMode === "week") {
       const range = getWeekRange();
       const cur = new Date(range.start);
       const end = new Date(range.end);
       while (cur <= end) {
         const dateStr = formatDate(cur);
-        count += (records[dateStr] || []).length;
+        const dayRecords = records[dateStr] || [];
+        count += dayRecords.length;
+        if (dayRecords.length > 0) dayCount++;
+        dayRecords.forEach(rec => {
+          if (rec.timestamp) allTimestamps.push(rec.timestamp);
+        });
         cur.setDate(cur.getDate() + 1);
       }
       peeStatsLabel.textContent = t('weekTotal');
@@ -2585,13 +2833,46 @@ function updatePeeStats() {
       const end = new Date(range.end);
       while (cur <= end) {
         const dateStr = formatDate(cur);
-        count += (records[dateStr] || []).length;
+        const dayRecords = records[dateStr] || [];
+        count += dayRecords.length;
+        if (dayRecords.length > 0) dayCount++;
+        dayRecords.forEach(rec => {
+          if (rec.timestamp) allTimestamps.push(rec.timestamp);
+        });
         cur.setDate(cur.getDate() + 1);
       }
       peeStatsLabel.textContent = t('monthTotal');
     }
+
     peeStatsCount.textContent = count;
+
+    const dailyAvg = dayCount > 0 ? (count / dayCount).toFixed(1) : "0";
+    const dailyAvgEl = document.getElementById("peeDailyAvg");
+    if (dailyAvgEl) dailyAvgEl.textContent = dailyAvg;
+
+    let maxInterval = "--";
+    let minInterval = "--";
+    if (allTimestamps.length >= 2) {
+      allTimestamps.sort((a, b) => a - b);
+      const intervals = [];
+      for (let i = 1; i < allTimestamps.length; i++) {
+        intervals.push(Math.round((allTimestamps[i] - allTimestamps[i-1]) / 60000));
+      }
+      maxInterval = formatInterval(Math.max(...intervals));
+      minInterval = formatInterval(Math.min(...intervals));
+    }
+    const maxEl = document.getElementById("peeMaxInterval");
+    const minEl = document.getElementById("peeMinInterval");
+    if (maxEl) maxEl.textContent = maxInterval;
+    if (minEl) minEl.textContent = minInterval;
   });
+}
+
+function formatInterval(minutes) {
+  if (minutes < 60) return minutes + t('unitMinutes');
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h + t('unitHours') + (m > 0 ? m + t('unitMinutes') : "");
 }
 
 peeWeekBtn.addEventListener("click", () => {
