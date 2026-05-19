@@ -50,6 +50,23 @@ function formatDateDisplay(dateStr) {
   return t("dateDisplay", { y, m: parseInt(m), d: parseInt(d) });
 }
 
+// ==================== 公共存储操作 ====================
+// 通用删除记录：从指定 key 的存储中删除某天某条记录
+// callback(records, targetDate, isEmpty) 在存储写入完成后调用
+function _deleteRecordFromStorage(key, targetDate, idx, callback) {
+  chrome.storage.local.get([key], (data) => {
+    const records = data[key] || {};
+    if (!records[targetDate]) return callback(null);
+    records[targetDate].splice(idx, 1);
+    const isEmpty = records[targetDate].length === 0;
+    if (isEmpty) delete records[targetDate];
+    chrome.storage.local.set({ [key]: records }, () => {
+      showToast(t("toastDeleteSuccess"));
+      callback(records, targetDate, isEmpty);
+    });
+  });
+}
+
 // ==================== 页面切换 ====================
 let currentTab = "eat";
 
@@ -327,8 +344,6 @@ function updateMealRecords() {
         `;
       }).join("");
 
-      // 添加编辑和删除按钮的事件监听
-      attachMealActionListeners();
     }
   });
 }
@@ -425,53 +440,6 @@ if (eatMonthBtn) {
     eatMonthBtn.classList.add("active");
     eatWeekBtn.classList.remove("active");
     renderEatStats();
-  });
-}
-
-function attachMealActionListeners() {
-  // 编辑按钮 - 打开弹窗
-  document.querySelectorAll(".edit-meal").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const today = getToday();
-      chrome.storage.local.get(["mealRecords"], (data) => {
-        const records = data.mealRecords || {};
-        showEatEditModal(today, records[today] || []);
-      });
-    });
-  });
-
-  // 删除按钮
-  document.querySelectorAll(".delete-meal").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const index = parseInt(e.target.dataset.index);
-      deleteMealRecord(index);
-    });
-  });
-}
-
-function deleteMealRecord(index) {
-  if (!confirm(t("confirmDeleteMeal"))) return;
-
-  const today = getToday();
-  chrome.storage.local.get(["mealRecords"], (data) => {
-    const records = data.mealRecords || {};
-    if (!records[today]) return;
-
-    // 删除指定索引的记录
-    records[today].splice(index, 1);
-
-    // 如果当天没有记录了，删除该日期的键
-    if (records[today].length === 0) {
-      delete records[today];
-    }
-
-    chrome.storage.local.set({ mealRecords: records }, () => {
-      renderEatCalendar();
-      updateMealRecords();
-      showToast(t("toastMealDeleted"));
-    });
   });
 }
 
@@ -931,25 +899,21 @@ function saveEatRecord(idx) {
   });
 }
 
-function deleteEatRecord(idx) {
+function deleteEatRecord(idx, dateStr) {
   if (!confirm(t("confirmDeleteRecord"))) return;
-  
-  chrome.storage.local.get(["mealRecords"], (data) => {
-    const records = data.mealRecords || {};
-    if (records[currentEditDate]) {
-      records[currentEditDate].splice(idx, 1);
-      if (records[currentEditDate].length === 0) {
-        delete records[currentEditDate];
+  const targetDate = dateStr || currentEditDate;
+  const isModal = !dateStr;
+
+  _deleteRecordFromStorage("mealRecords", targetDate, idx, (records, targetDate, isEmpty) => {
+    showToast(t("toastDeleteSuccess"));
+    renderEatCalendar();
+    updateMealRecords();
+    if (isModal) {
+      if (isEmpty) {
         hideEditModal();
+      } else {
+        showEatEditModal(targetDate, records[targetDate]);
       }
-      chrome.storage.local.set({ mealRecords: records }, () => {
-        showToast(t("toastDeleteSuccess"));
-        renderEatCalendar();
-        updateMealRecords();
-        if (records[currentEditDate]) {
-          showEatEditModal(currentEditDate, records[currentEditDate]);
-        }
-      });
     }
   });
 }
@@ -1845,44 +1809,22 @@ function savePoopRecord(idx) {
   });
 }
 
-function deletePoopRecord(idx) {
+function deletePoopRecord(idx, dateStr) {
   if (!confirm(t("confirmDeleteRecord"))) return;
-  
-  chrome.storage.local.get(["poopRecords"], (data) => {
-    const records = data.poopRecords || {};
-    if (records[currentEditDate]) {
-      records[currentEditDate].splice(idx, 1);
-      if (records[currentEditDate].length === 0) {
-        delete records[currentEditDate];
-        hideEditModal();
-      }
-      chrome.storage.local.set({ poopRecords: records }, () => {
-        showToast(t("toastDeleteSuccess"));
-        renderPoopCalendar();
-        updatePoopTodayStatus();
-        updatePoopStats();
-        if (records[currentEditDate]) {
-          showPoopEditModal(currentEditDate, records[currentEditDate]);
-        }
-      });
-    }
-  });
-}
+  const targetDate = dateStr || currentEditDate;
+  const isModal = !dateStr;
 
-function deleteTodayPoopRecord(idx) {
-  if (!confirm(t("confirmDeleteRecord"))) return;
-  const today = getToday();
-  chrome.storage.local.get(["poopRecords"], (data) => {
-    const records = data.poopRecords || {};
-    if (records[today]) {
-      records[today].splice(idx, 1);
-      if (records[today].length === 0) delete records[today];
-      chrome.storage.local.set({ poopRecords: records }, () => {
-        showToast(t("toastDeleteSuccess"));
-        renderPoopCalendar();
-        updatePoopTodayStatus();
-        updatePoopStats();
-      });
+  _deleteRecordFromStorage("poopRecords", targetDate, idx, (records, targetDate, isEmpty) => {
+    // Toast is already shown by the helper function
+    renderPoopCalendar();
+    updatePoopTodayStatus();
+    updatePoopStats();
+    if (isModal) {
+      if (isEmpty) {
+        hideEditModal();
+      } else {
+        showPoopEditModal(targetDate, records[targetDate]);
+      }
     }
   });
 }
@@ -2070,33 +2012,9 @@ function updatePoopTodayStatus() {
         </div>
       `).join("");
 
-      // 添加编辑和删除按钮的事件监听
-      attachPoopRecordActions();
     } else {
       poopTodaySection.style.display = "none";
     }
-  });
-}
-
-function attachPoopRecordActions() {
-  // 编辑按钮 - 打开弹窗
-  document.querySelectorAll(".edit-poop-record").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const today = getToday();
-      chrome.storage.local.get(["poopRecords"], (data) => {
-        showPoopEditModal(today, data.poopRecords[today] || []);
-      });
-    });
-  });
-
-  // 删除按钮
-  document.querySelectorAll(".delete-poop-record").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const idx = parseInt(e.target.dataset.index);
-      deleteTodayPoopRecord(idx);
-    });
   });
 }
 
@@ -2515,44 +2433,22 @@ function savePeeRecord(idx) {
   });
 }
 
-function deletePeeRecord(idx) {
+function deletePeeRecord(idx, dateStr) {
   if (!confirm(t("confirmDeleteRecord"))) return;
-  
-  chrome.storage.local.get(["peeRecords"], (data) => {
-    const records = data.peeRecords || {};
-    if (records[currentEditDate]) {
-      records[currentEditDate].splice(idx, 1);
-      if (records[currentEditDate].length === 0) {
-        delete records[currentEditDate];
-        hideEditModal();
-      }
-      chrome.storage.local.set({ peeRecords: records }, () => {
-        showToast(t("toastDeleteSuccess"));
-        renderPeeCalendar();
-        updatePeeTodayStatus();
-        updatePeeStats();
-        if (records[currentEditDate]) {
-          showPeeEditModal(currentEditDate, records[currentEditDate]);
-        }
-      });
-    }
-  });
-}
+  const targetDate = dateStr || currentEditDate;
+  const isModal = !dateStr;
 
-function deleteTodayPeeRecord(idx) {
-  if (!confirm(t("confirmDeleteRecord"))) return;
-  const today = getToday();
-  chrome.storage.local.get(["peeRecords"], (data) => {
-    const records = data.peeRecords || {};
-    if (records[today]) {
-      records[today].splice(idx, 1);
-      if (records[today].length === 0) delete records[today];
-      chrome.storage.local.set({ peeRecords: records }, () => {
-        showToast(t("toastDeleteSuccess"));
-        renderPeeCalendar();
-        updatePeeTodayStatus();
-        updatePeeStats();
-      });
+  _deleteRecordFromStorage("peeRecords", targetDate, idx, (records, targetDate, isEmpty) => {
+    // Toast is already shown by the helper function
+    renderPeeCalendar();
+    updatePeeTodayStatus();
+    updatePeeStats();
+    if (isModal) {
+      if (isEmpty) {
+        hideEditModal();
+      } else {
+        showPeeEditModal(targetDate, records[targetDate]);
+      }
     }
   });
 }
@@ -2775,33 +2671,9 @@ function updatePeeTodayStatus() {
       `;
       }).join("");
 
-      // 添加编辑和删除按钮的事件监听
-      attachPeeRecordActions();
     } else {
       peeTodaySection.style.display = "none";
     }
-  });
-}
-
-function attachPeeRecordActions() {
-  // 编辑按钮 - 打开弹窗
-  document.querySelectorAll(".edit-pee-record").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const today = getToday();
-      chrome.storage.local.get(["peeRecords"], (data) => {
-        showPeeEditModal(today, data.peeRecords[today] || []);
-      });
-    });
-  });
-
-  // 删除按钮
-  document.querySelectorAll(".delete-pee-record").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const idx = parseInt(e.target.dataset.index);
-      deleteTodayPeeRecord(idx);
-    });
   });
 }
 
@@ -2955,20 +2827,7 @@ editModalBody.addEventListener("click", (e) => {
       }
     });
   } else if (action === "delete-eat") {
-    if (!confirm(t("confirmDeleteRecord"))) return;
-    chrome.storage.local.get(["mealRecords"], (data) => {
-      const records = data.mealRecords || {};
-      if (records[currentEditDate]) {
-        records[currentEditDate].splice(idx, 1);
-        if (records[currentEditDate].length === 0) { delete records[currentEditDate]; hideEditModal(); }
-        chrome.storage.local.set({ mealRecords: records }, () => {
-          showToast(t("toastDeleteSuccess"));
-          renderEatCalendar();
-          updateMealRecords();
-          if (records[currentEditDate]) { showEatEditModal(currentEditDate, records[currentEditDate]); }
-        });
-      }
-    });
+    deleteEatRecord(idx);
   }
   
   // 排便编辑
@@ -3004,21 +2863,7 @@ editModalBody.addEventListener("click", (e) => {
       }
     });
   } else if (action === "delete-poop") {
-    if (!confirm(t("confirmDeleteRecord"))) return;
-    chrome.storage.local.get(["poopRecords"], (data) => {
-      const records = data.poopRecords || {};
-      if (records[currentEditDate]) {
-        records[currentEditDate].splice(idx, 1);
-        if (records[currentEditDate].length === 0) { delete records[currentEditDate]; hideEditModal(); }
-        chrome.storage.local.set({ poopRecords: records }, () => {
-          showToast(t("toastDeleteSuccess"));
-          renderPoopCalendar();
-          updatePoopTodayStatus();
-          updatePoopStats();
-          if (records[currentEditDate]) { showPoopEditModal(currentEditDate, records[currentEditDate]); }
-        });
-      }
-    });
+    deletePoopRecord(idx);
   }
   
   // 排尿编辑
@@ -3054,21 +2899,7 @@ editModalBody.addEventListener("click", (e) => {
       }
     });
   } else if (action === "delete-pee") {
-    if (!confirm(t("confirmDeleteRecord"))) return;
-    chrome.storage.local.get(["peeRecords"], (data) => {
-      const records = data.peeRecords || {};
-      if (records[currentEditDate]) {
-        records[currentEditDate].splice(idx, 1);
-        if (records[currentEditDate].length === 0) { delete records[currentEditDate]; hideEditModal(); }
-        chrome.storage.local.set({ peeRecords: records }, () => {
-          showToast(t("toastDeleteSuccess"));
-          renderPeeCalendar();
-          updatePeeTodayStatus();
-          updatePeeStats();
-          if (records[currentEditDate]) { showPeeEditModal(currentEditDate, records[currentEditDate]); }
-        });
-      }
-    });
+    deletePeeRecord(idx);
   }
 });
 
@@ -3319,6 +3150,75 @@ document.getElementById("navEat").addEventListener("click", () => switchTab("eat
 document.getElementById("navDrink").addEventListener("click", () => switchTab("drink"));
 document.getElementById("navPoop").addEventListener("click", () => switchTab("poop"));
 document.getElementById("navPee").addEventListener("click", () => switchTab("pee"));
+
+// 事件委托：今日记录列表（只绑定一次，避免每次渲染都绑定）
+(function () {
+  // 排便记录列表
+  const poopList = document.getElementById("poopRecordsList");
+  if (poopList) {
+    poopList.addEventListener("click", (e) => {
+      const editBtn = e.target.closest(".edit-poop-record");
+      if (editBtn) {
+        e.stopPropagation();
+        const today = getToday();
+        chrome.storage.local.get(["poopRecords"], (data) => {
+          const records = data.poopRecords || {};
+          showPoopEditModal(today, records[today] || []);
+        });
+        return;
+      }
+      const delBtn = e.target.closest(".delete-poop-record");
+      if (delBtn) {
+        e.stopPropagation();
+        deletePoopRecord(parseInt(delBtn.dataset.index), getToday());
+      }
+    });
+  }
+
+  // 排尿记录列表
+  const peeList = document.getElementById("peeRecordsList");
+  if (peeList) {
+    peeList.addEventListener("click", (e) => {
+      const editBtn = e.target.closest(".edit-pee-record");
+      if (editBtn) {
+        e.stopPropagation();
+        const today = getToday();
+        chrome.storage.local.get(["peeRecords"], (data) => {
+          const records = data.peeRecords || {};
+          showPeeEditModal(today, records[today] || []);
+        });
+        return;
+      }
+      const delBtn = e.target.closest(".delete-pee-record");
+      if (delBtn) {
+        e.stopPropagation();
+        deletePeeRecord(parseInt(delBtn.dataset.index), getToday());
+      }
+    });
+  }
+
+  // 饮食记录列表
+  const mealList = document.getElementById("mealRecordsList");
+  if (mealList) {
+    mealList.addEventListener("click", (e) => {
+      const editBtn = e.target.closest(".edit-meal");
+      if (editBtn) {
+        e.stopPropagation();
+        const today = getToday();
+        chrome.storage.local.get(["mealRecords"], (data) => {
+          const records = data.mealRecords || {};
+          showEatEditModal(today, records[today] || []);
+        });
+        return;
+      }
+      const delBtn = e.target.closest(".delete-meal");
+      if (delBtn) {
+        e.stopPropagation();
+        deleteEatRecord(parseInt(delBtn.dataset.index), getToday());
+      }
+    });
+  }
+})();
 
 // 从存储读取默认首页，若无则默认喝水
 chrome.storage.local.get(["defaultTab"], (data) => {
