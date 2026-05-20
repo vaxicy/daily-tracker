@@ -127,6 +127,8 @@ function switchTab(tab) {
   if (tab === "drink") { updateDrinkUI(); updateDrinkStats(); renderDrinkCalendar(); }
   if (tab === "poop") {
     renderBristolMainSelector();
+    renderPoopAmountSelector();
+    clearPoopAmount();
     renderPoopCalendar();
     updatePoopTodayStatus();
     updatePoopStats();
@@ -412,11 +414,18 @@ function renderEatStats() {
 
     const detailEl = document.getElementById("eatStatsDetail");
     if (detailEl) {
-      let detail = "";
-      if (ratingCount > 0) detail += t('eatStatAvgRating') + ": " + avgRating + " ";
-      if (typeStr) detail += " | " + t('eatStatTypeDist') + ": " + typeStr;
-      if (streak > 0) detail += " | " + t('eatStatStreak') + ": " + streak + " " + t('eatStatDays');
-      detailEl.textContent = detail;
+      let row1 = "";
+      let row2 = "";
+      if (ratingCount > 0) {
+        row1 += `<span class="eat-stat-tag">${t('eatStatAvgRating')}: <b>${avgRating}</b></span>`;
+      }
+      if (streak > 0) {
+        row1 += `<span class="eat-stat-tag">${t('eatStatStreak')}: <b>${streak}</b> ${t('eatStatDays')}</span>`;
+      }
+      if (typeStr) {
+        row2 += `<span class="eat-stat-tag eat-stat-tag-wide">${t('eatStatTypeDist')}: ${typeStr}</span>`;
+      }
+      detailEl.innerHTML = (row1 ? `<div class="eat-stats-row">${row1}</div>` : "") + (row2 ? `<div class="eat-stats-row">${row2}</div>` : "");
     }
   });
 }
@@ -1539,9 +1548,11 @@ const poopTodayCount = document.getElementById("poopTodayCount");
 const bristolMainSelector = document.getElementById("bristolMainSelector");
 const bristolMainLabel = document.getElementById("bristolMainLabel");
 const bristolMainDesc = document.getElementById("bristolMainDesc");
+const poopAmountBtns = document.getElementById("poopAmountBtns");
 
 // 主界面布里斯托分类选择
 let selectedBristolType = 0; // 0表示未选择
+let selectedPoopAmount = 0;  // 0=未选, 1=少, 2=中, 3=多
 
 function renderBristolMainSelector() {
   const types = t("bristolTypes") || [];
@@ -1587,6 +1598,33 @@ function clearBristolSelection() {
   selectedBristolType = 0;
   bristolMainSelector?.querySelectorAll(".bristol-main-btn").forEach(b => b.classList.remove("active"));
   updateBristolMainDesc();
+}
+
+function renderPoopAmountSelector() {
+  const amounts = t("poopAmounts") || [];
+  if (!poopAmountBtns) return;
+  poopAmountBtns.innerHTML = amounts.map((label, i) =>
+    `<button class="poop-amount-btn" data-amount="${i+1}">${label}</button>`
+  ).join("");
+
+  poopAmountBtns.querySelectorAll(".poop-amount-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const amount = parseInt(btn.dataset.amount);
+      if (selectedPoopAmount === amount) {
+        selectedPoopAmount = 0;
+        btn.classList.remove("active");
+      } else {
+        selectedPoopAmount = amount;
+        poopAmountBtns.querySelectorAll(".poop-amount-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+    });
+  });
+}
+
+function clearPoopAmount() {
+  selectedPoopAmount = 0;
+  poopAmountBtns?.querySelectorAll(".poop-amount-btn").forEach(b => b.classList.remove("active"));
 }
 
 const poopWeekBtn = document.getElementById("poopWeekBtn");
@@ -1668,7 +1706,11 @@ function showPoopEditModal(dateStr, dayRecords) {
       <div class="edit-input-row">
         <input class="edit-input" type="text" id="poopAddRemark" placeholder="${t('remarkPlaceholder')}" />
       </div>
-      <button class="edit-save-btn" id="poopAddBtn" style="background: var(--secondary);">${t('makeUpCheckinBtn')}</button>
+      <div class="poop-amount-selector" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopAmountLabel')}</span>
+        ${(t("poopAmounts") || []).map((label, i) => `<button class="poop-amount-btn-sm" data-amount="${i+1}" id="poopAddAmount${i+1}">${label}</button>`).join("")}
+      </div>
+      <button class="edit-save-btn" id="poopAddBtn" style="background: var(--secondary);margin-top:10px;">${t('makeUpCheckinBtn')}</button>
     `;
     
     // 切换时间模式
@@ -1679,6 +1721,16 @@ function showPoopEditModal(dateStr, dayRecords) {
       });
     });
     
+    // 补打卡表单排便量按钮事件
+    document.querySelectorAll('.poop-amount-selector .poop-amount-btn-sm').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const amount = parseInt(btn.dataset.amount);
+        const isActive = btn.classList.contains('active');
+        document.querySelectorAll('.poop-amount-selector .poop-amount-btn-sm').forEach(b => b.classList.remove('active'));
+        if (!isActive) btn.classList.add('active');
+      });
+    });
+
     document.getElementById("poopAddBtn").addEventListener("click", () => {
       const remark = document.getElementById("poopAddRemark").value.trim();
       
@@ -1696,10 +1748,18 @@ function showPoopEditModal(dateStr, dayRecords) {
         recordTime = isToday ? new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" }) : t("makeUpCheckin");
       }
       
+      // 读取补打卡表单中的排便量
+      let addAmount = 0;
+      document.querySelectorAll('#poopAddAmount1, #poopAddAmount2, #poopAddAmount3').forEach(btn => {
+        if (btn.classList.contains('active')) addAmount = parseInt(btn.dataset.amount);
+      });
+
       chrome.storage.local.get(["poopRecords"], (data) => {
         const records = data.poopRecords || {};
         if (!records[dateStr]) records[dateStr] = [];
-        records[dateStr].push({ time: recordTime, remark, timestamp: Date.now(), isBackfill: !isToday });
+        const newRec = { time: recordTime, remark, timestamp: Date.now(), isBackfill: !isToday };
+        if (addAmount > 0) newRec.amount = addAmount;
+        records[dateStr].push(newRec);
         chrome.storage.local.set({ poopRecords: records }, () => {
           showToast(isToday ? "💩 " + t('checkinSuccess') : "💩 " + t('makeUpCheckinSuccess'));
           renderPoopCalendar();
@@ -1725,6 +1785,8 @@ function showPoopEditModal(dateStr, dayRecords) {
   const bristolTypes = t("bristolTypes") || [];
   const bristolDescs = t("bristolDescs") || [];
 
+  const poopAmounts = t("poopAmounts") || [];
+
   editModalBody.innerHTML = dayRecords.map((rec, idx) => {
     const parsedTime = parseRecordTimePoop(rec.time);
     const bristolBtns = bristolTypes.map((label, i) => {
@@ -1732,6 +1794,10 @@ function showPoopEditModal(dateStr, dayRecords) {
       return `<button class="bristol-btn ${isActive ? 'active' : ''}" data-idx="${idx}" data-type="${i+1}" title="${label}(${bristolDescs[i] || ''})">${i+1}</button>`;
     }).join("");
     const bristolLabel = rec.bristolType ? `${bristolTypes[rec.bristolType-1] || ''}(${t('bristolPrefix') || 'Bristol '}${rec.bristolType})` : "";
+    const amountBtns = poopAmounts.map((label, i) => {
+      const isActive = rec.amount === (i + 1);
+      return `<button class="poop-amount-btn-sm ${isActive ? 'active' : ''}" data-idx="${idx}" data-amount="${i+1}">${label}</button>`;
+    }).join("");
 
     return `
     <div class="edit-record-item" data-index="${idx}">
@@ -1745,6 +1811,10 @@ function showPoopEditModal(dateStr, dayRecords) {
       <div class="edit-record-content" id="poopContent${idx}">${rec.remark || t('noRemark')}</div>
       <div class="bristol-selector" data-record-idx="${idx}">${bristolBtns}</div>
       <div class="bristol-type-label" id="bristolLabel${idx}">${bristolLabel}</div>
+      <div class="poop-amount-selector" data-record-idx="${idx}" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopAmountLabel')}</span>
+        ${amountBtns}
+      </div>
       <div class="edit-input-row" id="poopEditFormTime${idx}" style="display:none;align-items:center;">
         <input type="time" class="edit-input" id="poopEditTime${idx}" value="${parsedTime}" placeholder="HH:mm" style="width:auto;flex:none;" />
         <span style="font-size:11px;color:#999;white-space:nowrap;margin-left:12px;">${t('modifyRecordTime')}</span>
@@ -1770,6 +1840,28 @@ function showPoopEditModal(dateStr, dayRecords) {
           records[currentEditDate][idx].bristolType = (cur === type) ? null : type;
           chrome.storage.local.set({ poopRecords: records }, () => {
             // 刷新弹窗
+            chrome.storage.local.get(["poopRecords"], (d) => {
+              if (d.poopRecords && d.poopRecords[currentEditDate]) {
+                showPoopEditModal(currentEditDate, d.poopRecords[currentEditDate]);
+              }
+            });
+          });
+        }
+      });
+    });
+  });
+
+  // 排便量按钮点击事件
+  editModalBody.querySelectorAll(".poop-amount-btn-sm").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const idx = Number(btn.dataset.idx);
+      const amount = Number(btn.dataset.amount);
+      chrome.storage.local.get(["poopRecords"], (data) => {
+        const records = data.poopRecords || {};
+        if (records[currentEditDate] && records[currentEditDate][idx]) {
+          const cur = records[currentEditDate][idx].amount;
+          records[currentEditDate][idx].amount = (cur === amount) ? null : amount;
+          chrome.storage.local.set({ poopRecords: records }, () => {
             chrome.storage.local.get(["poopRecords"], (d) => {
               if (d.poopRecords && d.poopRecords[currentEditDate]) {
                 showPoopEditModal(currentEditDate, d.poopRecords[currentEditDate]);
@@ -1946,10 +2038,14 @@ poopCheckinBtn.addEventListener("click", () => {
     if (selectedBristolType > 0) {
       record.bristolType = selectedBristolType;
     }
+    if (selectedPoopAmount > 0) {
+      record.amount = selectedPoopAmount;
+    }
     records[today].push(record);
     chrome.storage.local.set({ poopRecords: records }, () => {
       poopRemarkInput.value = "";
       clearBristolSelection();
+      clearPoopAmount();
       renderPoopCalendar();
       updatePoopTodayStatus();
       updatePoopStats();

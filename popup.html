@@ -464,22 +464,66 @@
         backdrop-filter: blur(12px);
         box-shadow: 0 4px 16px rgba(245,158,11,0.1);
         margin-bottom: 12px;
+        text-align: center;
       }
       .eat-stats-title {
         font-size: 11px;
         font-weight: 600;
         color: var(--muted);
         margin-bottom: 10px;
+        text-align: left;
+      }
+      .eat-stats-body {
+        background: rgba(255,255,255,0.5);
+        border-radius: 12px;
+        padding: 14px 0 10px;
+        margin: 10px 0;
+        text-align: center;
+      }
+      .eat-stats-body .stats-num {
+        color: var(--eat);
+        font-size: 36px;
+        font-weight: 800;
+        line-height: 1;
+      }
+      .eat-stats-body .stats-label {
+        margin-top: 6px;
+        font-size: 12px;
+        color: var(--muted);
       }
       .eat-stats-detail {
-        margin-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 10px;
+        padding: 0 4px;
+        align-items: stretch;
+      }
+      .eat-stats-row {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        width: 100%;
+      }
+      .eat-stats-row .eat-stat-tag {
+        flex: 1;
+        justify-content: center;
+      }
+      .eat-stat-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 8px;
+        border-radius: 14px;
+        background: rgba(245,158,11,0.06);
+        border: 1px solid rgba(245,158,11,0.12);
         font-size: 11px;
         color: var(--muted);
-        line-height: 1.8;
+        white-space: nowrap;
       }
-      .eat-stats-detail span {
+      .eat-stat-tag b {
         color: var(--eat);
-        font-weight: 600;
+        font-weight: 700;
       }
 
       /* ============ 喝 - 喝水提醒 ============ */
@@ -2665,8 +2709,10 @@
           <button class="stats-toggle-btn eat-stats-toggle active" id="eatWeekBtn" data-i18n="eatWeek">本周</button>
           <button class="stats-toggle-btn eat-stats-toggle" id="eatMonthBtn" data-i18n="eatMonth">本月</button>
         </div>
-        <div class="eat-stat-num" id="eatStatsCount">0</div>
-        <div class="eat-stat-label" id="eatStatsLabel" data-i18n="itemCount">条</div>
+        <div class="eat-stats-body">
+          <div class="stats-num" id="eatStatsCount">0</div>
+          <div class="stats-label" id="eatStatsLabel" data-i18n="itemCount">条</div>
+        </div>
         <div class="eat-stats-detail" id="eatStatsDetail"></div>
       </div>
     </div>
