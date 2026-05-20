@@ -16,7 +16,7 @@
         --eat2: #FBBF24;
         --pee: #10B981;
         --pee2: #34D399;
-        --poop: #db2777;
+        --poop: #7c3aed;
       }
       * { box-sizing: border-box; margin: 0; padding: 0; }
       html, body {
@@ -1086,7 +1086,7 @@
         gap: 8px;
         margin: 10px 0 4px;
         padding: 6px 12px;
-        background: rgba(219,39,119,0.04);
+        background: rgba(124,58,237,0.04);
         border-radius: 8px;
       }
       .poop-amount-label {
@@ -1101,7 +1101,7 @@
       .poop-amount-btn {
         padding: 3px 10px;
         border-radius: 12px;
-        border: 1px solid rgba(219,39,119,0.2);
+        border: 1px solid rgba(124,58,237,0.2);
         background: rgba(255,255,255,0.8);
         color: var(--muted);
         font-size: 11px;
@@ -1124,7 +1124,7 @@
       .poop-amount-btn-sm {
         padding: 2px 8px;
         border-radius: 10px;
-        border: 1px solid rgba(219,39,119,0.2);
+        border: 1px solid rgba(124,58,237,0.2);
         background: rgba(255,255,255,0.8);
         color: var(--muted);
         font-size: 10px;
@@ -1421,8 +1421,8 @@
         box-shadow: 0 4px 16px rgba(16,185,129,0.08);
       }
       .stats-card.poop-stats {
-        border-color: rgba(219,39,119,0.15);
-        box-shadow: 0 4px 16px rgba(219,39,119,0.08);
+        border-color: rgba(124,58,237,0.15);
+        box-shadow: 0 4px 16px rgba(124,58,237,0.08);
       }
       .poop-stats-body {
         background: rgba(255,255,255,0.5);
@@ -1463,8 +1463,8 @@
         font-weight: 700;
       }
       .stats-card.poop-stats .stats-detail-item {
-        background: rgba(219,39,119,0.06);
-        border-color: rgba(219,39,119,0.12);
+        background: rgba(124,58,237,0.06);
+        border-color: rgba(124,58,237,0.12);
       }
       .stats-card.poop-stats .stats-detail-item .detail-val {
         color: var(--poop);
@@ -2565,8 +2565,107 @@
       }
 
       [data-theme="dark"] .stats-toggle-btn {
-        border-color: rgba(148,163,184,0.2);
-        color: var(--muted, rgba(226,232,240,0.55));
+        border-color: rgba(148,163,184,0.35);
+        color: rgba(226,232,240,0.75);
+        background: rgba(148,163,184,0.08);
+      }
+      [data-theme="dark"] .stats-toggle-btn:hover {
+        border-color: rgba(148,163,184,0.55);
+        color: rgba(226,232,240,0.95);
+        background: rgba(148,163,184,0.15);
+      }
+      [data-theme="dark"] .stats-toggle-btn.active {
+        background: linear-gradient(135deg, var(--secondary), var(--secondary2));
+        color: #fff;
+        border-color: transparent;
+      }
+      [data-theme="dark"] .stats-toggle-btn.pee-toggle.active {
+        background: linear-gradient(135deg, var(--pee), var(--pee2));
+      }
+      [data-theme="dark"] .stats-toggle-btn.drink-toggle.active {
+        background: linear-gradient(135deg, var(--primary), var(--primary2));
+      }
+
+      [data-theme="dark"] .poop-amount-row,
+      [data-theme="dark"] .pee-amount-row {
+        background: rgba(148,163,184,0.08);
+      }
+      [data-theme="dark"] .poop-amount-btn,
+      [data-theme="dark"] .poop-amount-btn-sm {
+        background: rgba(15,23,42,0.6);
+        border-color: rgba(124,58,237,0.25);
+        color: rgba(226,232,240,0.7);
+      }
+      [data-theme="dark"] .poop-amount-btn:hover,
+      [data-theme="dark"] .poop-amount-btn-sm:hover {
+        border-color: var(--poop);
+        color: var(--poop);
+      }
+      [data-theme="dark"] .poop-amount-btn.active,
+      [data-theme="dark"] .poop-amount-btn-sm.active {
+        background: var(--poop);
+        color: #fff;
+        border-color: var(--poop);
+      }
+      [data-theme="dark"] .pee-amount-btn,
+      [data-theme="dark"] .pee-amount-btn-sm {
+        background: rgba(15,23,42,0.6);
+        border-color: rgba(16,185,129,0.25);
+        color: rgba(226,232,240,0.7);
+      }
+      [data-theme="dark"] .pee-amount-btn:hover,
+      [data-theme="dark"] .pee-amount-btn-sm:hover {
+        border-color: var(--pee);
+        color: var(--pee);
+      }
+      [data-theme="dark"] .pee-amount-btn.active,
+      [data-theme="dark"] .pee-amount-btn-sm.active {
+        background: var(--pee);
+        color: #fff;
+        border-color: var(--pee);
+      }
+
+      [data-theme="dark"] .eat-stats-card {
+        background: var(--card-bg, rgba(30,41,59,0.85));
+        border-color: var(--card-border, rgba(148,163,184,0.15));
+      }
+      [data-theme="dark"] .eat-stats-body {
+        background: rgba(15,23,42,0.5);
+      }
+      [data-theme="dark"] .eat-stat-tag {
+        background: rgba(245,158,11,0.12);
+        border-color: rgba(245,158,11,0.25);
+        color: rgba(226,232,240,0.75);
+      }
+
+      [data-theme="dark"] .poop-stats-body {
+        background: rgba(51,65,85,0.45);
+      }
+      [data-theme="dark"] .stats-card.poop-stats .stats-label {
+        color: rgba(226,232,240,0.8);
+      }
+      [data-theme="dark"] .stats-card.poop-stats .stats-detail-item {
+        background: rgba(124,58,237,0.18);
+        border-color: rgba(124,58,237,0.35);
+        color: rgba(226,232,240,0.9);
+      }
+
+      [data-theme="dark"] .fullness-row {
+        background: rgba(245,158,11,0.08);
+      }
+      [data-theme="dark"] .fullness-btn {
+        background: rgba(15,23,42,0.6);
+        border-color: rgba(245,158,11,0.25);
+        color: rgba(226,232,240,0.7);
+      }
+      [data-theme="dark"] .fullness-btn:hover {
+        border-color: var(--eat);
+        color: var(--eat);
+      }
+      [data-theme="dark"] .fullness-btn.active {
+        background: var(--eat);
+        color: #fff;
+        border-color: var(--eat);
       }
 
       /* 暗色主题：底部导航点 */
