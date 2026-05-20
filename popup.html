@@ -2503,16 +2503,22 @@
         border-color: rgba(148,163,184,0.1);
       }
 
-      [data-theme="dark"] .theme-opt {
+      [data-theme="dark"] .theme-opt,
+      [data-theme="dark"] .lang-opt,
+      [data-theme="dark"] .default-tab-opt {
         background: rgba(51,65,85,0.3);
         color: var(--muted, rgba(226,232,240,0.55));
       }
 
-      [data-theme="dark"] .theme-opt:hover {
+      [data-theme="dark"] .theme-opt:hover,
+      [data-theme="dark"] .lang-opt:hover,
+      [data-theme="dark"] .default-tab-opt:hover {
         background: rgba(51,65,85,0.5);
       }
 
-      [data-theme="dark"] .theme-opt.active {
+      [data-theme="dark"] .theme-opt.active,
+      [data-theme="dark"] .lang-opt.active,
+      [data-theme="dark"] .default-tab-opt.active {
         border-color: var(--primary, #3b82f6);
         background: color-mix(in srgb, var(--primary, #3b82f6) 12%, #0f172a);
         color: var(--text, #e2e8f0);
@@ -2534,6 +2540,16 @@
       [data-theme="dark"] .sidebar-close-btn:hover {
         background: rgba(148,163,184,0.2);
         color: var(--text, #e2e8f0);
+      }
+
+      [data-theme="dark"] .sidebar-toggle-btn {
+        background: rgba(51,65,85,0.9);
+        color: rgba(226,232,240,0.85);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+      }
+      [data-theme="dark"] .sidebar-toggle-btn:hover {
+        background: rgba(71,85,105,0.95);
+        color: #fff;
       }
 
       [data-theme="dark"] .edit-modal-close {
