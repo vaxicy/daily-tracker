@@ -187,19 +187,24 @@
       .meal-records-list.collapsed { display: none; }
       .meal-item {
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        gap: 4px;
         padding: 8px 10px;
         background: rgba(245,158,11,0.08);
         border-radius: 8px;
         margin-bottom: 6px;
         font-size: 12px;
         position: relative;
-        gap: 8px;
       }
       .meal-item:last-child { margin-bottom: 0; }
+      .meal-item-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
       .meal-content {
-        flex: 1;
-        margin-right: 8px;
+        color: var(--text);
+        overflow-wrap: break-word;
       }
       .meal-time {
         color: var(--muted);
@@ -207,15 +212,26 @@
         white-space: nowrap;
         min-width: 40px;
         text-align: right;
+        margin-left: auto;
+        flex-shrink: 0;
       }
       .meal-actions {
-        display: none;
+        display: flex;
+        visibility: hidden;
+        pointer-events: none;
         gap: 4px;
         flex-shrink: 0;
-        margin-left: 4px;
+      }
+      .meal-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 8px;
+        font-size: 10px;
       }
       .meal-item:hover .meal-actions {
-        display: flex;
+        visibility: visible;
+        pointer-events: auto;
       }
       .meal-action-btn {
         width: 24px;
@@ -267,15 +283,12 @@
         border-radius: 4px;
         font-size: 10px;
         font-weight: 600;
-        margin-right: 8px;
         flex-shrink: 0;
       }
       .meal-type-tag.breakfast { background: rgba(251,191,36,0.2); color: #D97706; }
       .meal-type-tag.lunch { background: rgba(245,158,11,0.2); color: #B45309; }
       .meal-type-tag.dinner { background: rgba(217,119,6,0.2); color: #92400E; }
       .meal-type-tag.snack { background: rgba(180,83,9,0.15); color: #78350F; }
-      .meal-content { flex: 1; color: var(--text); word-break: break-all; }
-      .meal-time { font-size: 10px; color: var(--muted); margin-left: 8px; flex-shrink: 0; }
 
       /* 评价星级样式 */
       .meal-rating-row {

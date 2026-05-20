@@ -318,30 +318,32 @@ function updateMealRecords() {
         const typeLabel = { breakfast: t("breakfast"), lunch: t("lunch"), dinner: t("dinner"), snack: t("snack") };
         const ratingStars = meal.rating ? "⭐".repeat(meal.rating) : "";
         const remarkHtml = meal.remark ? `<div class="meal-remark" style="font-size:10px;color:var(--muted);margin-top:3px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;"><span>📝</span><span>${meal.remark}</span></div>` : "";
-        const ratingHtml = meal.rating ? `<div class="meal-rating-display" style="font-size:10px;margin-top:3px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;"><span style="letter-spacing:2px;">${ratingStars}</span><span>${getRatingTextMap()[meal.rating] || ""}</span></div>` : "";
+        const ratingHtml = meal.rating ? `<span style="letter-spacing:2px;">${ratingStars}</span><span>${getRatingTextMap()[meal.rating] || ""}</span>` : "";
 
         // 饱腹感显示
         const fullnessLevels = t("fullnessLevels") || [];
-        const fullnessHtml = meal.fullness ? `<div style="font-size:10px;color:var(--muted);margin-top:3px;">🍽️ ${fullnessLevels[meal.fullness - 1] || ""}</div>` : "";
+        const fullnessHtml = meal.fullness ? `<span style="color:var(--muted);">🍽️ ${fullnessLevels[meal.fullness - 1] || ""}</span>` : "";
 
         // 标签显示（手动 + 自动识别）
-        const tagsHtml = meal.tags && meal.tags.length > 0 ? `<div style="font-size:10px;margin-top:3px;">${meal.tags.map(t => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--eat);font-size:10px;margin-right:3px;">${t}</span>`).join("")}</div>` : "";
-        
+        const tagsHtml = meal.tags && meal.tags.length > 0 ? meal.tags.map(t => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--eat);font-size:10px;">${t}</span>`).join("") : "";
+
+        // 合并评分、饱腹感、标签到一行
+        const metaParts = [ratingHtml, fullnessHtml, tagsHtml].filter(Boolean);
+        const metaHtml = metaParts.length > 0 ? `<div class="meal-meta">${metaParts.join("")}</div>` : "";
+
         return `
           <div class="meal-item" data-index="${index}">
-            <span class="meal-type-tag ${meal.type}">${typeLabel[meal.type]}</span>
-            <div style="flex:1;min-width:0;">
-              <span class="meal-content">${meal.content}</span>
-              ${remarkHtml}
-              ${ratingHtml}
-              ${fullnessHtml}
-              ${tagsHtml}
+            <div class="meal-item-header">
+              <span class="meal-type-tag ${meal.type}">${typeLabel[meal.type]}</span>
+              <span class="meal-time">${meal.time}</span>
+              <div class="meal-actions">
+                <button class="meal-action-btn edit-meal" data-index="${index}" title="${t('editTitle')}">✏️</button>
+                <button class="meal-action-btn delete-meal" data-index="${index}" title="${t('deleteTitle')}">🗑️</button>
+              </div>
             </div>
-            <span class="meal-time">${meal.time}</span>
-            <div class="meal-actions">
-              <button class="meal-action-btn edit-meal" data-index="${index}" title="${t('editTitle')}">✏️</button>
-              <button class="meal-action-btn delete-meal" data-index="${index}" title="${t('deleteTitle')}">🗑️</button>
-            </div>
+            <span class="meal-content">${meal.content}</span>
+            ${remarkHtml}
+            ${metaHtml}
           </div>
         `;
       }).join("");
