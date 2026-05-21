@@ -2949,6 +2949,121 @@
         transition: opacity 0.2s ease, transform 0.2s ease,
                     background-color 0.35s ease, color 0.35s ease;
       }
+      /* 提醒管理 */
+      .reminder-section { margin-top:4px; margin-bottom:4px; }
+      .sidebar-add-btn {
+        background: none; border: none; font-size: 16px;
+        cursor: pointer; color: var(--eat);
+        padding: 2px 6px; border-radius: 4px; transition: background 0.2s;
+      }
+      .sidebar-add-btn:hover { background: rgba(245,158,11,0.1); }
+      .reminder-list { max-height: 200px; overflow-y: auto; }
+      .reminder-item {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 6px 8px; margin-bottom: 4px;
+        background: rgba(12,42,77,0.03); border-radius: 6px; font-size: 11px;
+      }
+      .reminder-item-left { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+      .reminder-item-icon { font-size: 14px; flex-shrink: 0; }
+      .reminder-item-label { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .reminder-item-times { font-size: 10px; color: var(--muted); white-space: nowrap; }
+      .reminder-item-actions { display: flex; gap: 4px; flex-shrink: 0; }
+      .reminder-item-btn {
+        background: none; border: none; cursor: pointer;
+        font-size: 12px; padding: 2px 4px; border-radius: 4px;
+        color: var(--muted); transition: all 0.2s;
+      }
+      .reminder-item-btn:hover { background: rgba(12,42,77,0.08); color: var(--text); }
+      .reminder-empty { text-align: center; color: var(--muted); font-size: 11px; padding: 8px; }
+
+      /* 提醒编辑弹窗 */
+      .reminder-modal {
+        display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(12,42,77,0.5); z-index: 700;
+        align-items: center; justify-content: center;
+      }
+      .reminder-modal.show { display: flex; }
+      .reminder-modal-content {
+        background: #fff; border-radius: 16px; width: 280px;
+        max-height: 480px; overflow: hidden;
+        box-shadow: 0 8px 32px rgba(12,42,77,0.25);
+      }
+      .reminder-modal-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 16px; border-bottom: 1px solid rgba(12,42,77,0.1);
+      }
+      .reminder-modal-title { font-size: 15px; font-weight: 700; color: var(--text); }
+      .reminder-modal-close {
+        width: 28px; height: 28px; border-radius: 50%; border: none;
+        background: rgba(12,42,77,0.08); font-size: 18px;
+        color: var(--muted); cursor: pointer;
+        display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+      }
+      .reminder-modal-close:hover { background: rgba(12,42,77,0.15); color: var(--text); }
+      .reminder-modal-body { padding: 12px; max-height: 320px; overflow-y: auto; }
+      .reminder-form-row { margin-bottom: 12px; }
+      .reminder-form-row label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+      .reminder-input {
+        width: 100%; padding: 6px 10px; border: 1px solid rgba(12,42,77,0.15);
+        border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;
+        transition: border-color 0.2s;
+      }
+      .reminder-input:focus { border-color: var(--eat); }
+      .reminder-icon-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+      .reminder-icon-btn {
+        width: 32px; height: 32px; border-radius: 6px;
+        border: 1px solid rgba(12,42,77,0.12); background: rgba(255,255,255,0.8);
+        font-size: 16px; cursor: pointer; display: flex;
+        align-items: center; justify-content: center; transition: all 0.15s;
+      }
+      .reminder-icon-btn:hover { border-color: var(--eat); background: rgba(245,158,11,0.08); }
+      .reminder-icon-btn.active { border-color: var(--eat); background: rgba(245,158,11,0.15); }
+      .reminder-times-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+      .reminder-time-row { display: flex; align-items: center; gap: 6px; }
+      .reminder-time-input {
+        padding: 4px 8px; border: 1px solid rgba(12,42,77,0.15);
+        border-radius: 6px; font-size: 12px; outline: none; transition: border-color 0.2s;
+      }
+      .reminder-time-input:focus { border-color: var(--eat); }
+      .reminder-time-remove {
+        background: none; border: none; cursor: pointer;
+        color: #EF4444; font-size: 14px; padding: 2px 4px; border-radius: 4px; transition: background 0.2s;
+      }
+      .reminder-time-remove:hover { background: rgba(239,68,68,0.1); }
+      .reminder-add-time-btn {
+        background: none; border: 1px dashed rgba(12,42,77,0.2);
+        border-radius: 6px; padding: 4px 8px; font-size: 11px;
+        color: var(--muted); cursor: pointer; width: 100%; transition: all 0.2s;
+      }
+      .reminder-add-time-btn:hover { border-color: var(--eat); color: var(--eat); }
+      .reminder-modal-footer {
+        display: flex; gap: 6px; padding: 12px 16px;
+        border-top: 1px solid rgba(12,42,77,0.1); flex-shrink: 0;
+      }
+      .reminder-modal-cancel {
+        flex: 1; padding: 6px 12px; border-radius: 8px; border: none;
+        background: rgba(12,42,77,0.06); color: var(--text);
+        font-size: 13px; cursor: pointer; transition: all 0.2s;
+      }
+      .reminder-modal-cancel:hover { background: rgba(12,42,77,0.12); }
+      .reminder-modal-confirm {
+        flex: 1; padding: 6px 12px; border-radius: 8px; border: none;
+        background: linear-gradient(135deg, var(--eat), var(--eat2));
+        color: #fff; font-size: 13px; cursor: pointer; transition: all 0.2s;
+      }
+      .reminder-modal-confirm:hover { transform: translateY(-1px); }
+
+      /* 暗色主题 - 提醒 */
+      [data-theme="dark"] .reminder-modal-content { background: #1e1e2e; }
+      [data-theme="dark"] .reminder-modal-header { border-bottom-color: rgba(148,163,184,0.15); }
+      [data-theme="dark"] .reminder-modal-close { background: rgba(148,163,184,0.1); color: var(--muted, rgba(226,232,240,0.55)); }
+      [data-theme="dark"] .reminder-modal-close:hover { background: rgba(148,163,184,0.2); color: var(--text, #e2e8f0); }
+      [data-theme="dark"] .reminder-item { background: rgba(51,65,85,0.3); }
+      [data-theme="dark"] .reminder-input { background: rgba(15,23,42,0.6); border-color: rgba(148,163,184,0.2); color: var(--text, #e2e8f0); }
+      [data-theme="dark"] .reminder-icon-btn { background: rgba(15,23,42,0.6); border-color: rgba(148,163,184,0.2); }
+      [data-theme="dark"] .reminder-add-time-btn { background: rgba(15,23,42,0.6); border-color: rgba(148,163,184,0.2); color: var(--muted, rgba(226,232,240,0.55)); }
+      [data-theme="dark"] .reminder-time-input { background: rgba(15,23,42,0.6); border-color: rgba(148,163,184,0.2); color: var(--text, #e2e8f0); }
+
     </style>
   </head>
   <body>
@@ -3103,7 +3218,7 @@
         <div class="switch-item">
           <div>
             <div class="switch-label" data-i18n="drinkTimerLabel">开始提醒</div>
-            <div class="switch-sub" id="timerStatus" data-i18n="notifDisabled">未开启</div>
+            <div class="switch-sub" id="timerStatus">未开启</div>
           </div>
           <label class="toggle">
             <input type="checkbox" id="timerToggle" />
@@ -3114,7 +3229,7 @@
         <div class="switch-item">
           <div>
             <div class="switch-label" data-i18n="drinkNotifLabel">弹出通知</div>
-            <div class="switch-sub" id="notifStatus" data-i18n="notifDisabled">未开启</div>
+            <div class="switch-sub" id="notifStatus">未开启</div>
           </div>
           <label class="toggle">
             <input type="checkbox" id="notifToggle" />
@@ -3399,8 +3514,14 @@
         </label>
       </div>
 
-      <!-- 分隔线 -->
-      <div class="theme-divider"></div>
+      <!-- 提醒管理 -->
+      <div class="reminder-section" id="reminderSection">
+        <div class="sidebar-header" style="margin-top:4px;margin-bottom:8px;padding-bottom:8px;">
+          <span class="sidebar-title" data-i18n="reminderTitle">⏰ 提醒管理</span>
+          <button class="sidebar-add-btn" id="addReminderBtn">＋</button>
+        </div>
+        <div class="reminder-list" id="reminderList"></div>
+      </div>
 
       <!-- 分隔线 -->
       <div class="theme-divider"></div>
@@ -3500,6 +3621,42 @@
           <button class="edit-modal-close" id="editModalClose">×</button>
         </div>
         <div class="edit-modal-body" id="editModalBody"></div>
+      </div>
+    </div>
+
+    <!-- 提醒编辑弹窗 -->
+    <div class="reminder-modal" id="reminderModal">
+      <div class="reminder-modal-content">
+        <div class="reminder-modal-header">
+          <span class="reminder-modal-title" id="reminderModalTitle" data-i18n="addReminder">添加提醒</span>
+          <button class="reminder-modal-close" id="reminderModalClose">×</button>
+        </div>
+        <div class="reminder-modal-body" id="reminderModalBody">
+          <div class="reminder-form-row">
+            <label data-i18n="reminderLabel">提醒名称</label>
+            <input class="reminder-input" type="text" id="reminderLabelInput" data-i18n-placeholder="reminderLabelPlaceholder" maxlength="20" />
+          </div>
+          <div class="reminder-form-row">
+            <label data-i18n="reminderIcon">选择图标</label>
+            <div class="reminder-icon-grid" id="reminderIconGrid"></div>
+          </div>
+          <div class="reminder-form-row">
+            <label data-i18n="reminderTimes">提醒时间</label>
+            <div class="reminder-times-list" id="reminderTimesList"></div>
+            <button class="reminder-add-time-btn" id="reminderAddTimeBtn" data-i18n="addTime">＋ 添加时间</button>
+          </div>
+          <div class="reminder-form-row" style="display:flex;align-items:center;justify-content:space-between;">
+            <label data-i18n="reminderEnabled">启用</label>
+            <label class="sb-toggle">
+              <input type="checkbox" id="reminderEnabledInput" checked />
+              <div class="sb-track"></div><div class="sb-thumb"></div>
+            </label>
+          </div>
+        </div>
+        <div class="reminder-modal-footer">
+          <button class="reminder-modal-cancel" id="reminderModalCancel" data-i18n="cancel">取消</button>
+          <button class="reminder-modal-confirm" id="reminderModalConfirm" data-i18n="save">保存</button>
+        </div>
       </div>
     </div>
 

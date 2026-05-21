@@ -9,6 +9,8 @@ const BG_I18N = {
     notifSkip: "没喝",
     testNotifTitle: "测试通知 🔔",
     testNotifBody: "这是一条测试通知，用于验证功能是否正常。",
+    reminderNotifBody: "该{label}啦！",
+    reminderButton: "知道了",
   },
   en: {
     notifTitle: "Drink Reminder 💧",
@@ -17,6 +19,8 @@ const BG_I18N = {
     notifSkip: "Skip",
     testNotifTitle: "Test Notification 🔔",
     testNotifBody: "This is a test notification to verify everything works.",
+    reminderNotifBody: "Time to {label}!",
+    reminderButton: "Got it",
   }
 };
 
@@ -83,11 +87,19 @@ setInterval(() => {
       logInfo("[检查] 无活跃闹钟");
       // 尝试恢复闹钟
       restoreAlarm();
-    } else {
-      alarms.forEach(a => {
-        const remaining = Math.max(0, (a.scheduledTime - Date.now()) / 1000);
-        logInfo("[检查] 闹钟状态", { name: a.name, 剩余秒: remaining.toFixed(1), 周期分钟: a.periodInMinutes });
-      });
+      return;
+    }
+
+    alarms.forEach(a => {
+      const remaining = Math.max(0, (a.scheduledTime - Date.now()) / 1000);
+      logInfo("[检查] 闹钟状态", { name: a.name, 剩余秒: remaining.toFixed(1), 周期分钟: a.periodInMinutes });
+    });
+
+    // 确保提醒检查闹钟存在
+    const hasReminderCheck = alarms.some(a => a.name === "reminderCheck");
+    if (!hasReminderCheck) {
+      logInfo("[检查] reminderCheck 闹钟缺失，重新创建");
+      chrome.alarms.create("reminderCheck", { periodInMinutes: 1 });
     }
   });
 }, 30000);
@@ -112,7 +124,7 @@ function createAlarm(minutes) {
   // 重要：确保 minutes 是有效数字
   const mins = Math.max(Number(minutes) || DEFAULT_MINUTES, 0.001); // 至少约 0.06 秒
   
-  chrome.alarms.clearAll(() => {
+  chrome.alarms.clear("drinkWater", () => {
     chrome.alarms.create("drinkWater", {
       delayInMinutes: mins,
       periodInMinutes: mins,
@@ -211,7 +223,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   if (msg.type === "CANCEL_ALARM") {
     logInfo("取消闹钟");
-    chrome.alarms.clearAll();
+    chrome.alarms.clear("drinkWater");
     chrome.storage.local.set({ timerRunning: false });
     sendResponse({ ok: true });
     return false;
@@ -256,6 +268,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "GET_ALARM_STATUS") {
     chrome.alarms.getAll(sendResponse);
     return true;
+  }
+
+  if (msg.type === "REFRESH_REMINDERS") {
+    loadBgReminders();
+    sendResponse({ ok: true });
+    return false;
   }
   
   return false;
@@ -361,4 +379,155 @@ function recordDrink() {
   });
 }
 
+// ==================== 自定义提醒 ====================
+let bgCustomReminders = [];
+
+function loadBgReminders() {
+  chrome.storage.local.get(["customReminders"], (data) => {
+    bgCustomReminders = data.customReminders || [];
+    logInfo("后台提醒已加载", { count: bgCustomReminders.length });
+    scheduleReminderAlarms();
+  });
+}
+
+// 监听提醒数据变化
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.customReminders) {
+    bgCustomReminders = changes.customReminders.newValue || [];
+    logInfo("提醒数据已更新", { count: bgCustomReminders.length });
+    scheduleReminderAlarms();
+  }
+});
+
+// 计算某个时间（如 "08:30"）的下一次触发时间戳
+function getNextReminderTimestamp(timeStr) {
+  const [h, m] = timeStr.split(":").map(Number);
+  const now = new Date();
+  const target = new Date(now);
+  target.setHours(h, m, 0, 0);
+  // 如果今天已过，则排到明天
+  if (target.getTime() <= now.getTime()) {
+    target.setDate(target.getDate() + 1);
+  }
+  return target.getTime();
+}
+
+// 为每个启用的提醒时间创建独立闹钟
+function scheduleReminderAlarms() {
+  // 先清除所有旧的提醒闹钟
+  chrome.alarms.getAll((alarms) => {
+    alarms.forEach(a => {
+      if (a.name.startsWith("reminder_")) {
+        chrome.alarms.clear(a.name);
+      }
+    });
+
+    // 为每个提醒时间创建新闹钟
+    bgCustomReminders.forEach(r => {
+      if (!r.enabled || !r.times) return;
+      r.times.forEach(timeStr => {
+        const alarmName = `reminder_${r.id}_${timeStr}`;
+        const when = getNextReminderTimestamp(timeStr);
+        chrome.alarms.create(alarmName, { when });
+        logInfo("[提醒闹钟已创建]", { name: alarmName, time: timeStr, at: new Date(when).toLocaleString() });
+      });
+    });
+  });
+}
+
+// 发送提醒通知
+function sendReminderNotification(r, timeStr) {
+  const today = getLocalDateStr();
+
+  // 检查今天是否已触发
+  const last = r.lastTriggered || {};
+  if (last[timeStr] === today) {
+    logInfo("[提醒跳过-已触发]", { label: r.label, time: timeStr });
+    // 仍然要重新调度明天的闹钟
+    rescheduleReminder(r, timeStr);
+    return;
+  }
+
+  logInfo("[提醒触发]", { label: r.label, time: timeStr });
+
+  const notificationId = `reminder_${r.id}_${timeStr}_${Date.now()}`;
+  chrome.notifications.create(notificationId, {
+    type: "basic",
+    iconUrl: "icon128.png",
+    title: `${r.icon || "⏰"} ${r.label}`,
+    message: (bgT("reminderNotifBody") || "该{label}啦！").replace("{label}", r.label),
+    priority: 2,
+    requireInteraction: true,
+    buttons: [
+      { title: bgT("reminderButton") || "知道了" }
+    ]
+  }, () => {
+    if (chrome.runtime.lastError) {
+      logError("提醒通知创建失败", { error: chrome.runtime.lastError.message });
+    } else {
+      // 更新 lastTriggered
+      if (!r.lastTriggered) r.lastTriggered = {};
+      r.lastTriggered[timeStr] = today;
+      // 清理旧数据（只保留今天和昨天）
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
+      Object.keys(r.lastTriggered).forEach(key => {
+        if (key !== today && key !== yesterdayStr) {
+          delete r.lastTriggered[key];
+        }
+      });
+      // 更新 storage
+      chrome.storage.local.get(["customReminders"], (data) => {
+        const all = data.customReminders || [];
+        const idx = all.findIndex(x => x.id === r.id);
+        if (idx >= 0) {
+          all[idx] = r;
+          chrome.storage.local.set({ customReminders: all });
+        }
+      });
+      logInfo("[提醒已记录]", { label: r.label, time: timeStr });
+    }
+    // 重新调度明天的闹钟
+    rescheduleReminder(r, timeStr);
+  });
+}
+
+// 重新调度明天的闹钟
+function rescheduleReminder(r, timeStr) {
+  const alarmName = `reminder_${r.id}_${timeStr}`;
+  const when = getNextReminderTimestamp(timeStr);
+  chrome.alarms.create(alarmName, { when });
+  logInfo("[提醒闹钟已重新调度]", { name: alarmName, at: new Date(when).toLocaleString() });
+}
+
+// 监听闹钟触发
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name.startsWith("reminder_")) {
+    // 解析 alarm name: reminder_{id}_{time}
+    const parts = alarm.name.split("_");
+    // parts[0]="reminder", parts[1]=id, parts[2]=time (may contain ":"), parts[3..]=可能有多余部分
+    // id 可能是 "rem_1234567890"，time 是 "08:00"
+    // 格式: reminder_rem_1234567890_08:00
+    const idWithRem = alarm.name.substring("reminder_".length);
+    // 找到最后一个 "_" 的位置，后面是 time
+    const lastUnderscore = idWithRem.lastIndexOf("_");
+    const id = idWithRem.substring(0, lastUnderscore);
+    const timeStr = idWithRem.substring(lastUnderscore + 1);
+
+    const r = bgCustomReminders.find(x => x.id === id);
+    if (r && r.enabled) {
+      sendReminderNotification(r, timeStr);
+    } else {
+      // 提醒已被删除或禁用，清除此闹钟
+      chrome.alarms.clear(alarm.name);
+    }
+  }
+});
+
+// 启动时加载提醒
+loadBgReminders();
+
 logInfo("后台脚本初始化完成 ✓");
+
+

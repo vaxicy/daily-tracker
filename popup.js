@@ -81,8 +81,8 @@ function switchTab(tab) {
   currentTab = tab;
 
   // 导航高亮
-  ["eat", "drink", "poop", "pee"].forEach(t => {
-    document.getElementById(`nav${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.toggle("active", t === tab);
+  ["eat", "drink", "poop", "pee"].forEach(tabName => {
+    document.getElementById(`nav${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`).classList.toggle("active", tabName === tab);
   });
 
   const oldPage = document.getElementById(`page${oldTab.charAt(0).toUpperCase() + oldTab.slice(1)}`);
@@ -399,7 +399,7 @@ function confirmAddCustomTag() {
     showToast(t("tagExists") || "标签已存在");
     return;
   }
-  if (customMealTags.some(t => t.name === name)) {
+  if (customMealTags.some(tag => tag.name === name)) {
     showToast(t("tagExists") || "标签已存在");
     return;
   }
@@ -486,7 +486,7 @@ function updateMealRecords() {
         const fullnessHtml = meal.fullness ? `<span style="color:var(--muted);">🍽️ ${fullnessLevels[meal.fullness - 1] || ""}</span>` : "";
 
         // 标签显示（手动 + 自动识别）
-        const tagsHtml = meal.tags && meal.tags.length > 0 ? meal.tags.map(t => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--eat);font-size:10px;">${t}</span>`).join("") : "";
+        const tagsHtml = meal.tags && meal.tags.length > 0 ? meal.tags.map(tag => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--eat);font-size:10px;">${tag}</span>`).join("") : "";
 
         // 合并评分、饱腹感、标签到一行
         const metaParts = [ratingHtml, fullnessHtml, tagsHtml].filter(Boolean);
@@ -923,7 +923,7 @@ function showEatEditModal(dateStr, dayRecords) {
           <div>📝 ${t('remarkLabel')}: ${remarkHtml}</div>
           <div>⭐ ${t('rateLabelShort')}: ${ratingStars}</div>
           ${rec.fullness ? `<div>🍽️ ${t('fullnessLabel')}: ${t('fullnessLevels')[rec.fullness - 1] || ""}</div>` : ''}
-          ${rec.tags && rec.tags.length > 0 ? `<div>🏷 ${t('autoTagHint')}: ${rec.tags.map(t => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--eat);font-size:10px;margin-right:3px;">${t}</span>`).join("")}</div>` : ''}
+          ${rec.tags && rec.tags.length > 0 ? `<div>🏷 ${t('autoTagHint')}: ${rec.tags.map(tag => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--eat);font-size:10px;margin-right:3px;">${tag}</span>`).join("")}</div>` : ''}
         </div>
       </div>
       <div class="edit-input-row" id="eatEditForm${idx}" style="display:none;">
@@ -3608,4 +3608,167 @@ loadLanguage(() => {
     btn.classList.toggle("active", btn.dataset.lang === currentLang);
   });
   applyI18n();
+  // 重新应用动态状态文本，避免被 applyI18n 覆盖
+  applyRunningUI(isRunning);
+  applyNotifUI(notifToggle.checked);
 });
+
+// ==================== 自定义提醒 ====================
+// 防御：保存 t 引用，防止运行时回调参数覆盖全局 t
+const _t = (typeof t === 'function') ? t : (key) => key;
+const REMINDER_ICONS = ["⏰","💊","💧","🏃","🍽️","🏋️","📿","🧘","🚶","📋","🔔","🎒","🧪","✏️","🏥"];
+
+let customReminders = [];
+let editingReminderId = null;
+let reminderSelectedIcon = "⏰";
+
+function loadReminders(cb) {
+  chrome.storage.local.get(["customReminders"], (data) => {
+    customReminders = data.customReminders || [];
+    if (cb) cb();
+  });
+}
+
+function saveReminders() {
+  chrome.storage.local.set({ customReminders });
+  chrome.runtime.sendMessage({ type: "REFRESH_REMINDERS" }).catch(() => {});
+}
+
+function renderReminderList() {
+  const list = document.getElementById("reminderList");
+  if (!list) return;
+  if (customReminders.length === 0) {
+    list.innerHTML = `<div class="reminder-empty" data-i18n="noReminders">${_t("noReminders")}</div>`;
+    applyI18n();
+    return;
+  }
+  list.innerHTML = customReminders.map(r => `
+    <div class="reminder-item" data-id="${r.id}">
+      <div class="reminder-item-left">
+        <span class="reminder-item-icon">${r.icon || "⏰"}</span>
+        <div>
+          <div class="reminder-item-label">${r.label}</div>
+          <div class="reminder-item-times">${(r.times || []).map(time => _t("remindAt") + " " + time).join("，")}</div>
+        </div>
+      </div>
+      <div class="reminder-item-actions">
+        <button class="reminder-item-btn edit-reminder" data-id="${r.id}" title="${_t("editReminder")}">✏️</button>
+        <button class="reminder-item-btn delete-reminder" data-id="${r.id}" title="${_t("delete")}">🗑️</button>
+      </div>
+    </div>
+  `).join("");
+  applyI18n();
+}
+
+function openReminderModal(reminder) {
+  editingReminderId = reminder ? reminder.id : null;
+  const modal = document.getElementById("reminderModal");
+  const title = document.getElementById("reminderModalTitle");
+  title.textContent = reminder ? t("editReminder") : t("addReminder");
+  document.getElementById("reminderLabelInput").value = reminder ? reminder.label : "";
+  reminderSelectedIcon = reminder ? (reminder.icon || "⏰") : "⏰";
+  document.getElementById("reminderEnabledInput").checked = reminder ? (!!reminder.enabled) : true;
+
+  const iconGrid = document.getElementById("reminderIconGrid");
+  iconGrid.innerHTML = REMINDER_ICONS.map(ic =>
+    `<button class="reminder-icon-btn ${ic === reminderSelectedIcon ? 'active' : ''}" data-icon="${ic}">${ic}</button>`
+  ).join('');
+  iconGrid.querySelectorAll(".reminder-icon-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      reminderSelectedIcon = btn.dataset.icon;
+      iconGrid.querySelectorAll(".reminder-icon-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    });
+  });
+
+  renderReminderTimes(reminder ? (reminder.times || []) : ["08:00"]);
+  modal.classList.add("show");
+}
+
+function renderReminderTimes(times) {
+  const list = document.getElementById("reminderTimesList");
+  list.innerHTML = times.map((t, i) => `
+    <div class="reminder-time-row">
+      <input type="time" class="reminder-time-input" value="${t}" data-idx="${i}" />
+      <button class="reminder-time-remove" data-idx="${i}">×</button>
+    </div>
+  `).join('');
+  list.querySelectorAll(".reminder-time-remove").forEach(btn => {
+    btn.addEventListener("click", () => {
+      times.splice(parseInt(btn.dataset.idx), 1);
+      renderReminderTimes(times);
+    });
+  });
+}
+
+function closeReminderModal() {
+  document.getElementById("reminderModal").classList.remove("show");
+  editingReminderId = null;
+}
+
+function saveReminder() {
+  const label = document.getElementById("reminderLabelInput").value.trim();
+  if (!label) { showToast(t("reminderLabelRequired") || "请输入提醒名称"); return; }
+  const enabled = document.getElementById("reminderEnabledInput").checked;
+  const times = [];
+  document.querySelectorAll(".reminder-time-input").forEach(inp => {
+    if (inp.value) times.push(inp.value);
+  });
+  if (times.length === 0) { showToast(t("reminderTimeRequired") || "请至少添加一个时间"); return; }
+
+  if (editingReminderId) {
+    const idx = customReminders.findIndex(r => r.id === editingReminderId);
+    if (idx >= 0) {
+      customReminders[idx].label = label;
+      customReminders[idx].icon = reminderSelectedIcon;
+      customReminders[idx].times = times;
+      customReminders[idx].enabled = enabled;
+    }
+    showToast(t("reminderUpdated"));
+  } else {
+    customReminders.push({
+      id: "rem_" + Date.now(),
+      label,
+      icon: reminderSelectedIcon,
+      times,
+      enabled,
+      lastTriggered: {}
+    });
+    showToast(t("reminderAdded"));
+  }
+
+  saveReminders();
+  renderReminderList();
+  closeReminderModal();
+}
+
+document.getElementById("addReminderBtn")?.addEventListener("click", () => openReminderModal(null));
+document.getElementById("reminderModalClose")?.addEventListener("click", closeReminderModal);
+document.getElementById("reminderModalCancel")?.addEventListener("click", closeReminderModal);
+document.getElementById("reminderModalConfirm")?.addEventListener("click", saveReminder);
+document.getElementById("reminderAddTimeBtn")?.addEventListener("click", () => {
+  const list = document.getElementById("reminderTimesList");
+  const currentTimes = [];
+  list.querySelectorAll(".reminder-time-input").forEach(inp => currentTimes.push(inp.value || "08:00"));
+  currentTimes.push("08:00");
+  renderReminderTimes(currentTimes);
+});
+
+document.getElementById("reminderList")?.addEventListener("click", (e) => {
+  const editBtn = e.target.closest(".edit-reminder");
+  if (editBtn) {
+    const r = customReminders.find(r => r.id === editBtn.dataset.id);
+    if (r) openReminderModal(r);
+    return;
+  }
+  const delBtn = e.target.closest(".delete-reminder");
+  if (delBtn) {
+    if (!confirm(t("confirmDeleteReminder"))) return;
+    customReminders = customReminders.filter(r => r.id !== delBtn.dataset.id);
+    saveReminders();
+    renderReminderList();
+    showToast(t("reminderDeleted"));
+  }
+});
+
+loadReminders(() => renderReminderList());
