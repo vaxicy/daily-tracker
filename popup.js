@@ -166,6 +166,8 @@ let selectedFullness = 0; // 0=未选, 1=饿, 2=刚好, 3=撑
 // 饮食快速标签
 const mealTagsRow = document.getElementById("mealTagsRow");
 let selectedMealTags = [];
+let customMealTags = []; // {name, emoji}
+let selectedTagEmoji = "";
 
 // 饮食统计模式
 let eatStatsMode = "week";
@@ -198,11 +200,23 @@ function renderMealTags() {
   const tags = t("mealTags") || [];
   const emojis = t("mealTagEmojis") || [];
   if (!mealTagsRow) return;
-  mealTagsRow.innerHTML = tags.map((tag, i) =>
-    `<button class="meal-tag-btn" data-tag="${tag}" data-idx="${i}">${emojis[i] || ''} ${tag}</button>`
+
+  let html = tags.map((tag, i) =>
+    `<button class="meal-tag-btn ${selectedMealTags.includes(tag) ? 'active' : ''}" data-tag="${tag}" data-idx="${i}">${emojis[i] || ''} ${tag}</button>`
   ).join("");
 
-  mealTagsRow.querySelectorAll(".meal-tag-btn").forEach(btn => {
+  // 自定义标签
+  customMealTags.forEach((ct, i) => {
+    html += `<button class="meal-tag-btn ${selectedMealTags.includes(ct.name) ? 'active' : ''}" data-tag="${ct.name}" data-custom-idx="${i}">${ct.emoji} ${ct.name}<span class="meal-tag-del" data-del-idx="${i}">&times;</span></button>`;
+  });
+
+  // + 自定义按钮
+  html += `<button class="meal-tag-add-btn" id="addCustomTagBtn">${t('customTag') || '\u81EA\u5B9A\u4E49'}</button>`;
+
+  mealTagsRow.innerHTML = html;
+
+  // 预设标签点击
+  mealTagsRow.querySelectorAll(".meal-tag-btn:not([data-custom-idx])").forEach(btn => {
     btn.addEventListener("click", () => {
       const tag = btn.dataset.tag;
       const idx = selectedMealTags.indexOf(tag);
@@ -215,6 +229,43 @@ function renderMealTags() {
       }
     });
   });
+
+  // 自定义标签点击
+  mealTagsRow.querySelectorAll(".meal-tag-btn[data-custom-idx]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      if (e.target.classList.contains("meal-tag-del")) return;
+      const tag = btn.dataset.tag;
+      const idx = selectedMealTags.indexOf(tag);
+      if (idx >= 0) {
+        selectedMealTags.splice(idx, 1);
+        btn.classList.remove("active");
+      } else {
+        selectedMealTags.push(tag);
+        btn.classList.add("active");
+      }
+    });
+  });
+
+  // 删除自定义标签
+  mealTagsRow.querySelectorAll(".meal-tag-del").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.delIdx);
+      const removedName = customMealTags[idx]?.name;
+      customMealTags.splice(idx, 1);
+      // 同时从已选中移除
+      const si = selectedMealTags.indexOf(removedName);
+      if (si >= 0) selectedMealTags.splice(si, 1);
+      saveCustomTags();
+      renderMealTags();
+    });
+  });
+
+  // + 按钮
+  const addBtn = document.getElementById("addCustomTagBtn");
+  if (addBtn) {
+    addBtn.addEventListener("click", openTagModal);
+  }
 }
 
 function clearMealTags() {
@@ -229,12 +280,20 @@ function autoDetectTags(remark) {
     "中式": ["米饭", "面条", "馒头", "炒菜", "中餐", "家常"],
     "西式": ["汉堡", "披萨", "牛排", "意面", "沙拉", "三明治"],
     "日式": ["寿司", "拉面", "刺身", "日料", "天妇罗"],
+    "韩式": ["韩", "泡菜", "石锅", "拌饭", "烤肉", "部队锅"],
+    "泰式": ["泰", "冬阴功", "咖喱", "芒果糯米饭"],
+    "东南亚": ["东南亚", "越南", "印尼", "马来西亚", "新加坡", "咖喱"],
     "清淡": ["粥", "清汤", "蒸", "煮", "清淡"],
     "油腻": ["炸", "煎", "红烧", "油腻", "火锅"],
     "偏咸": ["咸", "腌", "酱", "腊肉"],
     "偏甜": ["甜", "蛋糕", "糖水", "蜜"],
+    "素食": ["素", "蔬菜", "豆腐", "斋"],
+    "海鲜": ["鱼", "虾", "蟹", "贝", "海鲜", "刺身"],
+    "烧烤": ["烧烤", "烤串", "烤肉", "BBQ", "bbq"],
     "外卖": ["外卖", "美团", "饿了么", "配送"],
-    "自炊": ["自己做的", "在家做", "自制"]
+    "自炊": ["自己做的", "在家做", "自制"],
+    "夜宵": ["夜宵", "宵夜", "深夜"],
+    "零食": ["零食", "薯片", "饼干", "坚果", "巧克力"]
   };
   const autoTags = [];
   const lowerRemark = remark.toLowerCase();
@@ -243,16 +302,102 @@ function autoDetectTags(remark) {
       autoTags.push(tag);
     }
   });
+  // 自定义标签：用名称本身做关键词匹配
+  customMealTags.forEach(ct => {
+    if (lowerRemark.includes(ct.name.toLowerCase())) {
+      autoTags.push(ct.name);
+    }
+  });
   return autoTags;
 }
 
 // 初始化饮食页面
 function initEatPage() {
   renderFullnessSelector();
-  renderMealTags();
+  loadCustomTags(() => {
+    renderMealTags();
+  });
   renderEatCalendar();
   updateMealRecords();
   renderEatStats();
+}
+
+// 自定义标签弹窗
+function openTagModal() {
+  const modal = document.getElementById("tagModal");
+  const emojiGrid = document.getElementById("emojiGrid");
+  const nameInput = document.getElementById("tagNameInput");
+  if (!modal || !emojiGrid) return;
+
+  const emojis = ["🍜","🍲","🥗","🍕","🥪","🌮","🌯","🍛","🍝","🍣","🍤","🍗","🍖","🥩","🥓","🍳","🧀","🥖","🥨","🍞","🥐","🥯","🧇","🥞","🍩","🍪","🍫","🍬","🍭","🍮","🍰","🧁","🥧","🍦","🍨","🍧","🍡","🍢","🥟","🥠","🥡","🍱","🍘","🍙","🍚","🍠","🥮","🎂","🍿","🌰","🥜","🍯","🥛","☕","🍵","🧃","🥤","🍶","🍺","🍻","🥂","🍷","🥃","🍸","🍹","🧉","🍾"];
+
+  selectedTagEmoji = "";
+  if (nameInput) nameInput.value = "";
+
+  emojiGrid.innerHTML = emojis.map(e =>
+    `<button class="emoji-btn" data-emoji="${e}">${e}</button>`
+  ).join("");
+
+  emojiGrid.querySelectorAll(".emoji-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      emojiGrid.querySelectorAll(".emoji-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      selectedTagEmoji = btn.dataset.emoji;
+    });
+  });
+
+  modal.classList.add("active");
+}
+
+function closeTagModal() {
+  const modal = document.getElementById("tagModal");
+  if (modal) modal.classList.remove("active");
+  selectedTagEmoji = "";
+}
+
+function confirmAddCustomTag() {
+  const nameInput = document.getElementById("tagNameInput");
+  const name = nameInput ? nameInput.value.trim() : "";
+
+  if (!name) {
+    showToast(t("tagNameRequired") || "请输入标签名称");
+    return;
+  }
+  if (!selectedTagEmoji) {
+    showToast(t("emojiRequired") || "请选择一个 emoji");
+    return;
+  }
+  if (name.length > 6) {
+    showToast(t("tagNameTooLong") || "标签名称最多6个字");
+    return;
+  }
+
+  const allPresetTags = t("mealTags") || [];
+  if (allPresetTags.includes(name)) {
+    showToast(t("tagExists") || "标签已存在");
+    return;
+  }
+  if (customMealTags.some(t => t.name === name)) {
+    showToast(t("tagExists") || "标签已存在");
+    return;
+  }
+
+  customMealTags.push({ name, emoji: selectedTagEmoji });
+  saveCustomTags();
+  renderMealTags();
+  closeTagModal();
+  showToast(t("tagAdded") || "标签已添加");
+}
+
+function loadCustomTags(cb) {
+  chrome.storage.local.get(["customMealTags"], (data) => {
+    customMealTags = data.customMealTags || [];
+    if (cb) cb();
+  });
+}
+
+function saveCustomTags() {
+  chrome.storage.local.set({ customMealTags });
 }
 
 // 评价文本映射
@@ -3045,7 +3190,9 @@ const THEME_PRESETS = {
       "--eat": "#F472B6",
       "--eat2": "#FBCFE8",
       "--pee": "#C084FC",
-      "--pee2": "#E9D5FF"
+      "--pee2": "#E9D5FF",
+      "--poop": "#DB2777",
+      "--poop2": "#F9A8D4"
     },
     bgGradient: "linear-gradient(150deg, #fce7f3 0%, #fbcfe8 100%)"
   },
@@ -3327,6 +3474,14 @@ chrome.storage.local.get(["defaultTab"], (data) => {
 initDrinkTimer();
 updateDrinkStats();
 loadModuleStates();
+
+// 自定义标签弹窗事件
+document.getElementById("tagModalClose")?.addEventListener("click", closeTagModal);
+document.getElementById("tagModalCancel")?.addEventListener("click", closeTagModal);
+document.getElementById("tagModalConfirm")?.addEventListener("click", confirmAddCustomTag);
+document.getElementById("tagModal")?.addEventListener("click", (e) => {
+  if (e.target.id === "tagModal") closeTagModal();
+});
 
 // 语言切换按钮事件
 document.querySelectorAll(".lang-opt").forEach(btn => {

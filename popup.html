@@ -395,17 +395,18 @@
 
       /* 饮食快速标签 */
       .meal-tags-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
         margin-top: 12px;
         margin-bottom: 12px;
       }
       .meal-tag-btn {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 2px;
-        padding: 2px 8px;
+        padding: 4px 2px;
         border-radius: 10px;
         border: 1px solid rgba(245,158,11,0.2);
         background: rgba(245,158,11,0.06);
@@ -425,6 +426,190 @@
         border-color: var(--eat);
         color: var(--eat);
         font-weight: 600;
+      }
+      .meal-tag-del {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+        margin-left: 2px;
+        border-radius: 50%;
+        font-size: 10px;
+        line-height: 1;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .meal-tag-del:hover {
+        background: rgba(239,68,68,0.15);
+        color: #ef4444;
+      }
+
+      /* 自定义标签添加按钮 */
+      .meal-tag-add-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 4px 2px;
+        border-radius: 10px;
+        border: 1px dashed rgba(245,158,11,0.4);
+        background: rgba(245,158,11,0.03);
+        color: var(--muted);
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+      }
+      .meal-tag-add-btn:hover {
+        background: rgba(245,158,11,0.1);
+        border-color: rgba(245,158,11,0.6);
+        color: var(--eat);
+      }
+
+      /* 自定义标签弹窗 */
+      .tag-modal {
+        display: none;
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 200;
+      }
+      .tag-modal.active { display: block; }
+      .tag-modal-content {
+        background: #fff;
+        border-radius: 16px;
+        padding: 12px 14px;
+        width: 244px;
+        max-height: 300px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      }
+      .tag-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 8px;
+        flex-shrink: 0;
+      }
+      .tag-modal-close {
+        background: none;
+        border: none;
+        font-size: 18px;
+        color: var(--muted);
+        cursor: pointer;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.15s;
+      }
+      .tag-modal-close:hover { background: rgba(0,0,0,0.06); }
+      .tag-modal-body {
+        flex: 1;
+        overflow-y: auto;
+        margin-bottom: 8px;
+        scrollbar-width: none;
+      }
+      .tag-modal-body::-webkit-scrollbar { display: none; }
+      .tag-modal-body label {
+        display: block;
+        font-size: 10px;
+        color: var(--muted);
+        margin-bottom: 6px;
+        font-weight: 500;
+      }
+      .emoji-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 5px;
+        margin-bottom: 10px;
+      }
+      .emoji-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        aspect-ratio: 1;
+        font-size: 16px;
+        padding: 1px;
+        border-radius: 7px;
+        border: 1.5px solid transparent;
+        background: rgba(245,158,11,0.06);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .emoji-btn:hover { background: rgba(245,158,11,0.15); transform: scale(1.06); }
+      .emoji-btn.selected {
+        border-color: var(--eat);
+        background: rgba(245,158,11,0.15);
+      }
+      .tag-name-input {
+        width: 100%;
+        padding: 7px 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(245,158,11,0.2);
+        background: rgba(255,255,255,0.9);
+        color: var(--text);
+        font: inherit;
+        font-size: 12px;
+        outline: none;
+      }
+      .tag-name-input:focus { border-color: var(--eat); }
+      .tag-modal-footer {
+        display: flex;
+        gap: 6px;
+        justify-content: flex-end;
+        flex-shrink: 0;
+      }
+      .tag-modal-btn {
+        padding: 5px 12px;
+        border-radius: 8px;
+        border: none;
+        font: inherit;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .tag-modal-cancel {
+        background: rgba(12,42,77,0.06);
+        color: var(--text);
+      }
+      .tag-modal-cancel:hover { background: rgba(12,42,77,0.12); }
+      .tag-modal-confirm {
+        background: linear-gradient(135deg, var(--eat), var(--eat2));
+        color: #fff;
+      }
+      .tag-modal-confirm:hover { transform: translateY(-1px); }
+
+      /* 暗色主题覆盖 */
+      [data-theme="dark"] .tag-modal-content {
+        background: #1e1e2e;
+      }
+      [data-theme="dark"] .tag-name-input {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(255,255,255,0.1);
+        color: #e0e0e0;
+      }
+      [data-theme="dark"] .tag-modal-close:hover {
+        background: rgba(255,255,255,0.08);
+      }
+      [data-theme="dark"] .emoji-btn {
+        background: rgba(245,158,11,0.08);
+      }
+      [data-theme="dark"] .tag-modal-cancel {
+        background: rgba(255,255,255,0.08);
+        color: #e0e0e0;
       }
 
       .eat-stats {
@@ -1086,7 +1271,7 @@
         gap: 8px;
         margin: 10px 0 4px;
         padding: 6px 12px;
-        background: rgba(124,58,237,0.04);
+        background: color-mix(in srgb, var(--poop), transparent 96%);
         border-radius: 8px;
       }
       .poop-amount-label {
@@ -1101,7 +1286,7 @@
       .poop-amount-btn {
         padding: 3px 10px;
         border-radius: 12px;
-        border: 1px solid rgba(124,58,237,0.2);
+        border: 1px solid color-mix(in srgb, var(--poop), transparent 80%);
         background: rgba(255,255,255,0.8);
         color: var(--muted);
         font-size: 11px;
@@ -1124,7 +1309,7 @@
       .poop-amount-btn-sm {
         padding: 2px 8px;
         border-radius: 10px;
-        border: 1px solid rgba(124,58,237,0.2);
+        border: 1px solid color-mix(in srgb, var(--poop), transparent 80%);
         background: rgba(255,255,255,0.8);
         color: var(--muted);
         font-size: 10px;
@@ -1421,8 +1606,8 @@
         box-shadow: 0 4px 16px rgba(16,185,129,0.08);
       }
       .stats-card.poop-stats {
-        border-color: rgba(124,58,237,0.15);
-        box-shadow: 0 4px 16px rgba(124,58,237,0.08);
+        border-color: color-mix(in srgb, var(--poop), transparent 85%);
+        box-shadow: 0 4px 16px color-mix(in srgb, var(--poop), transparent 92%);
       }
       .poop-stats-body {
         background: rgba(255,255,255,0.5);
@@ -1463,8 +1648,8 @@
         font-weight: 700;
       }
       .stats-card.poop-stats .stats-detail-item {
-        background: rgba(124,58,237,0.06);
-        border-color: rgba(124,58,237,0.12);
+        background: color-mix(in srgb, var(--poop), transparent 94%);
+        border-color: color-mix(in srgb, var(--poop), transparent 88%);
       }
       .stats-card.poop-stats .stats-detail-item .detail-val {
         color: var(--poop);
@@ -2609,7 +2794,7 @@
       [data-theme="dark"] .poop-amount-btn,
       [data-theme="dark"] .poop-amount-btn-sm {
         background: rgba(15,23,42,0.6);
-        border-color: rgba(124,58,237,0.25);
+        border-color: color-mix(in srgb, var(--poop), transparent 75%);
         color: rgba(226,232,240,0.7);
       }
       [data-theme="dark"] .poop-amount-btn:hover,
@@ -2661,8 +2846,8 @@
         color: rgba(226,232,240,0.8);
       }
       [data-theme="dark"] .stats-card.poop-stats .stats-detail-item {
-        background: rgba(124,58,237,0.18);
-        border-color: rgba(124,58,237,0.35);
+        background: color-mix(in srgb, var(--poop), transparent 82%);
+        border-color: color-mix(in srgb, var(--poop), transparent 65%);
         color: rgba(226,232,240,0.9);
       }
 
@@ -2818,6 +3003,30 @@
 
         <!-- 饮食快速标签 -->
         <div class="meal-tags-row" id="mealTagsRow"></div>
+
+        <!-- 自定义标签弹窗 -->
+        <div class="tag-modal" id="tagModal">
+          <div class="tag-modal-content">
+            <div class="tag-modal-header">
+              <span data-i18n="addCustomTag">添加自定义标签</span>
+              <button class="tag-modal-close" id="tagModalClose">&times;</button>
+            </div>
+            <div class="tag-modal-body">
+              <div class="emoji-section">
+                <label data-i18n="chooseEmoji">选择 emoji</label>
+                <div class="emoji-grid" id="emojiGrid"></div>
+              </div>
+              <div class="tag-name-section">
+                <label data-i18n="tagName">标签名称</label>
+                <input type="text" class="tag-name-input" id="tagNameInput" maxlength="6" data-i18n-placeholder="tagNamePlaceholder" placeholder="输入标签名称（最多6字）" />
+              </div>
+            </div>
+            <div class="tag-modal-footer">
+              <button class="tag-modal-btn tag-modal-cancel" id="tagModalCancel" data-i18n="cancel">取消</button>
+              <button class="tag-modal-btn tag-modal-confirm" id="tagModalConfirm" data-i18n="confirm">确定</button>
+            </div>
+          </div>
+        </div>
 
         <div class="meal-records" id="mealRecords">
           <div class="meal-records-header" id="mealRecordsHeader">
