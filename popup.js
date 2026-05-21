@@ -929,15 +929,37 @@ function showEatEditModal(dateStr, dayRecords) {
         <input class="edit-input" type="text" id="eatEditRemark${idx}" value="${rec.remark || ''}" placeholder="${t('editRemarkPlaceholder')}" maxlength="50" />
       </div>
       <div class="edit-input-row" id="eatEditFormRating${idx}" style="display:none;align-items:center;gap:8px;">
-        <span style="font-size:11px;color:var(--muted);">${t('rateLabelShort')}：</span>
-        <select id="eatEditRating${idx}" class="edit-type-select" style="width:auto;">
-          <option value="0" ${!rec.rating ? 'selected' : ''}>${t('ratingNone')}</option>
-          <option value="1" ${rec.rating === 1 ? 'selected' : ''}>⭐ ${t('ratingTexts')[0]}</option>
-          <option value="2" ${rec.rating === 2 ? 'selected' : ''}>⭐⭐ ${t('ratingTexts')[1]}</option>
-          <option value="3" ${rec.rating === 3 ? 'selected' : ''}>⭐⭐⭐ ${t('ratingTexts')[2]}</option>
-          <option value="4" ${rec.rating === 4 ? 'selected' : ''}>⭐⭐⭐⭐ ${t('ratingTexts')[3]}</option>
-          <option value="5" ${rec.rating === 5 ? 'selected' : ''}>⭐⭐⭐⭐⭐ ${t('ratingTexts')[4]}</option>
-        </select>
+        <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${t('rateLabelShort')}：</span>
+        <div class="edit-rating-stars" id="eatEditRatingStars${idx}" style="display:flex;gap:2px;">
+          ${[1,2,3,4,5].map(r => `<span class="edit-star" data-rating="${r}" style="cursor:pointer;font-size:16px;opacity:${(rec.rating||0) >= r ? '1' : '0.3'};">⭐</span>`).join('')}
+        </div>
+        <span class="edit-rating-text" id="eatEditRatingText${idx}" style="font-size:10px;color:var(--eat);font-weight:600;">${getRatingTextMap()[rec.rating || 0] || t('ratingNone')}</span>
+        <input type="hidden" id="eatEditRating${idx}" value="${rec.rating || 0}" />
+      </div>
+      <div class="edit-input-row" id="eatEditFormFullness${idx}" style="display:none;align-items:center;gap:8px;">
+        <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${t('fullnessLabel')}：</span>
+        <div class="edit-fullness-btns" id="eatEditFullnessBtns${idx}" style="display:flex;gap:4px;">
+          ${(t('fullnessLevels') || []).map((lvl, i) => `<button class="edit-fullness-btn ${(rec.fullness || 0) === i+1 ? 'active' : ''}" data-level="${i+1}" style="padding:3px 10px;border-radius:12px;border:1px solid rgba(245,158,11,0.2);background:rgba(255,255,255,0.8);color:var(--text);font-size:11px;cursor:pointer;user-select:none;">${lvl}</button>`).join('')}
+        </div>
+        <input type="hidden" id="eatEditFullness${idx}" value="${rec.fullness || 0}" />
+      </div>
+      <div class="edit-input-row" id="eatEditFormTags${idx}" style="display:none;">
+        <span style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px;">${t('autoTagHint')}：</span>
+        <div class="edit-tags-grid" id="eatEditTagsGrid${idx}" style="display:flex;flex-wrap:wrap;gap:4px;">
+          ${(() => {
+            const allTags = (t('mealTags') || []);
+            const allEmojis = (t('mealTagEmojis') || []);
+            let tagHtml = allTags.map((tag, i) => {
+              const isActive = rec.tags && rec.tags.includes(tag);
+              return `<button class="edit-tag-btn ${isActive ? 'active' : ''}" data-tag="${tag}" style="display:inline-flex;align-items:center;gap:2px;padding:2px 6px;border-radius:8px;border:1px solid ${isActive ? 'var(--eat)' : 'rgba(245,158,11,0.2)'};background:${isActive ? 'rgba(245,158,11,0.15)' : 'rgba(245,158,11,0.06)'};color:${isActive ? 'var(--eat)' : 'var(--text)'};font-size:10px;cursor:pointer;user-select:none;">${allEmojis[i] || ''} ${tag}</button>`;
+            }).join('');
+            customMealTags.forEach((ct, ci) => {
+              const isActive = rec.tags && rec.tags.includes(ct.name);
+              tagHtml += `<button class="edit-tag-btn ${isActive ? 'active' : ''}" data-tag="${ct.name}" data-custom="1" style="display:inline-flex;align-items:center;gap:2px;padding:2px 6px;border-radius:8px;border:1px solid ${isActive ? 'var(--eat)' : 'rgba(245,158,11,0.2)'};background:${isActive ? 'rgba(245,158,11,0.15)' : 'rgba(245,158,11,0.06)'};color:${isActive ? 'var(--eat)' : 'var(--text)'};font-size:10px;cursor:pointer;user-select:none;">${ct.emoji} ${ct.name}</button>`;
+            });
+            return tagHtml;
+          })()}
+        </div>
       </div>
       <div class="edit-input-row" id="eatEditFormButtons${idx}" style="display:none;">
         <button class="edit-save-btn" data-action="save-eat" data-index="${idx}">${t('saveEdit')}</button>
@@ -3032,8 +3054,72 @@ editModalBody.addEventListener("click", (e) => {
     document.getElementById("eatEditFormContent" + idx).style.display = "block";
     document.getElementById("eatEditFormRemark" + idx).style.display = "block";
     document.getElementById("eatEditFormRating" + idx).style.display = "flex";
+    document.getElementById("eatEditFormFullness" + idx).style.display = "flex";
+    document.getElementById("eatEditFormTags" + idx).style.display = "block";
     document.getElementById("eatEditFormButtons" + idx).style.display = "block";
     document.getElementById("eatContent" + idx).style.display = "none";
+
+    // 绑定星级交互
+    const starContainer = document.getElementById("eatEditRatingStars" + idx);
+    if (starContainer && !starContainer.dataset.bound) {
+      starContainer.dataset.bound = "1";
+      let editRating = parseInt(document.getElementById("eatEditRating" + idx).value) || 0;
+      starContainer.querySelectorAll(".edit-star").forEach(star => {
+        star.addEventListener("click", () => {
+          const r = parseInt(star.dataset.rating);
+          editRating = editRating === r ? 0 : r;
+          document.getElementById("eatEditRating" + idx).value = editRating;
+          starContainer.querySelectorAll(".edit-star").forEach((s, i) => {
+            s.style.opacity = i < editRating ? "1" : "0.3";
+          });
+          document.getElementById("eatEditRatingText" + idx).textContent = getRatingTextMap()[editRating] || t('ratingNone');
+        });
+      });
+    }
+
+    // 绑定饱腹感交互
+    const fullnessContainer = document.getElementById("eatEditFullnessBtns" + idx);
+    if (fullnessContainer && !fullnessContainer.dataset.bound) {
+      fullnessContainer.dataset.bound = "1";
+      fullnessContainer.querySelectorAll(".edit-fullness-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const level = parseInt(btn.dataset.level);
+          const currentLevel = parseInt(document.getElementById("eatEditFullness" + idx).value) || 0;
+          const newLevel = currentLevel === level ? 0 : level;
+          document.getElementById("eatEditFullness" + idx).value = newLevel;
+          fullnessContainer.querySelectorAll(".edit-fullness-btn").forEach(b => {
+            const isActive = parseInt(b.dataset.level) === newLevel;
+            b.classList.toggle("active", isActive);
+            b.style.background = isActive ? 'var(--eat)' : 'rgba(255,255,255,0.8)';
+            b.style.color = isActive ? '#fff' : 'var(--text)';
+            b.style.borderColor = isActive ? 'var(--eat)' : 'rgba(245,158,11,0.2)';
+          });
+        });
+      });
+    }
+
+    // 绑定标签交互
+    const tagsContainer = document.getElementById("eatEditTagsGrid" + idx);
+    if (tagsContainer && !tagsContainer.dataset.bound) {
+      tagsContainer.dataset.bound = "1";
+      tagsContainer.querySelectorAll(".edit-tag-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const tag = btn.dataset.tag;
+          const isActive = btn.classList.contains("active");
+          if (isActive) {
+            btn.classList.remove("active");
+            btn.style.borderColor = 'rgba(245,158,11,0.2)';
+            btn.style.background = 'rgba(245,158,11,0.06)';
+            btn.style.color = 'var(--text)';
+          } else {
+            btn.classList.add("active");
+            btn.style.borderColor = 'var(--eat)';
+            btn.style.background = 'rgba(245,158,11,0.15)';
+            btn.style.color = 'var(--eat)';
+          }
+        });
+      });
+    }
   } else if (action === "save-eat") {
     const newType = document.getElementById("eatEditType" + idx).value;
     const newContent = document.getElementById("eatEditContent" + idx).value.trim();
@@ -3045,10 +3131,13 @@ editModalBody.addEventListener("click", (e) => {
       const [h, m] = editTimeEl.value.split(":");
       newTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
     }
-    // 获取编辑后的备注和评价
+    // 获取编辑后的备注、评价、饱腹感和标签
     const newRemark = document.getElementById("eatEditRemark" + idx) ? document.getElementById("eatEditRemark" + idx).value.trim() : "";
     const newRating = document.getElementById("eatEditRating" + idx) ? parseInt(document.getElementById("eatEditRating" + idx).value) : 0;
-    
+    const newFullness = document.getElementById("eatEditFullness" + idx) ? parseInt(document.getElementById("eatEditFullness" + idx).value) || undefined : undefined;
+    const tagsGrid = document.getElementById("eatEditTagsGrid" + idx);
+    const newTags = tagsGrid ? Array.from(tagsGrid.querySelectorAll(".edit-tag-btn.active")).map(b => b.dataset.tag) : undefined;
+
     chrome.storage.local.get(["mealRecords"], (data) => {
       const records = data.mealRecords || {};
       if (records[currentEditDate] && records[currentEditDate][idx]) {
@@ -3056,6 +3145,8 @@ editModalBody.addEventListener("click", (e) => {
         records[currentEditDate][idx].content = newContent;
         records[currentEditDate][idx].remark = newRemark;
         records[currentEditDate][idx].rating = newRating;
+        records[currentEditDate][idx].fullness = newFullness;
+        records[currentEditDate][idx].tags = newTags && newTags.length > 0 ? newTags : undefined;
         if (newTime) records[currentEditDate][idx].time = newTime;
         chrome.storage.local.set({ mealRecords: records }, () => {
           showToast(t("toastEditSuccess"));
