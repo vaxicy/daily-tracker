@@ -178,13 +178,7 @@
         align-items: center;
         gap: 6px;
       }
-      .meal-toggle {
-        font-size: 10px;
-        color: var(--muted);
-        transition: transform 0.2s;
-      }
-      .meal-toggle.collapsed { transform: rotate(-90deg); }
-      .meal-records-list.collapsed { display: none; }
+
       .meal-item {
         display: flex;
         flex-direction: column;
@@ -394,12 +388,39 @@
       }
 
       /* 饮食快速标签 */
+      .meal-tags-wrap {
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+      .meal-tags-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 6px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .meal-tags-toggle {
+        background: none;
+        border: none;
+        font-size: 10px;
+        color: var(--muted);
+        cursor: pointer;
+        padding: 2px 4px;
+        transition: transform 0.2s ease;
+      }
+      .meal-tags-wrap.collapsed .meal-tags-row {
+        display: none;
+      }
+      .meal-tags-wrap.collapsed .meal-tags-toggle {
+        transform: rotate(-90deg);
+      }
       .meal-tags-row {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 6px;
-        margin-top: 12px;
-        margin-bottom: 12px;
       }
       .meal-tag-btn {
         display: inline-flex;
@@ -3002,7 +3023,13 @@
         <button class="btn-eat" id="addMealBtn" data-i18n="addMeal">🍽️ 记录饮食</button>
 
         <!-- 饮食快速标签 -->
-        <div class="meal-tags-row" id="mealTagsRow"></div>
+        <div class="meal-tags-wrap" id="mealTagsWrap">
+          <div class="meal-tags-header" id="mealTagsHeader">
+            <span data-i18n="mealTagsLabel">🏷 快捷标签</span>
+            <button class="meal-tags-toggle" id="mealTagsToggle" type="button">▼</button>
+          </div>
+          <div class="meal-tags-row" id="mealTagsRow"></div>
+        </div>
 
         <!-- 自定义标签弹窗 -->
         <div class="tag-modal" id="tagModal">
@@ -3033,7 +3060,6 @@
             <span class="meal-records-title">
               📋 <span data-i18n="todayMeals">今日饮食</span> (<span id="mealCount">0</span> <span data-i18n="itemCount">条</span>)
             </span>
-            <span class="meal-toggle" id="mealToggle">▼</span>
           </div>
           <div class="meal-records-list" id="mealRecordsList"></div>
         </div>

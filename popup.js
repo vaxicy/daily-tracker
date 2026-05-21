@@ -149,14 +149,11 @@ const mealInput = document.getElementById("mealInput");
 const mealTypeSelect = document.getElementById("mealType");
 const addMealBtn = document.getElementById("addMealBtn");
 const mealRecordsList = document.getElementById("mealRecordsList");
-const mealRecordsHeader = document.getElementById("mealRecordsHeader");
-const mealToggle = document.getElementById("mealToggle");
 const mealCount = document.getElementById("mealCount");
 const mealRemarkInput = document.getElementById("mealRemarkInput");
 const mealRating = document.getElementById("mealRating");
 const mealRatingText = document.getElementById("mealRatingText");
 
-let isMealExpanded = true;
 let currentMealRating = 0; // 当前选中的评分
 
 // 饱腹感选择器
@@ -165,9 +162,13 @@ let selectedFullness = 0; // 0=未选, 1=饿, 2=刚好, 3=撑
 
 // 饮食快速标签
 const mealTagsRow = document.getElementById("mealTagsRow");
+const mealTagsWrap = document.getElementById("mealTagsWrap");
+const mealTagsHeader = document.getElementById("mealTagsHeader");
+const mealTagsToggle = document.getElementById("mealTagsToggle");
 let selectedMealTags = [];
 let customMealTags = []; // {name, emoji}
 let selectedTagEmoji = "";
+let isMealTagsCollapsed = false;
 
 // 饮食统计模式
 let eatStatsMode = "week";
@@ -266,6 +267,21 @@ function renderMealTags() {
   if (addBtn) {
     addBtn.addEventListener("click", openTagModal);
   }
+
+  // 更新折叠箭头
+  if (mealTagsToggle) {
+    mealTagsToggle.textContent = isMealTagsCollapsed ? "▶" : "▼";
+  }
+}
+
+function toggleMealTagsCollapse() {
+  isMealTagsCollapsed = !isMealTagsCollapsed;
+  if (mealTagsWrap) {
+    mealTagsWrap.classList.toggle("collapsed", isMealTagsCollapsed);
+  }
+  if (mealTagsToggle) {
+    mealTagsToggle.textContent = isMealTagsCollapsed ? "▶" : "▼";
+  }
 }
 
 function clearMealTags() {
@@ -285,13 +301,12 @@ function autoDetectTags(remark) {
     "东南亚": ["东南亚", "越南", "印尼", "马来西亚", "新加坡", "咖喱"],
     "清淡": ["粥", "清汤", "蒸", "煮", "清淡"],
     "油腻": ["炸", "煎", "红烧", "油腻", "火锅"],
-    "偏咸": ["咸", "腌", "酱", "腊肉"],
-    "偏甜": ["甜", "蛋糕", "糖水", "蜜"],
     "素食": ["素", "蔬菜", "豆腐", "斋"],
     "海鲜": ["鱼", "虾", "蟹", "贝", "海鲜", "刺身"],
     "烧烤": ["烧烤", "烤串", "烤肉", "BBQ", "bbq"],
     "外卖": ["外卖", "美团", "饿了么", "配送"],
     "自炊": ["自己做的", "在家做", "自制"],
+    "路边摊": ["路边摊", "小摊", "摆摊", "夜市"],
     "夜宵": ["夜宵", "宵夜", "深夜"],
     "零食": ["零食", "薯片", "饼干", "坚果", "巧克力"]
   };
@@ -317,6 +332,13 @@ function initEatPage() {
   loadCustomTags(() => {
     renderMealTags();
   });
+  if (mealTagsHeader) {
+    mealTagsHeader.addEventListener("click", (e) => {
+      if (e.target.closest(".meal-tags-toggle") || e.target === mealTagsHeader) {
+        toggleMealTagsCollapse();
+      }
+    });
+  }
   renderEatCalendar();
   updateMealRecords();
   renderEatStats();
@@ -441,12 +463,6 @@ if (mealRating) {
     });
   });
 }
-
-mealRecordsHeader.addEventListener("click", () => {
-  isMealExpanded = !isMealExpanded;
-  mealToggle.classList.toggle("collapsed", !isMealExpanded);
-  mealRecordsList.classList.toggle("collapsed", !isMealExpanded);
-});
 
 function updateMealRecords() {
   const today = getToday();
