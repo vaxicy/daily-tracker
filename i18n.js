@@ -129,10 +129,11 @@ const I18N = {
     poopAmountLabel: "排便量",
     weekTotal: "本周合计",
     monthTotal: "本月合计",
-    normalCount: "正常 {n} 次",
-    abnormalCount: "异常 {n} 次",
-    normalRatio: "正常率 {r}%",
-    consecutiveNormal: "连续正常 {n} 天",
+    idealCount: "理想型 {n}",
+    hardCount: "偏硬型 {n}",
+    softCount: "偏软型 {n}",
+    idealRatio: "理想型占比 {r}%",
+    consecutiveIdeal: "连续理想 {n} 天",
     statsTitle: "累计统计",
 
     // 撒尿页面
@@ -376,10 +377,11 @@ const I18N = {
     bristolPrefix: "Bristol ",
     weekTotal: "This week",
     monthTotal: "This month",
-    normalCount: "Normal: {n}",
-    abnormalCount: "Abnormal: {n}",
-    normalRatio: "Normal rate: {r}%",
-    consecutiveNormal: "Consecutive: {n} days",
+    idealCount: "Ideal: {n}",
+    hardCount: "Hard: {n}",
+    softCount: "Soft: {n}",
+    idealRatio: "Ideal ratio: {r}%",
+    consecutiveIdeal: "Ideal streak: {n} days",
     statsTitle: "Statistics",
 
     // Pee page

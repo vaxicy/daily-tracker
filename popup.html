@@ -1648,21 +1648,29 @@
       .stats-detail {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 5px;
         margin-top: 10px;
         justify-content: center;
       }
       .stats-detail-item {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 5px 12px;
-        border-radius: 14px;
+        gap: 3px;
+        padding: 4px 9px;
+        border-radius: 12px;
         background: rgba(139,92,246,0.06);
         border: 1px solid rgba(139,92,246,0.12);
         font-size: 12px;
         color: var(--muted);
         white-space: nowrap;
+      }
+      .stats-card.poop-stats .stats-detail {
+        gap: 4px;
+        padding: 0 6px;
+      }
+      .stats-card.poop-stats .stats-detail-item {
+        padding: 3px 8px;
+        font-size: 11px;
       }
       .stats-detail-item .detail-val {
         color: var(--secondary);

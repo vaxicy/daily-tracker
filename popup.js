@@ -2303,8 +2303,9 @@ function updatePoopStats() {
   chrome.storage.local.get(["poopRecords"], (data) => {
     const records = data.poopRecords || {};
     let count = 0;
-    let normalCount = 0;
-    let abnormalCount = 0;
+    let idealCount = 0;
+    let hardCount = 0;
+    let softCount = 0;
     let totalWithBristol = 0;
     const today = getToday();
 
@@ -2320,9 +2321,11 @@ function updatePoopStats() {
           if (rec.bristolType) {
             totalWithBristol++;
             if (rec.bristolType >= 3 && rec.bristolType <= 4) {
-              normalCount++;
+              idealCount++;
+            } else if (rec.bristolType <= 2) {
+              hardCount++;
             } else {
-              abnormalCount++;
+              softCount++;
             }
           }
         });
@@ -2341,9 +2344,11 @@ function updatePoopStats() {
           if (rec.bristolType) {
             totalWithBristol++;
             if (rec.bristolType >= 3 && rec.bristolType <= 4) {
-              normalCount++;
+              idealCount++;
+            } else if (rec.bristolType <= 2) {
+              hardCount++;
             } else {
-              abnormalCount++;
+              softCount++;
             }
           }
         });
@@ -2358,20 +2363,19 @@ function updatePoopStats() {
     if (detailEl) {
       let html = "";
       if (totalWithBristol > 0) {
-        const ratio = Math.round(normalCount / totalWithBristol * 100);
-        html += `<span class="stats-detail-item">${t('normalCount', { n: normalCount }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
-        html += `<span class="stats-detail-item">${t('abnormalCount', { n: abnormalCount }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
-        html += `<span class="stats-detail-item">${t('normalRatio', { r: ratio }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
+        html += `<span class="stats-detail-item">${t('idealCount', { n: idealCount }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
+        html += `<span class="stats-detail-item">${t('hardCount', { n: hardCount }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
+        html += `<span class="stats-detail-item">${t('softCount', { n: softCount }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
       }
-      // 连续正常天数
+      // 连续理想天数
       let streak = 0;
       const d = new Date(today);
       while (true) {
         const ds = formatDate(d);
         const dayRecords = records[ds] || [];
-        const hasNormal = dayRecords.some(rec => rec.bristolType && rec.bristolType >= 3 && rec.bristolType <= 4);
+        const hasIdeal = dayRecords.some(rec => rec.bristolType && rec.bristolType >= 3 && rec.bristolType <= 4);
         const hasAny = dayRecords.length > 0;
-        if (hasNormal) {
+        if (hasIdeal) {
           streak++;
           d.setDate(d.getDate() - 1);
         } else if (!hasAny) {
@@ -2382,7 +2386,7 @@ function updatePoopStats() {
         }
       }
       if (streak > 0) {
-        html += `<span class="stats-detail-item">${t('consecutiveNormal', { n: streak }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
+        html += `<span class="stats-detail-item">${t('consecutiveIdeal', { n: streak }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
       }
       detailEl.innerHTML = html;
     }
