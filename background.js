@@ -366,16 +366,42 @@ function recordDrink() {
     if (!records[today]) records[today] = [];
     records[today].push({ time, timestamp: Date.now() });
 
+    // 保存主数据，并在回调中验证保存是否成功
     chrome.storage.local.set({ drinkRecords: records }, () => {
       if (chrome.runtime.lastError) {
         logError("保存喝水记录失败", { error: chrome.runtime.lastError.message });
+        // 尝试再次保存
+        setTimeout(() => {
+          chrome.storage.local.set({ drinkRecords: records }, () => {
+            if (chrome.runtime.lastError) {
+              logError("重试保存喝水记录失败", { error: chrome.runtime.lastError.message });
+            } else {
+              logInfo("重试保存喝水记录成功", { today, time });
+              // 保存成功后，同时保存一个备份
+              saveDrinkBackup(records);
+            }
+          });
+        }, 500);
       } else {
         logInfo("喝水已记录", { today, time, total: records[today].length });
+        // 保存成功后，同时保存一个备份
+        saveDrinkBackup(records);
       }
     });
 
     // 通知 popup 刷新统计数据（popup 可能未打开，忽略发送失败）
     chrome.runtime.sendMessage({ type: "DRINK_RECORDED" }).catch(() => {});
+  });
+}
+
+// 保存喝水记录的备份（防止主数据丢失）
+function saveDrinkBackup(records) {
+  chrome.storage.local.set({ drinkRecordsBackup: records }, () => {
+    if (chrome.runtime.lastError) {
+      logError("保存喝水记录备份失败", { error: chrome.runtime.lastError.message });
+    } else {
+      logInfo("喝水记录备份已保存");
+    }
   });
 }
 

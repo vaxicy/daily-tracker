@@ -16,6 +16,40 @@ function getToday() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
+// 数据迁移：将旧的 fullness 值(1/2/3)迁移到新的值(1/2/3/4/5)
+function migrateFullnessData() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(["mealRecords"], (data) => {
+      const records = data.mealRecords || {};
+      let needsMigration = false;
+      
+      // 遍历所有日期的记录
+      for (const dateStr in records) {
+        records[dateStr].forEach(meal => {
+          if (meal.fullness && meal.fullness >= 1 && meal.fullness <= 3) {
+            // 旧数据：1=饿, 2=刚好, 3=撑
+            // 新数据：1=很饿, 2=有点饿, 3=刚好, 4=有点撑, 5=很撑
+            const oldValue = meal.fullness;
+            const mapping = { 1: 2, 2: 3, 3: 4 }; // 旧值映射到新值（取中间偏左）
+            meal.fullness = mapping[oldValue];
+            needsMigration = true;
+          }
+        });
+      }
+      
+      // 如果有需要迁移的数据，保存回 storage
+      if (needsMigration) {
+        chrome.storage.local.set({ mealRecords: records }, () => {
+          console.log("Fullness data migrated successfully");
+          resolve();
+        });
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
 const CN_NUMS = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
 function toChineseNum(n) {
   if (n <= 10) return CN_NUMS[n];
@@ -327,7 +361,10 @@ function autoDetectTags(remark) {
 }
 
 // 初始化饮食页面
-function initEatPage() {
+async function initEatPage() {
+  // 先迁移旧数据，等待完成后再渲染
+  await migrateFullnessData();
+  
   renderFullnessSelector();
   loadCustomTags(() => {
     renderMealTags();
@@ -955,7 +992,7 @@ function showEatEditModal(dateStr, dayRecords) {
       <div class="edit-input-row" id="eatEditFormFullness${idx}" style="display:none;align-items:center;gap:8px;">
         <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${t('fullnessLabel')}：</span>
         <div class="edit-fullness-btns" id="eatEditFullnessBtns${idx}" style="display:flex;gap:4px;">
-          ${(t('fullnessLevels') || []).map((lvl, i) => `<button class="edit-fullness-btn ${(rec.fullness || 0) === i+1 ? 'active' : ''}" data-level="${i+1}" style="padding:3px 10px;border-radius:12px;border:1px solid rgba(245,158,11,0.2);background:rgba(255,255,255,0.8);color:var(--text);font-size:11px;cursor:pointer;user-select:none;">${lvl}</button>`).join('')}
+          ${(t('fullnessLevels') || []).map((lvl, i) => `<button class="edit-fullness-btn ${(rec.fullness || 0) === i+1 ? 'active' : ''}" data-level="${i+1}" style="padding:3px 6px;border-radius:12px;border:1px solid rgba(245,158,11,0.2);background:rgba(255,255,255,0.8);color:var(--text);font-size:10px;cursor:pointer;user-select:none;">${lvl}</button>`).join('')}
         </div>
         <input type="hidden" id="eatEditFullness${idx}" value="${rec.fullness || 0}" />
       </div>
@@ -1327,8 +1364,28 @@ function updateDrinkUI() {
 }
 
 function updateDrinkStats() {
-  chrome.storage.local.get(["drinkRecords"], (data) => {
-    const records = data.drinkRecords || {};
+  // 先从 storage 读取数据，如果主数据丢失，尝试从备份恢复
+  chrome.storage.local.get(["drinkRecords", "drinkRecordsBackup"], (data) => {
+    // 检查主数据是否真的存在（hasOwnProperty 可以区分"key不存在"和"key存在但值为undefined"）
+    const mainDataExists = data.hasOwnProperty("drinkRecords");
+    const backupDataExists = data.hasOwnProperty("drinkRecordsBackup");
+
+    let records = data.drinkRecords || {};
+    const backup = data.drinkRecordsBackup || {};
+
+    // 数据完整性检查：只有主数据确实不存在（而不是存在但为空），才从备份恢复
+    if (!mainDataExists && backupDataExists && Object.keys(backup).length > 0) {
+      // 主数据丢失，从备份恢复
+      console.warn("[喝水统计] 主数据丢失，从备份恢复");
+      records = backup;
+      // 恢复主数据
+      chrome.storage.local.set({ drinkRecords: records }, () => {
+        console.log("[喝水统计] 从备份恢复主数据成功");
+      });
+    } else if (mainDataExists) {
+      // 主数据存在，更新备份（确保备份是最新的）
+      chrome.storage.local.set({ drinkRecordsBackup: records }, () => {});
+    }
 
     const todayCount = records[getToday()] ? records[getToday()].length : 0;
 
@@ -1432,6 +1489,8 @@ drinkEditConfirm.addEventListener("click", () => {
     }
 
     chrome.storage.local.set({ drinkRecords: records }, () => {
+      // 保存成功后，同时保存备份
+      chrome.storage.local.set({ drinkRecordsBackup: records }, () => {});
       updateDrinkStats();
       renderDrinkCalendar();
       showToast(diff > 0 ? t('toastDrinkAdded', { n: diff }) : t('toastDrinkRemoved', { n: Math.abs(diff) }));
@@ -1640,6 +1699,8 @@ drinkBtn.addEventListener("click", () => {
     if (!records[today]) records[today] = [];
     records[today].push({ time, timestamp: Date.now() });
     chrome.storage.local.set({ drinkRecords: records }, () => {
+      // 保存成功后，同时保存备份
+      chrome.storage.local.set({ drinkRecordsBackup: records }, () => {});
       updateDrinkStats();
     });
   });
