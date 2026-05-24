@@ -5,7 +5,6 @@
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![Version](https://img.shields.io/badge/version-3.0-blue)](https://github.com/vaxicy/daily-tracker)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![爱发电](https://img.shields.io/badge/爱发电-赞助支持-ff69b4)](https://ifdian.net/a/vaxicy024)
 
 一个功能丰富的 Chrome 浏览器扩展，帮助你全方位记录和管理日常生活中的饮食、饮水、排便和排尿情况，培养健康的生活习惯。
 
@@ -179,8 +178,6 @@ daily-tracker/
 如果这个项目对你有帮助，欢迎给个 Star ⭐️
 
 你也可以请我喝杯奶茶 ☕️
-
-- 💖 [爱发电 | 赞助支持](https://ifdian.net/a/vaxicy024)
 
 你的支持是我持续更新的动力！🙏
 
