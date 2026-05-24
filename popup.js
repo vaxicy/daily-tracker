@@ -459,45 +459,107 @@ function saveCustomTags() {
   chrome.storage.local.set({ customMealTags });
 }
 
-// 评价文本映射
+// 评价文本映射（支持半星：0.5~5，共10档）
 function getRatingTextMap() {
+  const texts = t("ratingTexts") || [];
   return {
     0: t("ratingNone"),
-    1: "😞 " + t("ratingTexts")[0],
-    2: "😐 " + t("ratingTexts")[1],
-    3: "😊 " + t("ratingTexts")[2],
-    4: "😄 " + t("ratingTexts")[3],
-    5: "🤩 " + t("ratingTexts")[4]
+    0.5: "😞 " + (texts[0] || ""),
+    1: "😞 " + (texts[1] || ""),
+    1.5: "😐 " + (texts[2] || ""),
+    2: "😐 " + (texts[3] || ""),
+    2.5: "😊 " + (texts[4] || ""),
+    3: "😊 " + (texts[5] || ""),
+    3.5: "😄 " + (texts[6] || ""),
+    4: "😄 " + (texts[7] || ""),
+    4.5: "🤩 " + (texts[8] || ""),
+    5: "🤩 " + (texts[9] || "")
   };
 }
 
-// 星级评分事件处理
+// 根据评分值计算评价文本
+function getRatingText(rating) {
+  if (!rating || rating === 0) return t("ratingNone");
+  return getRatingTextMap()[rating] || t("ratingNone");
+}
+
+// 生成5颗星的显示HTML（支持半星）
+function getRatingStarsHtml(rating) {
+  if (!rating || rating === 0) return "";
+  const starSvg = '<svg viewBox="0 0 24 24" width="12" height="12" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+  let html = '<span class="rating-stars-display" style="display:inline-flex;align-items:center;gap:2px;">';
+  for (let i = 1; i <= 5; i++) {
+    if (i <= Math.floor(rating)) {
+      html += '<span style="color:#F59E0B;line-height:0;">' + starSvg + '</span>';
+    } else if (i - 0.5 === rating) {
+      html += '<span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:12px;height:12px;color:#e0e0e0;line-height:0;">' + starSvg + '<span style="position:absolute;top:0;left:0;color:#F59E0B;line-height:0;overflow:hidden;width:50%;height:100%;display:flex;align-items:center;">' + starSvg + '</span></span>';
+    } else {
+      html += '<span style="color:#e0e0e0;line-height:0;">' + starSvg + '</span>';
+    }
+  }
+  html += '</span>';
+  return html;
+}
+
+// 星级评分事件处理（5颗星，支持半星）
 if (mealRating) {
   const stars = mealRating.querySelectorAll(".star");
-  stars.forEach(star => {
-    star.addEventListener("click", () => {
-      const rating = parseInt(star.dataset.rating);
-      currentMealRating = currentMealRating === rating ? 0 : rating; // 点击已选中的星星则取消
-      
-      stars.forEach((s, idx) => {
-        s.classList.toggle("active", idx < currentMealRating);
-      });
-      
-      mealRatingText.textContent = getRatingTextMap()[currentMealRating];
+
+  // 更新星星显示（实际选中状态）
+  function updateStarsDisplay(rating) {
+    stars.forEach((star, idx) => {
+      const starValue = idx + 1;
+      const fill = star.querySelector(".fill");
+
+      if (rating === 0) {
+        fill.style.clipPath = "inset(0 100% 0 0)";
+      } else if (starValue <= Math.floor(rating)) {
+        fill.style.clipPath = "inset(0 0% 0 0)";
+      } else if (starValue - 0.5 === rating) {
+        fill.style.clipPath = "inset(0 50% 0 0)";
+      } else {
+        fill.style.clipPath = "inset(0 100% 0 0)";
+      }
     });
-    
-    star.addEventListener("mouseenter", () => {
-      const rating = parseInt(star.dataset.rating);
-      stars.forEach((s, idx) => {
-        if (idx < rating) s.style.opacity = "0.8";
+  }
+
+  stars.forEach((star, idx) => {
+    // 鼠标移动时判断是左半边还是右半边，实时预览
+    star.addEventListener("mousemove", (e) => {
+      const rect = star.getBoundingClientRect();
+      const isLeftHalf = e.clientX - rect.left < rect.width / 2;
+      const rating = isLeftHalf ? (idx + 0.5) : (idx + 1);
+
+      // 预览效果：临时设置填充
+      stars.forEach((s, i) => {
+        const starValue = i + 1;
+        const fill = s.querySelector(".fill");
+
+        if (starValue <= Math.floor(rating)) {
+          fill.style.clipPath = "inset(0 0% 0 0)";
+        } else if (starValue - 0.5 === rating) {
+          fill.style.clipPath = "inset(0 50% 0 0)";
+        } else {
+          fill.style.clipPath = "inset(0 100% 0 0)";
+        }
       });
     });
-    
-    star.addEventListener("mouseleave", () => {
-      stars.forEach((s, idx) => {
-        s.style.opacity = idx < currentMealRating ? "1" : "0.3";
-      });
+
+    // 点击时设置评分
+    star.addEventListener("click", (e) => {
+      const rect = star.getBoundingClientRect();
+      const isLeftHalf = e.clientX - rect.left < rect.width / 2;
+      const rating = isLeftHalf ? (idx + 0.5) : (idx + 1);
+
+      currentMealRating = currentMealRating === rating ? 0 : rating;
+      updateStarsDisplay(currentMealRating);
+      mealRatingText.textContent = getRatingText(currentMealRating);
     });
+  });
+
+  // 鼠标离开时恢复已选中的状态
+  mealRating.addEventListener("mouseleave", () => {
+    updateStarsDisplay(currentMealRating);
   });
 }
 
@@ -514,9 +576,9 @@ function updateMealRecords() {
     } else {
       mealRecordsList.innerHTML = todayMeals.map((meal, index) => {
         const typeLabel = { breakfast: t("breakfast"), lunch: t("lunch"), dinner: t("dinner"), snack: t("snack") };
-        const ratingStars = meal.rating ? "⭐".repeat(meal.rating) : "";
+        const ratingStarsHtml = meal.rating ? getRatingStarsHtml(meal.rating) : "";
         const remarkHtml = meal.remark ? `<div class="meal-remark" style="font-size:10px;color:var(--muted);margin-top:3px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;"><span>📝</span><span>${meal.remark}</span></div>` : "";
-        const ratingHtml = meal.rating ? `<span style="letter-spacing:2px;">${ratingStars}</span><span>${getRatingTextMap()[meal.rating] || ""}</span>` : "";
+        const ratingHtml = meal.rating ? `<span style="letter-spacing:0px;font-size:9px;display:inline-flex;align-items:center;gap:4px;">${ratingStarsHtml}<span>${getRatingText(meal.rating)}</span></span>` : "";
 
         // 饱腹感显示
         const fullnessLevels = t("fullnessLevels") || [];
@@ -689,7 +751,10 @@ addMealBtn.addEventListener("click", () => {
       if (mealRemarkInput) mealRemarkInput.value = "";
       currentMealRating = 0;
       if (mealRating) {
-        mealRating.querySelectorAll(".star").forEach(s => s.classList.remove("active"));
+        mealRating.querySelectorAll(".star").forEach(s => {
+          s.classList.remove("active");
+          s.style.opacity = "0.3";
+        });
       }
       if (mealRatingText) mealRatingText.textContent = t('ratingNone');
 
@@ -833,33 +898,74 @@ function showEatEditModal(dateStr, dayRecords) {
       <div class="edit-input-row" style="align-items:center;gap:8px;">
         <span style="font-size:11px;color:var(--muted);">${t('rateLabelShort')}：</span>
         <div class="rating-stars" id="eatAddRating" style="display:flex;gap:2px;">
-          <span class="star" data-rating="1" style="cursor:pointer;font-size:16px;opacity:0.3;">⭐</span>
-          <span class="star" data-rating="2" style="cursor:pointer;font-size:16px;opacity:0.3;">⭐</span>
-          <span class="star" data-rating="3" style="cursor:pointer;font-size:16px;opacity:0.3;">⭐</span>
-          <span class="star" data-rating="4" style="cursor:pointer;font-size:16px;opacity:0.3;">⭐</span>
-          <span class="star" data-rating="5" style="cursor:pointer;font-size:16px;opacity:0.3;">⭐</span>
+          <span class="star" data-value="1" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="star" data-value="2" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="star" data-value="3" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="star" data-value="4" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="star" data-value="5" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
         </div>
         <span class="rating-text" id="eatAddRatingText" style="font-size:10px;color:var(--eat);font-weight:600;">${t('ratingNone')}</span>
       </div>
       <button class="edit-save-btn" id="eatAddBtn" style="background: var(--eat);">${t('addRecordBtn')}</button>
     `;
     
-    // 评价星级交互
+    // 评价星级交互（5颗星，支持半星）
     const addRatingStars = document.querySelectorAll("#eatAddRating .star");
     let addRating = 0;
-    if (addRatingStars.length > 0) {
-      addRatingStars.forEach(star => {
-        star.addEventListener("click", () => {
-          const rating = parseInt(star.dataset.rating);
-          addRating = addRating === rating ? 0 : rating;
-          addRatingStars.forEach((s, idx) => {
-            s.classList.toggle("active", idx < addRating);
-            s.style.opacity = idx < addRating ? "1" : "0.3";
-          });
-          document.getElementById("eatAddRatingText").textContent = getRatingTextMap()[addRating] || t('ratingNone');
-        });
+
+    function updateAddStarsDisplay(rating) {
+      addRatingStars.forEach((star, idx) => {
+        const starValue = idx + 1;
+        const fill = star.querySelector(".fill");
+        if (rating === 0) {
+          fill.style.clipPath = "inset(0 100% 0 0)";
+        } else if (starValue <= Math.floor(rating)) {
+          fill.style.clipPath = "inset(0 0% 0 0)";
+        } else if (starValue - 0.5 === rating) {
+          fill.style.clipPath = "inset(0 50% 0 0)";
+        } else {
+          fill.style.clipPath = "inset(0 100% 0 0)";
+        }
       });
     }
+
+    if (addRatingStars.length > 0) {
+      addRatingStars.forEach((star, idx) => {
+        star.addEventListener("mousemove", (e) => {
+          const rect = star.getBoundingClientRect();
+          const isLeftHalf = e.clientX - rect.left < rect.width / 2;
+          const rating = isLeftHalf ? (idx + 0.5) : (idx + 1);
+          addRatingStars.forEach((s, i) => {
+            const starValue = i + 1;
+            const fill = s.querySelector(".fill");
+            if (starValue <= Math.floor(rating)) {
+              fill.style.clipPath = "inset(0 0% 0 0)";
+            } else if (starValue - 0.5 === rating) {
+              fill.style.clipPath = "inset(0 50% 0 0)";
+            } else {
+              fill.style.clipPath = "inset(0 100% 0 0)";
+            }
+          });
+        });
+
+        star.addEventListener("click", (e) => {
+          const rect = star.getBoundingClientRect();
+          const isLeftHalf = e.clientX - rect.left < rect.width / 2;
+          const rating = isLeftHalf ? (idx + 0.5) : (idx + 1);
+          addRating = addRating === rating ? 0 : rating;
+          updateAddStarsDisplay(addRating);
+          document.getElementById("eatAddRatingText").textContent = getRatingText(addRating);
+        });
+    });
+
+    // 鼠标离开时恢复已选中的状态
+    const eatAddRatingContainer = document.getElementById("eatAddRating");
+    if (eatAddRatingContainer) {
+      eatAddRatingContainer.addEventListener("mouseleave", () => {
+        updateAddStarsDisplay(addRating);
+      });
+    }
+  }
     
     // 切换时间模式
     document.querySelectorAll('input[name="eatTimeMode"]').forEach(r => {
@@ -902,11 +1008,7 @@ function showEatEditModal(dateStr, dayRecords) {
       
       // 获取备注和评价
       const remark = document.getElementById("eatAddRemark") ? document.getElementById("eatAddRemark").value.trim() : "";
-      let rating = 0;
-      if (document.getElementById("eatAddRating")) {
-        const activeStars = document.getElementById("eatAddRating").querySelectorAll(".star.active");
-        rating = activeStars.length;
-      }
+      const rating = addRating || 0;
       
       chrome.storage.local.get(["mealRecords"], (data) => {
         const records = data.mealRecords || {};
@@ -943,7 +1045,7 @@ function showEatEditModal(dateStr, dayRecords) {
 
   editModalBody.innerHTML = dayRecords.map((rec, idx) => {
     const parsedTime = parseRecordTime(rec.time);
-    const ratingStars = rec.rating ? "⭐".repeat(rec.rating) : t('ratingNone');
+    const ratingStarsHtml = rec.rating ? getRatingStarsHtml(rec.rating) : t('ratingNone');
     const remarkHtml = rec.remark ? `📝 ${rec.remark}` : t('noRemark');
     return `
     <div class="edit-record-item" data-index="${idx}">
@@ -958,7 +1060,7 @@ function showEatEditModal(dateStr, dayRecords) {
         ${rec.content}
         <div style="font-size:10px;color:var(--muted);margin-top:4px;">
           <div>📝 ${t('remarkLabel')}: ${remarkHtml}</div>
-          <div>⭐ ${t('rateLabelShort')}: ${ratingStars}</div>
+          <div>⭐ ${t('rateLabelShort')}: <span style="display:inline-flex;align-items:center;gap:4px;">${ratingStarsHtml}</span></div>
           ${rec.fullness ? `<div>🍽️ ${t('fullnessLabel')}: ${t('fullnessLevels')[rec.fullness - 1] || ""}</div>` : ''}
           ${rec.tags && rec.tags.length > 0 ? `<div>🏷 ${t('autoTagHint')}: ${rec.tags.map(tag => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--eat);font-size:10px;margin-right:3px;">${tag}</span>`).join("")}</div>` : ''}
         </div>
@@ -984,9 +1086,13 @@ function showEatEditModal(dateStr, dayRecords) {
       <div class="edit-input-row" id="eatEditFormRating${idx}" style="display:none;align-items:center;gap:8px;">
         <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${t('rateLabelShort')}：</span>
         <div class="edit-rating-stars" id="eatEditRatingStars${idx}" style="display:flex;gap:2px;">
-          ${[1,2,3,4,5].map(r => `<span class="edit-star" data-rating="${r}" style="cursor:pointer;font-size:16px;opacity:${(rec.rating||0) >= r ? '1' : '0.3'};">⭐</span>`).join('')}
+          <span class="edit-star" data-value="1" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="edit-star" data-value="2" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="edit-star" data-value="3" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="edit-star" data-value="4" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="edit-star" data-value="5" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
         </div>
-        <span class="edit-rating-text" id="eatEditRatingText${idx}" style="font-size:10px;color:var(--eat);font-weight:600;">${getRatingTextMap()[rec.rating || 0] || t('ratingNone')}</span>
+        <span class="edit-rating-text" id="eatEditRatingText${idx}" style="font-size:10px;color:var(--eat);font-weight:600;">${getRatingText(rec.rating)}</span>
         <input type="hidden" id="eatEditRating${idx}" value="${rec.rating || 0}" />
       </div>
       <div class="edit-input-row" id="eatEditFormFullness${idx}" style="display:none;align-items:center;gap:8px;">
@@ -2314,7 +2420,7 @@ function syncMealRemarkToPoop() {
         .map(m => m.remark);
       const ratings = todayMeals
         .filter(m => m.rating)
-        .map(m => `${"⭐".repeat(m.rating)}`);
+        .map(m => `${m.rating}/5 ${getRatingText(m.rating)}`);
       
       let syncText = "";
       if (remarks.length > 0) {
@@ -2971,7 +3077,7 @@ function syncMealRemarkToPee() {
         .map(m => m.remark);
       const ratings = todayMeals
         .filter(m => m.rating)
-        .map(m => `${"⭐".repeat(m.rating)}`);
+        .map(m => `${m.rating}/5 ${getRatingText(m.rating)}`);
       
       let syncText = "";
       if (remarks.length > 0) {
@@ -3140,21 +3246,62 @@ editModalBody.addEventListener("click", (e) => {
     document.getElementById("eatEditFormButtons" + idx).style.display = "block";
     document.getElementById("eatContent" + idx).style.display = "none";
 
-    // 绑定星级交互
+    // 绑定星级交互（5颗星，支持半星）
     const starContainer = document.getElementById("eatEditRatingStars" + idx);
     if (starContainer && !starContainer.dataset.bound) {
       starContainer.dataset.bound = "1";
-      let editRating = parseInt(document.getElementById("eatEditRating" + idx).value) || 0;
-      starContainer.querySelectorAll(".edit-star").forEach(star => {
-        star.addEventListener("click", () => {
-          const r = parseInt(star.dataset.rating);
-          editRating = editRating === r ? 0 : r;
-          document.getElementById("eatEditRating" + idx).value = editRating;
-          starContainer.querySelectorAll(".edit-star").forEach((s, i) => {
-            s.style.opacity = i < editRating ? "1" : "0.3";
-          });
-          document.getElementById("eatEditRatingText" + idx).textContent = getRatingTextMap()[editRating] || t('ratingNone');
+      let editRating = parseFloat(document.getElementById("eatEditRating" + idx).value) || 0;
+
+      // 初始化显示
+      function updateEditStarsDisplay(rating) {
+        starContainer.querySelectorAll(".edit-star").forEach((star, i) => {
+          const starValue = i + 1;
+          const fill = star.querySelector(".edit-fill");
+          if (rating === 0) {
+            fill.style.clipPath = "inset(0 100% 0 0)";
+          } else if (starValue <= Math.floor(rating)) {
+            fill.style.clipPath = "inset(0 0% 0 0)";
+          } else if (starValue - 0.5 === rating) {
+            fill.style.clipPath = "inset(0 50% 0 0)";
+          } else {
+            fill.style.clipPath = "inset(0 100% 0 0)";
+          }
         });
+      }
+      updateEditStarsDisplay(editRating);
+
+      starContainer.querySelectorAll(".edit-star").forEach((star, starIdx) => {
+        star.addEventListener("mousemove", (e) => {
+          const rect = star.getBoundingClientRect();
+          const isLeftHalf = e.clientX - rect.left < rect.width / 2;
+          const rating = isLeftHalf ? (starIdx + 0.5) : (starIdx + 1);
+          starContainer.querySelectorAll(".edit-star").forEach((s, i) => {
+            const starValue = i + 1;
+            const fill = s.querySelector(".edit-fill");
+            if (starValue <= Math.floor(rating)) {
+              fill.style.clipPath = "inset(0 0% 0 0)";
+            } else if (starValue - 0.5 === rating) {
+              fill.style.clipPath = "inset(0 50% 0 0)";
+            } else {
+              fill.style.clipPath = "inset(0 100% 0 0)";
+            }
+          });
+        });
+
+        star.addEventListener("click", (e) => {
+          const rect = star.getBoundingClientRect();
+          const isLeftHalf = e.clientX - rect.left < rect.width / 2;
+          const rating = isLeftHalf ? (starIdx + 0.5) : (starIdx + 1);
+          editRating = editRating === rating ? 0 : rating;
+          document.getElementById("eatEditRating" + idx).value = editRating;
+          updateEditStarsDisplay(editRating);
+          document.getElementById("eatEditRatingText" + idx).textContent = getRatingText(editRating);
+        });
+      });
+
+      // 鼠标离开时恢复已选中的状态
+      starContainer.addEventListener("mouseleave", () => {
+        updateEditStarsDisplay(editRating);
       });
     }
 
@@ -3214,7 +3361,7 @@ editModalBody.addEventListener("click", (e) => {
     }
     // 获取编辑后的备注、评价、饱腹感和标签
     const newRemark = document.getElementById("eatEditRemark" + idx) ? document.getElementById("eatEditRemark" + idx).value.trim() : "";
-    const newRating = document.getElementById("eatEditRating" + idx) ? parseInt(document.getElementById("eatEditRating" + idx).value) : 0;
+    const newRating = document.getElementById("eatEditRating" + idx) ? parseFloat(document.getElementById("eatEditRating" + idx).value) || 0 : 0;
     const newFullness = document.getElementById("eatEditFullness" + idx) ? parseInt(document.getElementById("eatEditFullness" + idx).value) || undefined : undefined;
     const tagsGrid = document.getElementById("eatEditTagsGrid" + idx);
     const newTags = tagsGrid ? Array.from(tagsGrid.querySelectorAll(".edit-tag-btn.active")).map(b => b.dataset.tag) : undefined;
