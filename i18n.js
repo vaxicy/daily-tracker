@@ -169,6 +169,9 @@ const I18N = {
     language: "🌐 语言设置",
     langZh: "中文",
     langEn: "English",
+    donateTitle: "☕ 支持开发者",
+    donateDesc: "如果这个扩展帮到了你，可以请作者喝杯咖啡 ☕",
+    donateBtn: "捐赠支持",
 
     // 通知
     notifTitle: "喝水提醒 💧",
@@ -410,6 +413,9 @@ const I18N = {
     language: "🌐 Language",
     langZh: "中文",
     langEn: "English",
+    donateTitle: "☕ Support Developer",
+    donateDesc: "If this extension helped you, buy the author a coffee ☕",
+    donateBtn: "Donate",
 
     // Notifications
     notifTitle: "Drink Reminder 💧",

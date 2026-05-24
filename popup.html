@@ -2386,6 +2386,55 @@
         height: 14px;
       }
 
+      /* 捐赠卡片 */
+      .donate-section {
+        margin-top: 8px;
+        padding: 12px;
+        background: linear-gradient(135deg, rgba(11,107,255,0.08), rgba(32,198,255,0.08));
+        border-radius: 12px;
+        border: 1px solid rgba(11,107,255,0.12);
+      }
+      .donate-section-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .donate-section-desc {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 10px;
+        line-height: 1.4;
+      }
+      .donate-btn {
+        width: 100%;
+        padding: 8px 0;
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #0b6bff, #20c6ff);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .donate-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(11,107,255,0.3);
+      }
+
+      [data-theme="dark"] .donate-section {
+        background: linear-gradient(135deg, rgba(11,107,255,0.12), rgba(32,198,255,0.12));
+        border-color: rgba(11,107,255,0.2);
+      }
+
       /* 语言选择器 */
       .lang-options {
         display: flex;
@@ -3599,6 +3648,19 @@
         <button class="theme-opt" data-theme="forest" title="森林绿" data-i18n-title="themeForestName">
           <span class="theme-dot" style="background:linear-gradient(135deg,#059669,#34d399)"></span>
           <span data-i18n="themeForest">森林绿</span>
+        </button>
+      </div>
+
+      <!-- 分隔线 -->
+      <div class="theme-divider"></div>
+
+      <!-- 支持开发者 -->
+      <div class="donate-section" id="donateSection">
+        <div class="donate-section-title" data-i18n="donateTitle">☕ 支持开发者</div>
+        <div class="donate-section-desc" data-i18n="donateDesc">如果这个扩展帮到了你，可以请作者喝杯咖啡 ☕</div>
+        <button class="donate-btn" id="donateBtn">
+          <span>🧡</span>
+          <span data-i18n="donateBtn">捐赠支持</span>
         </button>
       </div>
     </div>
