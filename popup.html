@@ -2026,6 +2026,75 @@
         background: rgba(12,42,77,0.15);
         color: var(--text);
       }
+      /* 赞赏码弹窗 */
+      .donate-qr-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      .donate-qr-overlay.show {
+        display: flex;
+      }
+      .donate-qr-box {
+        background: #fff;
+        border-radius: 16px;
+        width: 280px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      }
+      .donate-qr-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(12,42,77,0.1);
+      }
+      .donate-qr-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .donate-qr-close {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(12,42,77,0.08);
+        color: var(--muted);
+        font-size: 18px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+      .donate-qr-close:hover {
+        background: rgba(12,42,77,0.15);
+        color: var(--text);
+      }
+      .donate-qr-body {
+        padding: 20px;
+        text-align: center;
+      }
+      .donate-qr-img {
+        width: 200px;
+        height: 200px;
+        object-fit: contain;
+        border-radius: 8px;
+        margin-bottom: 12px;
+      }
+      .donate-qr-tip {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
       .edit-modal-body {
         padding: 10px;
         max-height: 400px;
@@ -3662,6 +3731,20 @@
           <span>🧡</span>
           <span data-i18n="donateBtn">捐赠支持</span>
         </button>
+      </div>
+    </div>
+
+    <!-- 赞赏码弹窗 -->
+    <div class="donate-qr-overlay" id="donateQrOverlay">
+      <div class="donate-qr-box">
+        <div class="donate-qr-header">
+          <span class="donate-qr-title" data-i18n="donateQrTitle">💖 支持开发者</span>
+          <button class="donate-qr-close" id="donateQrClose">×</button>
+        </div>
+        <div class="donate-qr-body">
+          <img class="donate-qr-img" src="donate-qr.png" alt="赞赏码" />
+          <div class="donate-qr-tip" data-i18n="donateQrTip">扫码支持，感谢你的鼓励！</div>
+        </div>
       </div>
     </div>
 

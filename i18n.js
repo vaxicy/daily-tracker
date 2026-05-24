@@ -172,6 +172,8 @@ const I18N = {
     donateTitle: "☕ 支持开发者",
     donateDesc: "如果这个扩展帮到了你，可以请作者喝杯咖啡 ☕",
     donateBtn: "捐赠支持",
+    donateQrTitle: "💖 支持开发者",
+    donateQrTip: "扫码支持，感谢你的鼓励！",
 
     // 通知
     notifTitle: "喝水提醒 💧",
@@ -416,6 +418,8 @@ const I18N = {
     donateTitle: "☕ Support Developer",
     donateDesc: "If this extension helped you, buy the author a coffee ☕",
     donateBtn: "Donate",
+    donateQrTitle: "💖 Support Developer",
+    donateQrTip: "Scan to support, thanks for your encouragement!",
 
     // Notifications
     notifTitle: "Drink Reminder 💧",

@@ -3987,16 +3987,29 @@ loadReminders(() => renderReminderList());
 
 // ==================== 捐赠支持 ====================
 const donateBtn = document.getElementById("donateBtn");
+const donateQrOverlay = document.getElementById("donateQrOverlay");
+const donateQrClose = document.getElementById("donateQrClose");
 
 if (donateBtn) {
   donateBtn.addEventListener("click", () => {
-    const isCn = (currentLang || navigator.language).startsWith("zh");
-    if (isCn) {
-      // 国内用户：跳转到爱发电
-      chrome.tabs.create({ url: "https://ifdian.net/a/vaxicy024" });
-    } else {
-      // 国际用户：跳转到 PayPal
-      chrome.tabs.create({ url: "https://paypal.me/zero88248" });
+    if (donateQrOverlay) {
+      donateQrOverlay.classList.add("show");
+    }
+  });
+}
+
+if (donateQrClose) {
+  donateQrClose.addEventListener("click", () => {
+    if (donateQrOverlay) {
+      donateQrOverlay.classList.remove("show");
+    }
+  });
+}
+
+if (donateQrOverlay) {
+  donateQrOverlay.addEventListener("click", (e) => {
+    if (e.target === donateQrOverlay) {
+      donateQrOverlay.classList.remove("show");
     }
   });
 }
