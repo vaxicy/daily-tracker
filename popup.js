@@ -1273,12 +1273,23 @@ function showEatTooltip(e, dateStr) {
       
       if (dayRecords.length > 0) {
         const typeLabel = { breakfast: t("breakfast"), lunch: t("lunch"), dinner: t("dinner"), snack: t("snack") };
-        document.getElementById("tooltipRecords").innerHTML = dayRecords.map((rec, i) => `
-          <div class="tooltip-record">
-            <div class="tooltip-record-time">${typeLabel[rec.type] || ""} ${rec.time}</div>
-            <div class="tooltip-record-remark">${rec.content}</div>
-          </div>
-        `).join("");
+        const fullnessLevels = t("fullnessLevels") || [];
+        document.getElementById("tooltipRecords").innerHTML = dayRecords.map((rec, i) => {
+          const ratingHtml = rec.rating ? getRatingStarsHtml(rec.rating) : "";
+          const remarkHtml = rec.remark ? `📝 ${rec.remark}` : `📝 ${t('noRemark')}`;
+          const fullnessHtml = rec.fullness ? `🍽️ ${t('fullnessLabel')}: ${fullnessLevels[rec.fullness - 1] || ""}` : "";
+          return `
+            <div class="tooltip-record">
+              <div class="tooltip-record-time">${typeLabel[rec.type] || ""} ${rec.time}</div>
+              <div class="tooltip-record-remark">${rec.content}</div>
+              <div class="tooltip-record-detail">
+                ${ratingHtml ? `<span class="tooltip-record-rating">⭐ ${t('rateLabelShort')}: ${ratingHtml}</span>` : ''}
+                ${fullnessHtml ? `<span class="tooltip-record-fullness">${fullnessHtml}</span>` : ''}
+                <span class="tooltip-record-remark-text">${remarkHtml}</span>
+              </div>
+            </div>
+          `;
+        }).join("");
       } else {
         document.getElementById("tooltipRecords").innerHTML = '<div class="tooltip-empty">' + t('tooltipEmptyMeal') + '</div>';
       }
@@ -2286,16 +2297,25 @@ function showPoopTooltip(e, dateStr) {
       countEl.classList.remove("pee-count");
 
       if (dayRecords.length > 0) {
+        const poopAmounts = t("poopAmounts") || [];
         document.getElementById("tooltipRecords").innerHTML = dayRecords.map((rec, i) => {
           let bristolInfo = "";
           if (rec.bristolType) {
             const bt = bristolTypes[rec.bristolType - 1] || "";
-            bristolInfo = `<span style="color:var(--secondary);font-weight:600;margin-left:4px;">Bristol ${rec.bristolType}: ${bt}</span>`;
+            bristolInfo = `Bristol ${rec.bristolType}: ${bt}`;
           }
-          return '<div class="tooltip-record">' +
-            '<div class="tooltip-record-time">' + t('poopRecord', { num: i + 1, time: rec.time }) + ' ' + bristolInfo + '</div>' +
-            (rec.remark ? '<div class="tooltip-record-remark">' + rec.remark + '</div>' : '') +
-            '</div>';
+          const amountHtml = rec.amount ? `💩 ${t('poopAmountLabel')}: ${poopAmounts[rec.amount - 1] || ""}` : "";
+          const remarkHtml = rec.remark ? `📝 ${rec.remark}` : '';
+          return `
+            <div class="tooltip-record">
+              <div class="tooltip-record-time">${t('poopRecord', { num: i + 1, time: rec.time })}</div>
+              <div class="tooltip-record-detail">
+                ${bristolInfo ? `<span style="color:var(--secondary);font-weight:600;">${bristolInfo}</span>` : ''}
+                ${amountHtml ? `<span>${amountHtml}</span>` : ''}
+                ${remarkHtml ? `<span>${remarkHtml}</span>` : `<span>📝 ${t('noRemark')}</span>`}
+              </div>
+            </div>
+          `;
         }).join("");
       } else {
         document.getElementById("tooltipRecords").innerHTML = '<div class="tooltip-empty">' + t('tooltipEmptyRecord') + '</div>';

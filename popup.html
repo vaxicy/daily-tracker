@@ -1309,10 +1309,11 @@
       }
       .poop-amount-btns {
         display: flex;
-        gap: 4px;
+        gap: 3px;
+        flex-wrap: nowrap;
       }
       .poop-amount-btn {
-        padding: 3px 10px;
+        padding: 3px 6px;
         border-radius: 12px;
         border: 1px solid color-mix(in srgb, var(--poop), transparent 80%);
         background: rgba(255,255,255,0.8);
@@ -1373,10 +1374,11 @@
       }
       .pee-amount-btns {
         display: flex;
-        gap: 4px;
+        gap: 3px;
+        flex-wrap: nowrap;
       }
       .pee-amount-btn {
-        padding: 3px 10px;
+        padding: 3px 6px;
         border-radius: 12px;
         border: 1px solid rgba(16,185,129,0.2);
         background: rgba(255,255,255,0.8);
@@ -1890,7 +1892,7 @@
         border-radius: 12px;
         padding: 12px 14px;
         min-width: 160px;
-        max-width: 220px;
+        max-width: 260px;
         box-shadow: 0 8px 32px rgba(12,42,77,0.18);
         pointer-events: auto;
         transition: opacity 0.15s ease;
@@ -1925,7 +1927,7 @@
         color: var(--eat);
       }
       .tooltip-records {
-        max-height: 120px;
+        max-height: 160px;
         overflow-y: auto;
       }
       .tooltip-record {
@@ -1944,6 +1946,19 @@
       .tooltip-record-remark {
         color: var(--text);
         font-size: 12px;
+      }
+      .tooltip-record-detail {
+        margin-top: 4px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .tooltip-record-detail span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
       }
       .tooltip-empty {
         color: var(--muted);
