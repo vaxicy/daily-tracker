@@ -1147,28 +1147,41 @@
       }
 
       /* Bristol 分类型着色 */
-      #pagePoop .day-cell.bristol-1,
-      #pagePoop .day-cell.bristol-2 {
-        background: rgba(239,68,68,0.16);
-        border-color: rgba(239,68,68,0.35);
+      /* Bristol 分类型着色 - 与主界面按钮颜色保持一致 */
+      #pagePoop .day-cell.bristol-1 {
+        background: rgba(220,38,38,0.16);
+        border-color: rgba(220,38,38,0.35);
         color: #dc2626;
       }
-      #pagePoop .day-cell.bristol-3,
+      #pagePoop .day-cell.bristol-2 {
+        background: rgba(234,88,12,0.16);
+        border-color: rgba(234,88,12,0.35);
+        color: #ea580c;
+      }
+      #pagePoop .day-cell.bristol-3 {
+        background: rgba(202,138,4,0.16);
+        border-color: rgba(202,138,4,0.35);
+        color: #ca8a04;
+      }
       #pagePoop .day-cell.bristol-4 {
-        background: rgba(34,197,94,0.16);
-        border-color: rgba(34,197,94,0.35);
+        background: rgba(22,163,74,0.16);
+        border-color: rgba(22,163,74,0.35);
         color: #16a34a;
       }
       #pagePoop .day-cell.bristol-5 {
-        background: rgba(249,115,22,0.16);
-        border-color: rgba(249,115,22,0.35);
-        color: #ea580c;
+        background: rgba(101,163,13,0.16);
+        border-color: rgba(101,163,13,0.35);
+        color: #65a30d;
       }
-      #pagePoop .day-cell.bristol-6,
-      #pagePoop .day-cell.bristol-7 {
-        background: rgba(59,130,246,0.16);
-        border-color: rgba(59,130,246,0.35);
+      #pagePoop .day-cell.bristol-6 {
+        background: rgba(37,99,235,0.16);
+        border-color: rgba(37,99,235,0.35);
         color: #2563eb;
+      }
+      #pagePoop .day-cell.bristol-7 {
+        background: rgba(29,78,216,0.16);
+        border-color: rgba(29,78,216,0.35);
+        color: #1d4ed8;
       }
 
       /* 打卡卡片 */
@@ -2211,12 +2224,21 @@
         border-color: var(--secondary);
         background: rgba(139,92,246,0.10);
       }
-      .bristol-btn.active {
-        border-color: var(--secondary);
-        background: var(--secondary);
-        color: #fff;
-        box-shadow: 0 2px 8px rgba(139,92,246,0.3);
-      }
+      /* 编辑弹窗 Bristol 按钮按类型着色 - 与主界面保持一致 */
+      .bristol-btn[data-type="1"] { border-color: #fca5a5; background: #fef2f2; color: #dc2626; }
+      .bristol-btn[data-type="2"] { border-color: #fdba74; background: #fff7ed; color: #ea580c; }
+      .bristol-btn[data-type="3"] { border-color: #fde047; background: #fefce8; color: #ca8a04; }
+      .bristol-btn[data-type="4"] { border-color: #86efac; background: #f0fdf4; color: #16a34a; }
+      .bristol-btn[data-type="5"] { border-color: #bef264; background: #ecfccb; color: #65a30d; }
+      .bristol-btn[data-type="6"] { border-color: #93c5fd; background: #eff6ff; color: #2563eb; }
+      .bristol-btn[data-type="7"] { border-color: #60a5fa; background: #eff6ff; color: #1d4ed8; }
+      .bristol-btn[data-type="1"].active { background: #dc2626; color: #fff; box-shadow: 0 2px 8px rgba(220,38,38,0.3); border-color: #dc2626; }
+      .bristol-btn[data-type="2"].active { background: #ea580c; color: #fff; box-shadow: 0 2px 8px rgba(234,88,12,0.3); border-color: #ea580c; }
+      .bristol-btn[data-type="3"].active { background: #ca8a04; color: #fff; box-shadow: 0 2px 8px rgba(202,138,4,0.3); border-color: #ca8a04; }
+      .bristol-btn[data-type="4"].active { background: #16a34a; color: #fff; box-shadow: 0 2px 8px rgba(22,163,74,0.3); border-color: #16a34a; }
+      .bristol-btn[data-type="5"].active { background: #65a30d; color: #fff; box-shadow: 0 2px 8px rgba(101,163,13,0.3); border-color: #65a30d; }
+      .bristol-btn[data-type="6"].active { background: #2563eb; color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,0.3); border-color: #2563eb; }
+      .bristol-btn[data-type="7"].active { background: #1d4ed8; color: #fff; box-shadow: 0 2px 8px rgba(29,78,216,0.3); border-color: #1d4ed8; }
       .bristol-type-label {
         font-size: 11px;
         color: var(--muted);

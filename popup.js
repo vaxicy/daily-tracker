@@ -2310,7 +2310,7 @@ function showPoopTooltip(e, dateStr) {
             <div class="tooltip-record">
               <div class="tooltip-record-time">${t('poopRecord', { num: i + 1, time: rec.time })}</div>
               <div class="tooltip-record-detail">
-                ${bristolInfo ? `<span style="color:var(--secondary);font-weight:600;">${bristolInfo}</span>` : ''}
+                ${bristolInfo ? `<span style="color:${['#dc2626','#ea580c','#ca8a04','#16a34a','#65a30d','#2563eb','#1d4ed8'][rec.bristolType-1]};font-weight:600;">${bristolInfo}</span>` : ''}
                 ${amountHtml ? `<span>${amountHtml}</span>` : ''}
                 ${remarkHtml ? `<span>${remarkHtml}</span>` : `<span>📝 ${t('noRemark')}</span>`}
               </div>

@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "吃喝拉撒",
     "description": "全方位记录生活起居：吃、喝、拉、撒，养成健康好习惯。",
-    "version": "3.0",
+    "version": "3.0.1",
     "action": {
       "default_popup": "popup.html",
       "default_title": "健康追踪器",
@@ -19,9 +19,6 @@
       "notifications",
       "storage",
       "alarms"
-    ],
-    "host_permissions": [
-      "<all_urls>"
     ],
     "icons": {
       "16": "icon16.png",
