@@ -1347,6 +1347,115 @@
         border-color: var(--poop);
         font-weight: 600;
       }
+      /* 大便颜色选择器 */
+      .poop-color-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 6px 0 4px;
+        padding: 6px 12px;
+        background: color-mix(in srgb, var(--poop), transparent 96%);
+        border-radius: 8px;
+      }
+      .poop-color-label {
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .poop-color-btns {
+        display: flex;
+        gap: 4px;
+        flex-wrap: nowrap;
+      }
+      .poop-color-btn {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid rgba(0,0,0,0.15);
+        cursor: pointer;
+        transition: all 0.2s;
+        padding: 0;
+        flex-shrink: 0;
+      }
+      .poop-color-btn:hover {
+        transform: scale(1.15);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+      }
+      .poop-color-btn.active {
+        border-color: var(--poop);
+        border-width: 3px;
+        box-shadow: 0 0 0 2px rgba(124,58,237,0.25);
+      }
+      .poop-color-btn-sm {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 2px solid rgba(0,0,0,0.15);
+        cursor: pointer;
+        transition: all 0.2s;
+        padding: 0;
+        flex-shrink: 0;
+      }
+      .poop-color-btn-sm:hover {
+        transform: scale(1.15);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+      }
+      .poop-color-btn-sm.active {
+        border-color: var(--poop);
+        border-width: 3px;
+        box-shadow: 0 0 0 2px rgba(124,58,237,0.25);
+      }
+      /* 大便颜色显示区（已选颜色） */
+      .poop-color-display {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px 3px 6px;
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--poop), transparent 92%);
+        cursor: pointer;
+        transition: background 0.2s;
+        user-select: none;
+      }
+      .poop-color-display:hover {
+        background: color-mix(in srgb, var(--poop), transparent 85%);
+      }
+      .poop-color-dot {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid rgba(0,0,0,0.12);
+        flex-shrink: 0;
+      }
+      .poop-color-name {
+        font-size: 11px;
+        color: var(--text);
+      }
+      .poop-color-none {
+        font-size: 11px;
+        color: var(--muted);
+        font-style: italic;
+      }
+      /* 大便颜色展开选择面板 */
+      .poop-color-picker {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 0;
+        padding: 0 8px;
+        background: color-mix(in srgb, var(--poop), transparent 96%);
+        border-radius: 8px;
+        overflow: hidden;
+        max-height: 0;
+        opacity: 0;
+        transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease, margin 0.25s ease;
+      }
+      .poop-color-picker.expanded {
+        max-height: 40px;
+        opacity: 1;
+        padding: 4px 8px;
+        margin-top: 4px;
+      }
       /* 编辑弹窗中的小号排便量按钮 */
       .poop-amount-btn-sm {
         padding: 2px 8px;
@@ -2999,6 +3108,24 @@
         color: #fff;
         border-color: var(--poop);
       }
+      [data-theme="dark"] .poop-color-row {
+        background: rgba(148,163,184,0.08);
+      }
+      [data-theme="dark"] .poop-color-btn.active {
+        box-shadow: 0 0 0 2px rgba(124,58,237,0.4);
+      }
+      [data-theme="dark"] .poop-color-btn-sm.active {
+        box-shadow: 0 0 0 2px rgba(124,58,237,0.4);
+      }
+      [data-theme="dark"] .poop-color-display {
+        background: rgba(148,163,184,0.1);
+      }
+      [data-theme="dark"] .poop-color-display:hover {
+        background: rgba(148,163,184,0.18);
+      }
+      [data-theme="dark"] .poop-color-picker {
+        background: rgba(148,163,184,0.08);
+      }
       [data-theme="dark"] .pee-amount-btn,
       [data-theme="dark"] .pee-amount-btn-sm {
         background: rgba(15,23,42,0.6);
@@ -3529,6 +3656,12 @@
         <div class="poop-amount-row" id="poopAmountRow">
           <span class="poop-amount-label" data-i18n="poopAmountLabel">排便量：</span>
           <div class="poop-amount-btns" id="poopAmountBtns"></div>
+        </div>
+
+        <!-- 大便颜色选择器 -->
+        <div class="poop-color-row" id="poopColorRow">
+          <span class="poop-color-label" data-i18n="poopColorLabel">颜色：</span>
+          <div class="poop-color-btns" id="poopColorBtns"></div>
         </div>
         
         <div class="today-records-section" id="poopTodaySection" style="display:none;">

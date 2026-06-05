@@ -163,6 +163,8 @@ function switchTab(tab) {
     renderBristolMainSelector();
     renderPoopAmountSelector();
     clearPoopAmount();
+    renderPoopColorSelector();
+    clearPoopColor();
     renderPoopCalendar();
     updatePoopTodayStatus();
     updatePoopStats();
@@ -1916,6 +1918,7 @@ const poopAmountBtns = document.getElementById("poopAmountBtns");
 // 主界面布里斯托分类选择
 let selectedBristolType = 0; // 0表示未选择
 let selectedPoopAmount = 0;  // 0=未选, 1=少, 2=中, 3=多
+let selectedPoopColor = 0;   // 0=未选, 1~7 对应颜色
 
 function renderBristolMainSelector() {
   const types = t("bristolTypes") || [];
@@ -1988,6 +1991,36 @@ function renderPoopAmountSelector() {
 function clearPoopAmount() {
   selectedPoopAmount = 0;
   poopAmountBtns?.querySelectorAll(".poop-amount-btn").forEach(b => b.classList.remove("active"));
+}
+
+// ==================== 大便颜色选择器 ====================
+function renderPoopColorSelector() {
+  const colors = t("poopColors") || [];
+  const container = document.getElementById("poopColorBtns");
+  if (!container) return;
+  container.innerHTML = colors.map((label, i) =>
+    `<button class="poop-color-btn" data-color="${i+1}" title="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};"></button>`
+  ).join("");
+
+  container.querySelectorAll(".poop-color-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const color = parseInt(btn.dataset.color);
+      if (selectedPoopColor === color) {
+        selectedPoopColor = 0;
+        btn.classList.remove("active");
+      } else {
+        selectedPoopColor = color;
+        container.querySelectorAll(".poop-color-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+    });
+  });
+}
+
+function clearPoopColor() {
+  selectedPoopColor = 0;
+  const container = document.getElementById("poopColorBtns");
+  container?.querySelectorAll(".poop-color-btn").forEach(b => b.classList.remove("active"));
 }
 
 const poopWeekBtn = document.getElementById("poopWeekBtn");
@@ -2073,6 +2106,10 @@ function showPoopEditModal(dateStr, dayRecords) {
         <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopAmountLabel')}</span>
         ${(t("poopAmounts") || []).map((label, i) => `<button class="poop-amount-btn-sm" data-amount="${i+1}" id="poopAddAmount${i+1}">${label}</button>`).join("")}
       </div>
+      <div class="poop-color-selector" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopColorLabel')}</span>
+        ${(t("poopColors") || []).map((label, i) => `<button class="poop-color-btn-sm" data-color="${i+1}" id="poopAddColor${i+1}" title="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid rgba(0,0,0,0.15);"></button>`).join("")}
+      </div>
       <button class="edit-save-btn" id="poopAddBtn" style="background: var(--secondary);margin-top:10px;">${t('makeUpCheckinBtn')}</button>
     `;
     
@@ -2094,6 +2131,16 @@ function showPoopEditModal(dateStr, dayRecords) {
       });
     });
 
+    // 补打卡表单大便颜色按钮事件
+    editModalBody.querySelectorAll('.poop-color-selector .poop-color-btn-sm').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const color = parseInt(btn.dataset.color);
+        const isActive = btn.classList.contains('active');
+        editModalBody.querySelectorAll('.poop-color-selector .poop-color-btn-sm').forEach(b => b.classList.remove('active'));
+        if (!isActive) btn.classList.add('active');
+      });
+    });
+  
     document.getElementById("poopAddBtn").addEventListener("click", () => {
       const remark = document.getElementById("poopAddRemark").value.trim();
       
@@ -2116,12 +2163,18 @@ function showPoopEditModal(dateStr, dayRecords) {
       document.querySelectorAll('#poopAddAmount1, #poopAddAmount2, #poopAddAmount3').forEach(btn => {
         if (btn.classList.contains('active')) addAmount = parseInt(btn.dataset.amount);
       });
+      // 读取补打卡表单中的大便颜色
+      let addColor = 0;
+      document.querySelectorAll('[id^="poopAddColor"]').forEach(btn => {
+        if (btn.classList.contains('active')) addColor = parseInt(btn.dataset.color);
+      });
 
       chrome.storage.local.get(["poopRecords"], (data) => {
         const records = data.poopRecords || {};
         if (!records[dateStr]) records[dateStr] = [];
         const newRec = { time: recordTime, remark, timestamp: Date.now(), isBackfill: !isToday };
         if (addAmount > 0) newRec.amount = addAmount;
+        if (addColor > 0) newRec.color = addColor;
         records[dateStr].push(newRec);
         chrome.storage.local.set({ poopRecords: records }, () => {
           showToast(isToday ? "💩 " + t('checkinSuccess') : "💩 " + t('makeUpCheckinSuccess'));
@@ -2149,6 +2202,7 @@ function showPoopEditModal(dateStr, dayRecords) {
   const bristolDescs = t("bristolDescs") || [];
 
   const poopAmounts = t("poopAmounts") || [];
+  const poopColors = t("poopColors") || [];
 
   editModalBody.innerHTML = dayRecords.map((rec, idx) => {
     const parsedTime = parseRecordTimePoop(rec.time);
@@ -2177,6 +2231,13 @@ function showPoopEditModal(dateStr, dayRecords) {
       <div class="poop-amount-selector" data-record-idx="${idx}" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopAmountLabel')}</span>
         ${amountBtns}
+      </div>
+      <div class="poop-color-display" data-idx="${idx}" title="${t('poopColorLabel')}" style="margin-top:8px;">
+        <span class="poop-color-dot" style="background:${rec.color ? POOP_COLOR_MAP[rec.color - 1] || '#eee' : 'rgba(0,0,0,0.08)'};"></span>
+        <span class="${rec.color ? 'poop-color-name' : 'poop-color-none'}">${rec.color ? poopColors[rec.color - 1] || '' : t('poopColorNotSelected')}</span>
+      </div>
+      <div class="poop-color-picker" data-idx="${idx}">
+        ${poopColors.map((label, i) => `<button class="poop-color-btn-sm ${rec.color === (i+1) ? 'active' : ''}" data-idx="${idx}" data-color="${i+1}" title="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid ${rec.color === (i+1) ? 'var(--poop)' : 'rgba(0,0,0,0.15)'};"></button>`).join("")}
       </div>
       <div class="edit-input-row" id="poopEditFormTime${idx}" style="display:none;align-items:center;">
         <input type="time" class="edit-input" id="poopEditTime${idx}" value="${parsedTime}" placeholder="HH:mm" style="width:auto;flex:none;" />
@@ -2224,6 +2285,42 @@ function showPoopEditModal(dateStr, dayRecords) {
         if (records[currentEditDate] && records[currentEditDate][idx]) {
           const cur = records[currentEditDate][idx].amount;
           records[currentEditDate][idx].amount = (cur === amount) ? null : amount;
+          chrome.storage.local.set({ poopRecords: records }, () => {
+            chrome.storage.local.get(["poopRecords"], (d) => {
+              if (d.poopRecords && d.poopRecords[currentEditDate]) {
+                showPoopEditModal(currentEditDate, d.poopRecords[currentEditDate]);
+              }
+            });
+          });
+        }
+      });
+    });
+  });
+
+  // 大便颜色：点击显示区 → 展开/收起选择面板
+  editModalBody.querySelectorAll(".poop-color-display").forEach(display => {
+    display.addEventListener("click", () => {
+      const idx = display.dataset.idx;
+      const picker = editModalBody.querySelector(`.poop-color-picker[data-idx="${idx}"]`);
+      if (!picker) return;
+      // 关闭其他已展开的面板
+      editModalBody.querySelectorAll(".poop-color-picker.expanded").forEach(p => {
+        if (p !== picker) p.classList.remove("expanded");
+      });
+      picker.classList.toggle("expanded");
+    });
+  });
+
+  // 大便颜色按钮点击事件
+  editModalBody.querySelectorAll(".poop-color-btn-sm").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const idx = Number(btn.dataset.idx);
+      const color = Number(btn.dataset.color);
+      chrome.storage.local.get(["poopRecords"], (data) => {
+        const records = data.poopRecords || {};
+        if (records[currentEditDate] && records[currentEditDate][idx]) {
+          const cur = records[currentEditDate][idx].color;
+          records[currentEditDate][idx].color = (cur === color) ? null : color;
           chrome.storage.local.set({ poopRecords: records }, () => {
             chrome.storage.local.get(["poopRecords"], (d) => {
               if (d.poopRecords && d.poopRecords[currentEditDate]) {
@@ -2305,6 +2402,13 @@ function showPoopTooltip(e, dateStr) {
             bristolInfo = `Bristol ${rec.bristolType}: ${bt}`;
           }
           const amountHtml = rec.amount ? `💩 ${t('poopAmountLabel')}: ${poopAmounts[rec.amount - 1] || ""}` : "";
+          let colorHtml = "";
+          if (rec.color) {
+            const colorHex = POOP_COLOR_MAP[rec.color - 1] || '#eee';
+            const poopColors = t("poopColors") || [];
+            const colorLabel = poopColors[rec.color - 1] || "";
+            colorHtml = ` <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorHex};vertical-align:middle;" title="${colorLabel}"></span>`;
+          }
           const remarkHtml = rec.remark ? `📝 ${rec.remark}` : '';
           return `
             <div class="tooltip-record">
@@ -2312,6 +2416,7 @@ function showPoopTooltip(e, dateStr) {
               <div class="tooltip-record-detail">
                 ${bristolInfo ? `<span style="color:${['#dc2626','#ea580c','#ca8a04','#16a34a','#65a30d','#2563eb','#1d4ed8'][rec.bristolType-1]};font-weight:600;">${bristolInfo}</span>` : ''}
                 ${amountHtml ? `<span>${amountHtml}</span>` : ''}
+                ${colorHtml}
                 ${remarkHtml ? `<span>${remarkHtml}</span>` : `<span>📝 ${t('noRemark')}</span>`}
               </div>
             </div>
@@ -2413,11 +2518,15 @@ poopCheckinBtn.addEventListener("click", () => {
     if (selectedPoopAmount > 0) {
       record.amount = selectedPoopAmount;
     }
+    if (selectedPoopColor > 0) {
+      record.color = selectedPoopColor;
+    }
     records[today].push(record);
     chrome.storage.local.set({ poopRecords: records }, () => {
       poopRemarkInput.value = "";
       clearBristolSelection();
       clearPoopAmount();
+      clearPoopColor();
       renderPoopCalendar();
       updatePoopTodayStatus();
       updatePoopStats();
@@ -2466,13 +2575,14 @@ function updatePoopTodayStatus() {
   chrome.storage.local.get(["poopRecords"], (data) => {
     const records = data.poopRecords || {};
     const todayRecord = records[today];
+    const poopColors = t("poopColors") || [];
     if (todayRecord && todayRecord.length > 0) {
       poopTodaySection.style.display = "block";
       poopTodayCount.textContent = todayRecord.length;
       poopRecordsList.innerHTML = todayRecord.map((rec, idx) => `
         <div class="record-item" data-index="${idx}">
           <span class="record-time">${rec.time}</span>
-          <span class="record-remark">${rec.remark || t('noRemark')}</span>
+          <span class="record-remark">${rec.remark || t('noRemark')}${rec.color ? ` <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${POOP_COLOR_MAP[rec.color - 1] || '#eee'};vertical-align:middle;" title="${poopColors[rec.color - 1] || ""}"></span>` : ""}</span>
           <div class="record-actions">
             <button class="record-action-btn edit-poop-record" data-index="${idx}" title="${t('editTitle')}">✏️</button>
             <button class="record-action-btn delete-poop-record" data-index="${idx}" title="${t('deleteTitle')}">🗑️</button>
@@ -3016,6 +3126,16 @@ const PEE_COLOR_MAP = [
   "#ff9900",   // 4: 深黄
   "#c87533",   // 5: 茶色/琥珀
   "#8b4513"    // 6: 异常深褐色
+];
+
+const POOP_COLOR_MAP = [
+  "#8B5E3C",   // 1: 深褐色 Dark Brown
+  "#C4A882",   // 2: 浅褐色 Light Brown
+  "#E5A443",   // 3: 黄色 Yellow
+  "#6B8E23",   // 4: 绿色 Green
+  "#2C2C2C",   // 5: 黑色 Black
+  "#C0392B",   // 6: 红色 Red
+  "#C0BDB8"    // 7: 灰白色 Clay/Grey
 ];
 
 let selectedPeeColor = 0; // 0=未选, 1~6 对应颜色
