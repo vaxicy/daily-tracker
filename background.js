@@ -9,21 +9,78 @@ const THEME_BADGE_COLOR = {
 };
 
 function updateBadge() {
-  const today = getLocalDateStr();
-  chrome.storage.local.get(['drinkRecords', 'selectedTheme'], (data) => {
-    const records = data.drinkRecords || {};
-    const count = (records[today] || []).length;
-    const theme = data.selectedTheme || 'default';
-    const themeColor = THEME_BADGE_COLOR[theme] || '#1a73e8';
-    if (count <= 0) {
-      chrome.action.setBadgeText({ text: '' });
-      return;
+  chrome.storage.local.get(
+    ['drinkRecords', 'poopRecords', 'peeRecords', 'mealRecords', 'selectedTheme', 'badgeEnabled', 'badgeContentType'],
+    (data) => {
+      if (chrome.runtime.lastError) {
+        logError('读取角标配置失败', { error: chrome.runtime.lastError.message });
+        return;
+      }
+      const enabled = data.badgeEnabled !== false;
+      if (!enabled) {
+        chrome.action.setIcon({ path: { '16': 'icon16.png', '48': 'icon48.png', '128': 'icon128.png' } });
+        chrome.action.setBadgeText({ text: '' });
+        return;
+      }
+      const badgeType = data.badgeContentType || 'drink_today';
+      const theme = data.selectedTheme || 'default';
+      const themeColor = THEME_BADGE_COLOR[theme] || '#1a73e8';
+      chrome.action.setIcon({ path: { '16': 'icon16.png', '48': 'icon48.png', '128': 'icon128.png' } });
+
+      // 解析 badgeType: "drink_today" -> ["drink", "today"]
+      const parts = badgeType.split('_');
+      const recordType = parts[0];   // drink / poop / pee / meal
+      const timeRange = parts[1];     // today / week / month
+
+      // 选取对应记录
+      let records = {};
+      if (recordType === 'drink') records = data.drinkRecords || {};
+      else if (recordType === 'poop') records = data.poopRecords || {};
+      else if (recordType === 'pee') records = data.peeRecords || {};
+      else if (recordType === 'meal') records = data.mealRecords || {};
+
+      let count = 0;
+      if (timeRange === 'today') {
+        const today = getLocalDateStr();
+        count = (records[today] || []).length;
+      } else if (timeRange === 'week') {
+        // 本周一 00:00 到今天
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const monday = new Date(now);
+        monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+        monday.setHours(0, 0, 0, 0);
+        const cur = new Date(monday);
+        while (cur <= now) {
+          const ds = formatDateStr(cur);
+          count += (records[ds] || []).length;
+          cur.setDate(cur.getDate() + 1);
+        }
+      } else if (timeRange === 'month') {
+        // 本月1日 到今天
+        const now = new Date();
+        const first = new Date(now.getFullYear(), now.getMonth(), 1);
+        const cur = new Date(first);
+        while (cur <= now) {
+          const ds = formatDateStr(cur);
+          count += (records[ds] || []).length;
+          cur.setDate(cur.getDate() + 1);
+        }
+      }
+
+      const txt = count > 99 ? '99+' : String(count);
+      chrome.action.setBadgeText({ text: txt });
+      chrome.action.setBadgeBackgroundColor({ color: themeColor });
+      if (chrome.action.setBadgeTextColor) {
+        chrome.action.setBadgeTextColor({ color: '#ffffff' });
+      }
     }
-    const txt = count > 99 ? '99+' : String(count);
-    chrome.action.setBadgeText({ text: txt });
-    chrome.action.setBadgeBackgroundColor({ color: themeColor });
-    chrome.action.setBadgeTextColor({ color: '#ffffff' });
-  });
+  );
+}
+
+// 辅助：Date -> "YYYY-MM-DD"
+function formatDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 // ==================== 后台 i18n ====================

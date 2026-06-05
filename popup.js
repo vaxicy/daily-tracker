@@ -1817,58 +1817,66 @@ var THEME_BADGE_COLOR = {
   forest: '#059669'
 };
 
-(function(){
-  let _cachedPopupIcons = null;
-  window._loadCachedPopupIcons = function() {
-    if (_cachedPopupIcons) return Promise.resolve(_cachedPopupIcons);
-    _cachedPopupIcons = {};
-    return Promise.all([16,48,128].map(function(size){ return new Promise(function(resolve){
-      var img = new Image();
-      img.onload = function(){ _cachedPopupIcons[size] = img; resolve(); };
-      img.onerror = function(){ resolve(); };
-      img.src = chrome.runtime.getURL('icon' + size + '.png');
-    });})).then(function(){ return _cachedPopupIcons; });
-  };
-  window._drawBadge = function(ctx, text, color, size) {
-    var r = Math.max(2, Math.round(size * 0.09));
-    var cx = size - r - 1;
-    var cy = size - r - 1;
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fill();
-    if (size >= 48 && text) {
-      var fontSize = Math.max(7, Math.round(size * 0.11));
-      ctx.font = 'bold ' + fontSize + 'px sans-serif';
-      ctx.fillStyle = '#ffffff';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(text, cx, cy + 1);
-    }
-  };
-})();
-
 
 function updateBadge() {
-  var today = getToday();
-  chrome.storage.local.get(["drinkRecords","selectedTheme"], function(data){
-    var records = data.drinkRecords || {};
-    var count = (records[today] || []).length;
-    var theme = data.selectedTheme || "default";
-    var themeColor = (THEME_BADGE_COLOR[theme] || "#0b6bff");
-    if (count <= 0) {
-      chrome.action.setBadgeText({ text: "" });
-      return;
+  chrome.storage.local.get(
+    ["drinkRecords","poopRecords","peeRecords","mealRecords","selectedTheme","badgeEnabled","badgeContentType"],
+    function(data){
+      if (chrome.runtime.lastError) {
+        console.error("[popup] 读取角标配置失败:", chrome.runtime.lastError.message);
+        return;
+      }
+      var enabled = data.badgeEnabled !== false;
+      if (!enabled) {
+        chrome.action.setIcon({ path: { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" } });
+        chrome.action.setBadgeText({ text: "" });
+        return;
+      }
+      var badgeType = data.badgeContentType || "drink_today";
+      var parts = badgeType.split("_");
+      var recordType = parts[0];
+      var timeRange = parts[1];
+      var theme = data.selectedTheme || "default";
+      var themeColor = (THEME_BADGE_COLOR[theme] || "#0b6bff");
+      chrome.action.setIcon({ path: { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" } });
+
+      var records = {};
+      if (recordType === "drink") records = data.drinkRecords || {};
+      else if (recordType === "poop") records = data.poopRecords || {};
+      else if (recordType === "pee") records = data.peeRecords || {};
+      else if (recordType === "meal") records = data.mealRecords || {};
+
+      var count = 0;
+      if (timeRange === "today") {
+        var today = getToday();
+        count = (records[today] || []).length;
+      } else if (timeRange === "week") {
+        var range = getWeekRange();
+        var cur = new Date(range.start);
+        var now = new Date();
+        while (cur <= now) {
+          count += (records[formatDate(cur)] || []).length;
+          cur.setDate(cur.getDate() + 1);
+        }
+      } else if (timeRange === "month") {
+        var range = getMonthRange();
+        var cur = new Date(range.start);
+        var now = new Date();
+        while (cur <= now) {
+          count += (records[formatDate(cur)] || []).length;
+          cur.setDate(cur.getDate() + 1);
+        }
+      }
+
+      var txt = count > 99 ? "99+" : String(count);
+      chrome.action.setBadgeText({ text: txt });
+      chrome.action.setBadgeBackgroundColor({ color: themeColor });
+      if (chrome.action.setBadgeTextColor) {
+        chrome.action.setBadgeTextColor({ color: "#ffffff" });
+      }
     }
-    var txt = count > 99 ? "99+" : String(count);
-    chrome.action.setBadgeText({ text: txt });
-    chrome.action.setBadgeBackgroundColor({ color: themeColor });
-    chrome.action.setBadgeTextColor({ color: "#ffffff" });
-  });
+  );
 }
-
-
-
 
 drinkBtn.addEventListener("click", () => {
   const startTime = Date.now();
@@ -4027,6 +4035,61 @@ loadLanguage(() => {
   // 重新应用动态状态文本，避免被 applyI18n 覆盖
   applyRunningUI(isRunning);
   applyNotifUI(notifToggle.checked);
+  // 角标开关初始化
+  var sbBadge = document.getElementById("sbBadge");
+  if (sbBadge) {
+    chrome.storage.local.get(["badgeEnabled"], function(data) {
+      sbBadge.checked = (data.badgeEnabled !== false);
+      updateBadge();
+    });
+    sbBadge.addEventListener("change", function() {
+      chrome.storage.local.set({ badgeEnabled: sbBadge.checked }, function() {
+        updateBadge();
+      });
+    });
+  }
+  // === 角标内容选择器 ===
+  var badgeContentType = "drink_today";
+  function getBadgeI18nKey(val) {
+    return "badgeOpt" + val.split("_").map(function(s){ return s.charAt(0).toUpperCase() + s.slice(1); }).join("");
+  }
+  function updateBadgeContentLabel() {
+    var el = document.getElementById("badgeContentLabel");
+    if (el) el.textContent = t(getBadgeI18nKey(badgeContentType));
+  }
+  chrome.storage.local.get(["badgeContentType"], function(data) {
+    badgeContentType = data.badgeContentType || "drink_today";
+    updateBadgeContentLabel();
+  });
+  var badgeContentBtn = document.getElementById("badgeContentBtn");
+  var badgeModalOverlay = document.getElementById("badgeModalOverlay");
+  var badgeModalClose = document.getElementById("badgeModalClose");
+  if (badgeContentBtn && badgeModalOverlay) {
+    badgeContentBtn.addEventListener("click", function() {
+      badgeModalOverlay.classList.remove("hidden");
+      badgeModalOverlay.querySelectorAll(".badge-modal-option").forEach(function(btn) {
+        btn.classList.toggle("active", btn.dataset.value === badgeContentType);
+      });
+    });
+  }
+  if (badgeModalClose && badgeModalOverlay) {
+    badgeModalClose.addEventListener("click", function() {
+      badgeModalOverlay.classList.add("hidden");
+    });
+    badgeModalOverlay.addEventListener("click", function(e) {
+      if (e.target === badgeModalOverlay) badgeModalOverlay.classList.add("hidden");
+    });
+  }
+  document.querySelectorAll(".badge-modal-option").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      badgeContentType = this.dataset.value;
+      chrome.storage.local.set({ badgeContentType: badgeContentType }, function() {
+        updateBadgeContentLabel();
+        badgeModalOverlay.classList.add("hidden");
+        updateBadge();
+      });
+    });
+  });
 });
 
 // ==================== 自定义提醒 ====================
