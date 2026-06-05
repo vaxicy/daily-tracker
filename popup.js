@@ -1611,6 +1611,7 @@ drinkEditConfirm.addEventListener("click", () => {
       // 保存成功后，同时保存备份
       chrome.storage.local.set({ drinkRecordsBackup: records }, () => {});
       updateDrinkStats();
+      updateBadge();
       renderDrinkCalendar();
       showToast(diff > 0 ? t('toastDrinkAdded', { n: diff }) : t('toastDrinkRemoved', { n: Math.abs(diff) }));
       closeDrinkCounter();
@@ -1808,6 +1809,67 @@ notifToggle.addEventListener("change", async () => {
   }
 });
 
+
+var THEME_BADGE_COLOR = {
+  default: '#0b6bff',
+  pink: '#EC4899',
+  dark: '#3b82f6',
+  forest: '#059669'
+};
+
+(function(){
+  let _cachedPopupIcons = null;
+  window._loadCachedPopupIcons = function() {
+    if (_cachedPopupIcons) return Promise.resolve(_cachedPopupIcons);
+    _cachedPopupIcons = {};
+    return Promise.all([16,48,128].map(function(size){ return new Promise(function(resolve){
+      var img = new Image();
+      img.onload = function(){ _cachedPopupIcons[size] = img; resolve(); };
+      img.onerror = function(){ resolve(); };
+      img.src = chrome.runtime.getURL('icon' + size + '.png');
+    });})).then(function(){ return _cachedPopupIcons; });
+  };
+  window._drawBadge = function(ctx, text, color, size) {
+    var r = Math.max(2, Math.round(size * 0.09));
+    var cx = size - r - 1;
+    var cy = size - r - 1;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    if (size >= 48 && text) {
+      var fontSize = Math.max(7, Math.round(size * 0.11));
+      ctx.font = 'bold ' + fontSize + 'px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, cx, cy + 1);
+    }
+  };
+})();
+
+
+function updateBadge() {
+  var today = getToday();
+  chrome.storage.local.get(["drinkRecords","selectedTheme"], function(data){
+    var records = data.drinkRecords || {};
+    var count = (records[today] || []).length;
+    var theme = data.selectedTheme || "default";
+    var themeColor = (THEME_BADGE_COLOR[theme] || "#0b6bff");
+    if (count <= 0) {
+      chrome.action.setBadgeText({ text: "" });
+      return;
+    }
+    var txt = count > 99 ? "99+" : String(count);
+    chrome.action.setBadgeText({ text: txt });
+    chrome.action.setBadgeBackgroundColor({ color: themeColor });
+    chrome.action.setBadgeTextColor({ color: "#ffffff" });
+  });
+}
+
+
+
+
 drinkBtn.addEventListener("click", () => {
   const startTime = Date.now();
   const today = getToday();
@@ -1821,6 +1883,7 @@ drinkBtn.addEventListener("click", () => {
       // 保存成功后，同时保存备份
       chrome.storage.local.set({ drinkRecordsBackup: records }, () => {});
       updateDrinkStats();
+      updateBadge();
     });
   });
   
@@ -3932,6 +3995,7 @@ chrome.storage.local.get(["defaultTab"], (data) => {
 
 initDrinkTimer();
 updateDrinkStats();
+updateBadge();
 loadModuleStates();
 
 // 自定义标签弹窗事件

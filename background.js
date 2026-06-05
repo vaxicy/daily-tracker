@@ -1,5 +1,31 @@
 const DEFAULT_MINUTES = 30;
 
+// ==================== 角标：显示今日喝水次数（后台原生角标）====================
+const THEME_BADGE_COLOR = {
+  default: '#1a73e8',
+  pink: '#EC4899',
+  dark: '#3b82f6',
+  forest: '#059669'
+};
+
+function updateBadge() {
+  const today = getLocalDateStr();
+  chrome.storage.local.get(['drinkRecords', 'selectedTheme'], (data) => {
+    const records = data.drinkRecords || {};
+    const count = (records[today] || []).length;
+    const theme = data.selectedTheme || 'default';
+    const themeColor = THEME_BADGE_COLOR[theme] || '#1a73e8';
+    if (count <= 0) {
+      chrome.action.setBadgeText({ text: '' });
+      return;
+    }
+    const txt = count > 99 ? '99+' : String(count);
+    chrome.action.setBadgeText({ text: txt });
+    chrome.action.setBadgeBackgroundColor({ color: themeColor });
+    chrome.action.setBadgeTextColor({ color: '#ffffff' });
+  });
+}
+
 // ==================== 后台 i18n ====================
 const BG_I18N = {
   zh: {
@@ -61,10 +87,12 @@ logInfo("后台脚本已加载", {
 chrome.runtime.onStartup.addListener(() => {
   logInfo("浏览器启动");
   restoreAlarm();
+  updateBadge();
 });
 
 chrome.runtime.onInstalled.addListener((details) => {
   logInfo(`扩展安装/更新: ${details.reason}`);
+  updateBadge();
 });
 
 // ==================== 核心问题修复：保持 Service Worker 活跃 ====================
@@ -292,6 +320,12 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     return;
   }
 
+  if (alarm.name === "dailyBadgeReset") {
+    logInfo("[角标] 跨日清零");
+    updateBadge();
+    return;
+  }
+
   logInfo("========== 闹钟触发! ==========", {
     name: alarm.name,
     scheduledTime: new Date(alarm.scheduledTime).toLocaleString(),
@@ -379,6 +413,7 @@ function recordDrink() {
               logInfo("重试保存喝水记录成功", { today, time });
               // 保存成功后，同时保存一个备份
               saveDrinkBackup(records);
+              updateBadge();
             }
           });
         }, 500);
@@ -386,6 +421,7 @@ function recordDrink() {
         logInfo("喝水已记录", { today, time, total: records[today].length });
         // 保存成功后，同时保存一个备份
         saveDrinkBackup(records);
+        updateBadge();
       }
     });
 
@@ -553,6 +589,20 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 // 启动时加载提醒
 loadBgReminders();
+
+// ==================== 每日角标跨日清零 ====================
+function scheduleDailyBadgeReset() {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 1, 0, 0);
+  chrome.alarms.create("dailyBadgeReset", {
+    when: tomorrow.getTime(),
+    periodInMinutes: 1440
+  });
+  logInfo("[角标] 每日跨日清零闹钟已创建", { nextFire: tomorrow.toLocaleString() });
+}
+scheduleDailyBadgeReset();
 
 logInfo("后台脚本初始化完成 ✓");
 
