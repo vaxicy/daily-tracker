@@ -1,6 +1,6 @@
-# 🍽️ 吃喝拉撒 - 健康生活追踪器
+# 🍽️ 吃喝拉撒 - Daily Habit Tracker 健康习惯追踪
 
-> 全方位记录生活起居：吃、喝、拉、撒，养成健康好习惯。
+> 记录饮食、饮水、排便、排尿，全方位健康习惯追踪器。Track diet, water, bowel, bladder daily.
 
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![Version](https://img.shields.io/badge/version-3.0-blue)](https://github.com/vaxicy/daily-tracker)

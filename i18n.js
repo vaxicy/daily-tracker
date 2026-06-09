@@ -2,9 +2,9 @@
 const I18N = {
   zh: {
     // 通用
-    appName: "吃喝拉撒",
-    appDesc: "全方位记录生活起居：吃、喝、拉、撒，养成健康好习惯。",
-    healthyTracker: "健康追踪器",
+    appName: "吃喝拉撒 - Daily Habit Tracker 健康习惯追踪",
+    appDesc: "记录饮食、饮水、排便、排尿，全方位健康习惯追踪器。",
+    healthyTracker: "健康习惯追踪",
     settings: "设置",
     close: "关闭",
 
@@ -290,9 +290,9 @@ const I18N = {
   },
   en: {
     // General
-    appName: "Daily Tracker",
-    appDesc: "Track your daily life: eat, drink, poop, pee. Build healthy habits.",
-    healthyTracker: "Health Tracker",
+    appName: "Daily Habit Tracker",
+    appDesc: "Track diet, water, bowel, bladder daily. Free daily health habit tracker for Chrome.",
+    healthyTracker: "Health Habit Tracker",
     settings: "Settings",
     close: "Close",
 
