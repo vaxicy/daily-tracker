@@ -2251,12 +2251,46 @@
         transform: translateX(22px);
       }
 
+      /* 经期状态卡片 header */
+      .period-status-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 2px 0;
+      }
+      .period-status-text {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .period-status-text.active {
+        color: var(--period);
+      }
+      .period-status-divider {
+        height: 1px;
+        background: rgba(236,72,153,0.1);
+        margin: 8px 0;
+        display: none;
+      }
+      .period-status-divider.show {
+        display: block;
+      }
+      .period-detail-content {
+        display: none;
+      }
+      .period-detail-content.show {
+        display: block;
+      }
+
       .btn-period-sm {
-        width: auto;
-        padding: 6px 16px;
+        width: 100%;
+        padding: 8px 16px;
         font-size: 12px;
         border-radius: 8px;
-        margin-top: 6px;
+        margin-top: 10px;
+      }
+      .btn-period-clear {
+        display: none;
       }
 
       .period-stats-card {
@@ -2484,6 +2518,33 @@
       .day-cell.selected-period-day {
         box-shadow: 0 0 0 2px var(--period);
         border-radius: 8px;
+      }
+      /* 日期单元格删除按钮（右上角，悬停显示） */
+      .period-cell-delete-btn {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 16px;
+        height: 16px;
+        border: none;
+        background: rgba(239, 68, 68, 0.9);
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+        line-height: 16px;
+        text-align: center;
+        border-radius: 0 0 0 4px;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.15s;
+        padding: 0;
+        z-index: 2;
+      }
+      .day-cell.has-delete-btn:hover .period-cell-delete-btn {
+        opacity: 1;
+      }
+      .period-cell-delete-btn:hover {
+        background: rgba(220, 38, 38, 1);
       }
       .day-cell .day-mood {
         position: static;
@@ -3521,6 +3582,13 @@
       [data-theme="dark"] .day-cell.period-day-2 { background: rgba(244,114,182,0.3); }
       [data-theme="dark"] .day-cell.period-day-3 { background: rgba(244,114,182,0.55); }
       [data-theme="dark"] .day-cell.period-day-4 { background: rgba(244,114,182,0.8); color: #fff; }
+      [data-theme="dark"] .period-cell-delete-btn {
+        background: rgba(248,113,113,0.9);
+      }
+      [data-theme="dark"] .period-cell-delete-btn:hover {
+        background: rgba(248,113,113,1);
+      }
+
       [data-theme="dark"] .period-mood-btn {
         background: rgba(51,65,85,0.5);
         border-color: rgba(244,114,182,0.2);
@@ -3566,6 +3634,15 @@
       }
       [data-theme="dark"] .period-toggle-track {
         background: rgba(51,65,85,0.8);
+      }
+      [data-theme="dark"] .period-status-text {
+        color: var(--text, #e2e8f0);
+      }
+      [data-theme="dark"] .period-status-text.active {
+        color: var(--period);
+      }
+      [data-theme="dark"] .period-status-divider {
+        background: rgba(148,163,184,0.1);
       }
 
       [data-theme="dark"] .toast {
@@ -4089,6 +4166,13 @@
       [data-theme="forest"] .day-cell.period-day-2 { background: rgba(5,150,105,0.25); }
       [data-theme="forest"] .day-cell.period-day-3 { background: rgba(5,150,105,0.5); }
       [data-theme="forest"] .day-cell.period-day-4 { background: rgba(5,150,105,0.7); color: #fff; }
+      [data-theme="forest"] .period-cell-delete-btn {
+        background: rgba(220,38,38,0.9);
+      }
+      [data-theme="forest"] .period-cell-delete-btn:hover {
+        background: rgba(220,38,38,1);
+      }
+
       [data-theme="forest"] #periodTooltip {
         box-shadow: 0 8px 32px rgba(5,150,105,0.18);
       }
@@ -4120,6 +4204,12 @@
       }
       [data-theme="forest"] .period-toggle-label {
         color: var(--text, #0a2923);
+      }
+      [data-theme="forest"] .period-status-text.active {
+        color: var(--period);
+      }
+      [data-theme="forest"] .period-status-divider {
+        background: rgba(5,150,105,0.1);
       }
 
     </style>
@@ -4562,41 +4652,45 @@
         </div>
       </div>
 
-      <!-- 经期开关 Toggle -->
-      <div class="period-card" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;">
-        <span class="period-toggle-label" id="periodToggleLabel" data-i18n="periodToggleLabel">经期</span>
-        <label class="period-toggle-wrap">
-          <input type="checkbox" id="periodToggleInput" />
-          <span class="period-toggle-track">
-            <span class="period-toggle-thumb"></span>
-          </span>
-        </label>
-      </div>
-
-      <!-- 心情 & 症状（经期进行中或结束后可记录） -->
-      <div class="period-card" id="periodMoodCard" style="display:none;">
-        <div class="period-mood-row">
-          <span class="period-mood-label" data-i18n="periodMoodLabel">心情</span>
-          <div class="period-mood-btns" id="periodMoodBtns"></div>
+      <!-- 经期状态卡片（始终可见，Toggle 融入顶部） -->
+      <div class="period-card" id="periodMoodCard">
+        <!-- 顶部状态栏：状态文字 + Toggle -->
+        <div class="period-status-header">
+          <span class="period-status-text" id="periodStatusText" data-i18n="periodStatusOff">未在经期</span>
+          <label class="period-toggle-wrap">
+            <input type="checkbox" id="periodToggleInput" />
+            <span class="period-toggle-track">
+              <span class="period-toggle-thumb"></span>
+            </span>
+          </label>
         </div>
 
-        <div style="height:1px;background:rgba(236,72,153,0.1);margin:8px 0;"></div>
+        <!-- 分割线（经期进行中时显示） -->
+        <div class="period-status-divider" id="periodStatusDivider"></div>
 
-        <div class="period-symptom-row">
-          <div class="period-symptom-label" data-i18n="periodSymptomsLabel">症状</div>
-          <div class="period-symptom-btns" id="periodSymptomBtns"></div>
-        </div>
+        <!-- 详情内容区域（经期进行中时显示） -->
+        <div class="period-detail-content" id="periodDetailContent">
+          <div class="period-mood-row">
+            <span class="period-mood-label" data-i18n="periodMoodLabel">心情</span>
+            <div class="period-mood-btns" id="periodMoodBtns"></div>
+          </div>
 
-        <div style="height:1px;background:rgba(236,72,153,0.1);margin:8px 0;"></div>
+          <div style="height:1px;background:rgba(236,72,153,0.1);margin:8px 0;"></div>
 
-        <div class="period-blood-row">
-          <div class="period-blood-label" data-i18n="periodBloodColorLabel">血的颜色</div>
-          <div class="period-blood-btns" id="periodBloodColorBtns"></div>
-        </div>
+          <div class="period-symptom-row">
+            <div class="period-symptom-label" data-i18n="periodSymptomsLabel">症状</div>
+            <div class="period-symptom-btns" id="periodSymptomBtns"></div>
+          </div>
 
-        <input class="period-remark-input" id="periodRemarkInput" type="text" placeholder="添加备注（可选）" maxlength="50" data-i18n-placeholder="periodRemarkPlaceholder" />
+          <div style="height:1px;background:rgba(236,72,153,0.1);margin:8px 0;"></div>
 
-        <div style="text-align:center;">
+          <div class="period-blood-row">
+            <div class="period-blood-label" data-i18n="periodBloodColorLabel">血的颜色</div>
+            <div class="period-blood-btns" id="periodBloodColorBtns"></div>
+          </div>
+
+          <input class="period-remark-input" id="periodRemarkInput" type="text" placeholder="添加备注（可选）" maxlength="50" data-i18n-placeholder="periodRemarkPlaceholder" />
+
           <button class="btn-period btn-period-sm" id="periodSaveMoodBtn">💾 <span data-i18n="save">保存</span></button>
         </div>
       </div>
