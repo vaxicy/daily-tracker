@@ -1213,7 +1213,8 @@
         color: var(--text);
         outline: none;
         font: inherit;
-        font-size: 13px;
+        font-size: 12px;
+        text-overflow: ellipsis;
       }
       .checkin-input.pee-input {
         border-color: rgba(16,185,129,0.25);
@@ -1483,29 +1484,29 @@
       .pee-amount-row {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         margin: 10px 0 4px;
-        padding: 6px 12px;
+        padding: 6px 10px;
         background: rgba(16,185,129,0.04);
         border-radius: 8px;
       }
       .pee-amount-label {
-        font-size: 11px;
+        font-size: 10px;
         color: var(--muted);
         white-space: nowrap;
       }
       .pee-amount-btns {
         display: flex;
-        gap: 3px;
-        flex-wrap: nowrap;
+        gap: 2px;
+        flex-wrap: wrap;
       }
       .pee-amount-btn {
-        padding: 3px 6px;
+        padding: 2px 5px;
         border-radius: 12px;
         border: 1px solid rgba(16,185,129,0.2);
         background: rgba(255,255,255,0.8);
         color: var(--muted);
-        font-size: 11px;
+        font-size: 10px;
         cursor: pointer;
         transition: all 0.2s;
         user-select: none;
@@ -1548,12 +1549,12 @@
       .pee-color-row {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         margin: 6px 0 4px;
         padding: 6px 0;
       }
       .pee-color-label {
-        font-size: 12px;
+        font-size: 10px;
         color: var(--muted);
         white-space: nowrap;
       }
@@ -1707,6 +1708,14 @@
         flex: 1;
         word-break: break-all;
         margin-right: 8px;
+      }
+      .record-color-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(0,0,0,0.12);
+        flex-shrink: 0;
+        display: inline-block;
       }
       .record-actions {
         display: none;
@@ -1997,6 +2006,612 @@
       .stats-num.pee-num {
         color: var(--pee);
       }
+
+      /* ============ 经期记录页面 ============ */
+      :root {
+        --period: #EC4899;
+        --period2: #F472B6;
+      }
+      .nav-dot.active.period { background: var(--period); }
+
+      .period-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .period-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #FCE7F3, #FBCFE8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        box-shadow: 0 4px 12px rgba(236,72,153,0.15);
+      }
+      .period-title { font-size: 16px; font-weight: 700; }
+      .period-sub { font-size: 11px; color: var(--muted); }
+
+      .period-card {
+        background: rgba(255,255,255,0.7);
+        border: 1px solid rgba(236,72,153,0.15);
+        border-radius: 14px;
+        padding: 14px;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 4px 16px rgba(236,72,153,0.1);
+        margin-bottom: 12px;
+      }
+
+      .period-flow-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 10px 0;
+      }
+      .period-flow-label {
+        font-size: 12px;
+        color: var(--muted);
+        white-space: nowrap;
+        min-width: 50px;
+      }
+      .period-flow-btns {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .period-flow-btn {
+        padding: 4px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(236,72,153,0.2);
+        background: rgba(255,255,255,0.8);
+        color: var(--muted);
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+        white-space: nowrap;
+      }
+      .period-flow-btn:hover {
+        border-color: var(--period);
+        color: var(--period);
+      }
+      .period-flow-btn.active {
+        background: var(--period);
+        color: #fff;
+        border-color: var(--period);
+        font-weight: 600;
+      }
+
+      .period-mood-row {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin: 8px 0;
+      }
+      .period-mood-label {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .period-mood-btns {
+        display: flex;
+        gap: 10px;
+      }
+      .period-mood-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(236,72,153,0.18);
+        background: rgba(255,255,255,0.8);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .period-mood-btn:hover {
+        transform: scale(1.12);
+        border-color: var(--period);
+      }
+      .period-mood-btn.active {
+        border-color: var(--period);
+        background: rgba(236,72,153,0.12);
+        transform: scale(1.12);
+        box-shadow: 0 0 0 3px rgba(236,72,153,0.1);
+      }
+
+      .period-symptom-row {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin: 6px 0;
+      }
+      .period-symptom-label {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .period-symptom-btns {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 2px;
+        width: 100%;
+      }
+      .period-symptom-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 4px 3px;
+        border-radius: 8px;
+        border: 1px solid rgba(236,72,153,0.15);
+        background: rgba(236,72,153,0.04);
+        color: var(--text);
+        font-size: 9px;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+      }
+      .period-symptom-btn:hover {
+        background: rgba(236,72,153,0.12);
+        border-color: rgba(236,72,153,0.4);
+      }
+      .period-symptom-btn.active {
+        background: rgba(236,72,153,0.15);
+        border-color: var(--period);
+        color: var(--period);
+        font-weight: 600;
+        box-shadow: 0 0 0 2px rgba(236,72,153,0.08);
+      }
+
+      .period-remark-input {
+        width: 100%;
+        padding: 7px 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(236,72,153,0.18);
+        background: rgba(255,255,255,0.9);
+        color: var(--text);
+        font: inherit;
+        font-size: 12px;
+        outline: none;
+        margin: 6px 0;
+      }
+      .period-remark-input:focus { border-color: var(--period); }
+      .period-remark-input::placeholder { color: var(--muted); }
+
+      .btn-period {
+        width: 100%;
+        padding: 10px;
+        border-radius: 10px;
+        border: none;
+        background: linear-gradient(135deg, var(--period), var(--period2));
+        color: #fff;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(236,72,153,0.3);
+        transition: all 0.2s;
+      }
+      .btn-period:hover { transform: translateY(-1px); }
+      .btn-period.unsaved {
+        animation: period-unsaved-pulse 1.2s ease-in-out infinite;
+      }
+      @keyframes period-unsaved-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(236,72,153,0.5); }
+        50% { box-shadow: 0 0 0 6px rgba(236,72,153,0); }
+      }
+      /* 经期开关 Toggle */
+      .period-toggle-wrap {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+      }
+      .period-toggle-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .period-toggle-track {
+        width: 48px;
+        height: 26px;
+        background: #cbd5e1;
+        border-radius: 13px;
+        position: relative;
+        transition: background 0.25s;
+        flex-shrink: 0;
+        display: inline-block;
+      }
+      .period-toggle-thumb {
+        width: 22px;
+        height: 22px;
+        background: #fff;
+        border-radius: 50%;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+      }
+      #periodToggleInput {
+        display: none;
+      }
+      #periodToggleInput:checked + .period-toggle-track {
+        background: var(--period);
+      }
+      #periodToggleInput:checked + .period-toggle-track .period-toggle-thumb {
+        transform: translateX(22px);
+      }
+
+      .btn-period-sm {
+        width: auto;
+        padding: 6px 16px;
+        font-size: 12px;
+        border-radius: 8px;
+        margin-top: 6px;
+      }
+
+      .period-stats-card {
+        background: rgba(255,255,255,0.7);
+        border: 1px solid rgba(236,72,153,0.15);
+        border-radius: 14px;
+        padding: 14px;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 4px 16px rgba(236,72,153,0.08);
+      }
+      .period-stats-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        margin-bottom: 10px;
+      }
+      .period-stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .period-stat-item {
+        background: rgba(236,72,153,0.05);
+        border-radius: 8px;
+        padding: 8px;
+        text-align: center;
+      }
+      .period-stat-label {
+        font-size: 10px;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .period-stat-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--period);
+      }
+
+      /* 周期趋势条形图 */
+      #periodBarChart {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .bar-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .bar-label {
+        flex-shrink: 0;
+        width: 22px;
+        font-size: 10px;
+        color: var(--muted);
+        text-align: right;
+        font-weight: 600;
+      }
+      .bar-track {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        position: relative;
+      }
+      .bar-fill {
+        height: 14px;
+        border-radius: 999px;
+        min-width: 8px;
+        max-width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 6px;
+        font-size: 9px;
+        font-weight: 700;
+        color: #fff;
+        transition: width 0.4s ease;
+        position: relative;
+      }
+      .bar-fill-cycle {
+        background: rgba(236,72,153,0.25);
+        color: var(--period);
+      }
+      .bar-fill-duration {
+        background: rgba(236,72,153,0.7);
+        color: #fff;
+      }
+      .bar-fill-cycle.bar-abnormal {
+        background: rgba(251,146,60,0.35);
+      }
+      .bar-fill-duration.bar-abnormal {
+        background: rgba(251,146,60,0.85);
+      }
+      .bar-abnormal-dot {
+        position: absolute;
+        right: -6px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #fb923c;
+      }
+      .bar-value-outside {
+        flex-shrink: 0;
+        font-size: 9px;
+        color: var(--muted);
+        width: 32px;
+        text-align: left;
+        padding-left: 4px;
+      }
+
+      /* 周期记录时间轴 */
+      .tl-list {
+        position: relative;
+        padding-left: 20px;
+      }
+      .tl-line {
+        position: absolute;
+        left: 7px;
+        top: 6px;
+        bottom: 6px;
+        width: 2px;
+        background: repeating-linear-gradient(
+          to bottom,
+          rgba(236,72,153,0.3) 0px,
+          rgba(236,72,153,0.3) 4px,
+          transparent 4px,
+          transparent 8px
+        );
+      }
+      .tl-item {
+        position: relative;
+        margin-bottom: 10px;
+      }
+      .tl-dot {
+        position: absolute;
+        left: -20px;
+        top: 8px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--period);
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 2px rgba(236,72,153,0.3);
+        z-index: 1;
+      }
+      .tl-dot.active {
+        background: transparent;
+        border-color: var(--period);
+        animation: tl-pulse 1.8s ease-in-out infinite;
+      }
+      @keyframes tl-pulse {
+        0%, 100% { box-shadow: 0 0 0 2px rgba(236,72,153,0.3); }
+        50%      { box-shadow: 0 0 0 5px rgba(236,72,153,0.15); }
+      }
+      .tl-card {
+        background: #fff;
+        border: 1px solid rgba(236,72,153,0.12);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: 11px;
+        line-height: 1.5;
+        box-shadow: 0 1px 4px rgba(236,72,153,0.06);
+      }
+      .tl-card.active {
+        border-color: rgba(236,72,153,0.4);
+        background: rgba(236,72,153,0.03);
+        box-shadow: 0 2px 8px rgba(236,72,153,0.1);
+      }
+      .tl-card-title {
+        font-weight: 700;
+        color: var(--period);
+        font-size: 12px;
+        margin-bottom: 2px;
+      }
+      .tl-card-range {
+        color: var(--text);
+        font-size: 11px;
+      }
+      .tl-card-meta {
+        color: var(--muted);
+        font-size: 10px;
+        margin-top: 2px;
+      }
+      .tl-progress-bar {
+        height: 5px;
+        background: rgba(236,72,153,0.1);
+        border-radius: 999px;
+        margin-top: 6px;
+        overflow: hidden;
+      }
+      .tl-progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(236,72,153,0.35), rgba(236,72,153,0.7));
+        transition: width 0.6s ease;
+        width: 0;
+      }
+      .tl-empty {
+        text-align: center;
+        color: var(--muted);
+        padding: 16px 0;
+        font-size: 11px;
+      }
+      .tl-empty-icon {
+        font-size: 24px;
+        margin-bottom: 4px;
+      }
+
+      /* 日历中经期日期的样式 */
+      .day-cell.period-day-0 { background: transparent; }
+      .day-cell.period-day-1 { background: rgba(236,72,153,0.1); }
+      .day-cell.period-day-2 { background: rgba(236,72,153,0.25); }
+      .day-cell.period-day-3 { background: rgba(236,72,153,0.5); }
+      .day-cell.period-day-4 { background: rgba(236,72,153,0.7); color: #fff; }
+
+      .day-cell {
+        position: relative;
+        cursor: default;
+      }
+      .day-cell.period-date {
+        cursor: pointer;
+      }
+      .day-cell.selected-period-day {
+        box-shadow: 0 0 0 2px var(--period);
+        border-radius: 8px;
+      }
+      .day-cell .day-mood {
+        position: static;
+        transform: none;
+        font-size: 10px;
+        line-height: 1;
+        pointer-events: none;
+        margin-top: 1px;
+      }
+      #periodCalendarDays .day-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        font-size: 12px;
+        line-height: 1.2;
+        padding-bottom: 3px;
+      }
+      /* 血的颜色选择区 */
+      .period-blood-row {
+        margin: 6px 0;
+      }
+      .period-blood-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .period-blood-btns {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+      }
+      .period-blood-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 8px;
+        border: 2px solid transparent;
+        transition: all 0.15s;
+        background: none;
+      }
+      .period-blood-btn:hover {
+        background: rgba(236,72,153,0.08);
+      }
+      .period-blood-btn.selected {
+        border-color: var(--period);
+        background: rgba(236,72,153,0.1);
+      }
+      .period-blood-swatch {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(0,0,0,0.12);
+        box-sizing: border-box;
+      }
+      .period-blood-btn.selected .period-blood-swatch {
+        border-color: var(--period);
+        box-shadow: 0 0 0 2px rgba(236,72,153,0.3);
+      }
+      .period-blood-name {
+        font-size: 10px;
+        color: var(--muted);
+        line-height: 1;
+      }
+      .period-blood-btn.selected .period-blood-name {
+        color: var(--period);
+        font-weight: 600;
+      }
+
+      /* 经期记录 tooltip */
+      #periodTooltip {
+        position: fixed;
+        z-index: 1000;
+        display: none;
+        opacity: 0;
+        background: #fff;
+        border-radius: 12px;
+        padding: 10px 14px;
+        min-width: 140px;
+        max-width: 220px;
+        box-shadow: 0 8px 32px rgba(236,72,153,0.18);
+        pointer-events: auto;
+        transition: opacity 0.15s ease;
+        font-size: 12px;
+      }
+      #periodTooltip.show {
+        display: block;
+        opacity: 1;
+      }
+      #periodTooltip .pt-date {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 6px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid rgba(236,72,153,0.2);
+      }
+      #periodTooltip .pt-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 0;
+        font-size: 12px;
+        color: var(--text);
+      }
+      #periodTooltip .pt-item .pt-label {
+        color: var(--muted);
+        min-width: 45px;
+        font-size: 11px;
+      }
+      #periodTooltip .pt-remark {
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px solid rgba(236,72,153,0.1);
+        font-size: 11px;
+        color: var(--muted);
+        font-style: italic;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
       .stats-label {
         font-size: 11px;
         color: var(--muted);
@@ -2873,6 +3488,85 @@
       [data-theme="dark"] .tooltip-header {
         border-bottom-color: rgba(148,163,184,0.2);
       }
+      [data-theme="dark"] #periodTooltip {
+        background: var(--modal-bg, #1e293b);
+        color: var(--text, #e2e8f0);
+      }
+      [data-theme="dark"] #periodTooltip .pt-date {
+        border-bottom-color: rgba(236,72,153,0.3);
+      }
+      [data-theme="dark"] .period-blood-label {
+        color: var(--text, #e2e8f0);
+      }
+      [data-theme="dark"] .period-blood-name {
+        color: #94a3b8;
+      }
+      [data-theme="dark"] .period-blood-btn:hover {
+        background: rgba(236,72,153,0.15);
+      }
+      [data-theme="dark"] .period-blood-btn.selected .period-blood-name {
+        color: #f472b6;
+      }
+
+      /* 暗色主题 - 经期页面增强 */
+      [data-theme="dark"] .period-card {
+        background: rgba(30,41,59,0.85);
+        border-color: rgba(148,163,184,0.15);
+      }
+      [data-theme="dark"] .period-icon {
+        background: linear-gradient(135deg, #4a1a3a, #6b2d52);
+        box-shadow: 0 4px 12px rgba(244,114,182,0.15);
+      }
+      [data-theme="dark"] .day-cell.period-day-1 { background: rgba(244,114,182,0.15); }
+      [data-theme="dark"] .day-cell.period-day-2 { background: rgba(244,114,182,0.3); }
+      [data-theme="dark"] .day-cell.period-day-3 { background: rgba(244,114,182,0.55); }
+      [data-theme="dark"] .day-cell.period-day-4 { background: rgba(244,114,182,0.8); color: #fff; }
+      [data-theme="dark"] .period-mood-btn {
+        background: rgba(51,65,85,0.5);
+        border-color: rgba(244,114,182,0.2);
+      }
+      [data-theme="dark"] .period-mood-btn:hover {
+        border-color: #f472b6;
+      }
+      [data-theme="dark"] .period-mood-btn.active {
+        background: rgba(244,114,182,0.15);
+        border-color: #f472b6;
+        box-shadow: 0 0 0 3px rgba(244,114,182,0.1);
+      }
+      [data-theme="dark"] .period-symptom-btn {
+        background: rgba(244,114,182,0.06);
+        border-color: rgba(244,114,182,0.15);
+        color: var(--text, #e2e8f0);
+      }
+      [data-theme="dark"] .period-symptom-btn:hover {
+        background: rgba(244,114,182,0.12);
+        border-color: rgba(244,114,182,0.4);
+      }
+      [data-theme="dark"] .period-symptom-btn.active {
+        background: rgba(244,114,182,0.15);
+        border-color: #f472b6;
+        color: #f472b6;
+        box-shadow: 0 0 0 2px rgba(244,114,182,0.08);
+      }
+      [data-theme="dark"] .period-remark-input {
+        background: rgba(15,23,42,0.6);
+        border-color: rgba(148,163,184,0.2);
+        color: var(--text, #e2e8f0);
+      }
+      [data-theme="dark"] .btn-period:not(:hover) {
+        background: rgba(51,65,85,0.8);
+        color: var(--text, #e2e8f0);
+      }
+      [data-theme="dark"] .period-toggle-wrap {
+        background: rgba(30,41,59,0.85);
+        border-color: rgba(148,163,184,0.15);
+      }
+      [data-theme="dark"] .period-toggle-label {
+        color: var(--text, #e2e8f0);
+      }
+      [data-theme="dark"] .period-toggle-track {
+        background: rgba(51,65,85,0.8);
+      }
 
       [data-theme="dark"] .toast {
         background: var(--toast-bg, rgba(226,232,240,0.9));
@@ -3361,6 +4055,73 @@
       [data-theme="dark"] .reminder-add-time-btn { background: rgba(15,23,42,0.6); border-color: rgba(148,163,184,0.2); color: var(--muted, rgba(226,232,240,0.55)); }
       [data-theme="dark"] .reminder-time-input { background: rgba(15,23,42,0.6); border-color: rgba(148,163,184,0.2); color: var(--text, #e2e8f0); }
 
+      /* ============ 森林绿主题 - 经期记录 ============ */
+      [data-theme="forest"] .period-card {
+        border-color: rgba(5,150,105,0.2);
+        box-shadow: 0 4px 16px rgba(5,150,105,0.1);
+      }
+      [data-theme="forest"] .period-icon {
+        background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+        box-shadow: 0 4px 12px rgba(5,150,105,0.15);
+      }
+      [data-theme="forest"] .period-flow-btn {
+        border-color: rgba(5,150,105,0.2);
+      }
+      [data-theme="forest"] .period-mood-btn {
+        border-color: rgba(5,150,105,0.18);
+      }
+      [data-theme="forest"] .period-mood-btn.active {
+        background: rgba(5,150,105,0.12);
+        border-color: var(--period);
+        box-shadow: 0 0 0 3px rgba(5,150,105,0.1);
+      }
+      [data-theme="forest"] .period-symptom-btn {
+        background: rgba(5,150,105,0.06);
+        border-color: rgba(5,150,105,0.18);
+      }
+      [data-theme="forest"] .period-symptom-btn.active {
+        background: rgba(5,150,105,0.15);
+        border-color: var(--period);
+        color: var(--period);
+        box-shadow: 0 0 0 2px rgba(5,150,105,0.08);
+      }
+      [data-theme="forest"] .day-cell.period-day-1 { background: rgba(5,150,105,0.1); }
+      [data-theme="forest"] .day-cell.period-day-2 { background: rgba(5,150,105,0.25); }
+      [data-theme="forest"] .day-cell.period-day-3 { background: rgba(5,150,105,0.5); }
+      [data-theme="forest"] .day-cell.period-day-4 { background: rgba(5,150,105,0.7); color: #fff; }
+      [data-theme="forest"] #periodTooltip {
+        box-shadow: 0 8px 32px rgba(5,150,105,0.18);
+      }
+      [data-theme="forest"] #periodTooltip .pt-date {
+        border-bottom-color: rgba(5,150,105,0.25);
+      }
+      [data-theme="forest"] .btn-period {
+        box-shadow: 0 4px 14px rgba(5,150,105,0.35);
+      }
+      [data-theme="forest"] .btn-period.unsaved {
+        animation: period-unsaved-pulse-forest 1.2s ease-in-out infinite;
+      }
+      @keyframes period-unsaved-pulse-forest {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(5,150,105,0.5); }
+        50% { box-shadow: 0 0 0 6px rgba(5,150,105,0); }
+      }
+      [data-theme="forest"] .period-blood-btn:hover {
+        background: rgba(5,150,105,0.1);
+      }
+      [data-theme="forest"] .period-blood-btn.selected {
+        border-color: var(--period);
+        background: rgba(5,150,105,0.1);
+      }
+      [data-theme="forest"] .period-blood-btn.selected .period-blood-name {
+        color: var(--period);
+      }
+      [data-theme="forest"] .period-toggle-wrap {
+        border-color: rgba(5,150,105,0.18);
+      }
+      [data-theme="forest"] .period-toggle-label {
+        color: var(--text, #0a2923);
+      }
+
     </style>
   </head>
   <body>
@@ -3768,6 +4529,124 @@
       </div>
     </div>
 
+    <!-- ============ 经期记录页面 ============ -->
+    <div class="page" id="pagePeriod">
+      <div class="period-header">
+        <div class="period-icon">🩸</div>
+        <div>
+          <div class="period-title" data-i18n="periodTitle">经期记录</div>
+          <div class="period-sub" data-i18n="periodSub">追踪生理周期，关爱身体健康</div>
+        </div>
+      </div>
+
+      <!-- 日历 -->
+      <div class="period-card">
+        <div class="calendar-header">
+          <div class="calendar-title" id="periodCalendarTitle"></div>
+          <div class="calendar-nav">
+            <button class="nav-btn period-nav" id="periodPrevMonth"></button>
+            <button class="nav-btn period-nav" id="periodNextMonth"></button>
+          </div>
+        </div>
+        <div class="calendar-grid">
+          <div class="calendar-weekdays">
+            <div class="weekday" data-i18n="wdSun">日</div>
+            <div class="weekday" data-i18n="wdMon">一</div>
+            <div class="weekday" data-i18n="wdTue">二</div>
+            <div class="weekday" data-i18n="wdWed">三</div>
+            <div class="weekday" data-i18n="wdThu">四</div>
+            <div class="weekday" data-i18n="wdFri">五</div>
+            <div class="weekday" data-i18n="wdSat">六</div>
+          </div>
+        <div class="calendar-days" id="periodCalendarDays"></div>
+        </div>
+      </div>
+
+      <!-- 经期开关 Toggle -->
+      <div class="period-card" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;">
+        <span class="period-toggle-label" id="periodToggleLabel" data-i18n="periodToggleLabel">经期</span>
+        <label class="period-toggle-wrap">
+          <input type="checkbox" id="periodToggleInput" />
+          <span class="period-toggle-track">
+            <span class="period-toggle-thumb"></span>
+          </span>
+        </label>
+      </div>
+
+      <!-- 心情 & 症状（经期进行中或结束后可记录） -->
+      <div class="period-card" id="periodMoodCard" style="display:none;">
+        <div class="period-mood-row">
+          <span class="period-mood-label" data-i18n="periodMoodLabel">心情</span>
+          <div class="period-mood-btns" id="periodMoodBtns"></div>
+        </div>
+
+        <div style="height:1px;background:rgba(236,72,153,0.1);margin:8px 0;"></div>
+
+        <div class="period-symptom-row">
+          <div class="period-symptom-label" data-i18n="periodSymptomsLabel">症状</div>
+          <div class="period-symptom-btns" id="periodSymptomBtns"></div>
+        </div>
+
+        <div style="height:1px;background:rgba(236,72,153,0.1);margin:8px 0;"></div>
+
+        <div class="period-blood-row">
+          <div class="period-blood-label" data-i18n="periodBloodColorLabel">血的颜色</div>
+          <div class="period-blood-btns" id="periodBloodColorBtns"></div>
+        </div>
+
+        <input class="period-remark-input" id="periodRemarkInput" type="text" placeholder="添加备注（可选）" maxlength="50" data-i18n-placeholder="periodRemarkPlaceholder" />
+
+        <div style="text-align:center;">
+          <button class="btn-period btn-period-sm" id="periodSaveMoodBtn">💾 <span data-i18n="save">保存</span></button>
+        </div>
+      </div>
+
+      <!-- 统计 -->
+      <div class="period-stats-card">
+        <div class="period-stats-title" data-i18n="periodStatsTitle">周期统计</div>
+        <div class="period-stats-grid">
+          <div class="period-stat-item">
+            <div class="period-stat-label" data-i18n="periodTotalCycles">累积记录周期</div>
+            <div class="period-stat-value" id="periodTotalCycles">--</div>
+          </div>
+          <div class="period-stat-item">
+            <div class="period-stat-label" data-i18n="periodAvgCycle">平均周期长度</div>
+            <div class="period-stat-value" id="periodAvgCycle">--</div>
+          </div>
+          <div class="period-stat-item">
+            <div class="period-stat-label" data-i18n="periodAvgDuration">平均经期天数</div>
+            <div class="period-stat-value" id="periodAvgDuration">--</div>
+          </div>
+          <div class="period-stat-item">
+            <div class="period-stat-label" data-i18n="periodAbnormalCount">异常次数</div>
+            <div class="period-stat-value" id="periodAbnormalCount">--</div>
+          </div>
+        </div>
+
+        <!-- 周期趋势条形图 -->
+        <div style="margin-top:14px;">
+          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;" data-i18n="periodBarChartTitle">周期趋势</div>
+          <div id="periodBarChart" style="font-size:11px;"></div>
+          <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--muted);">
+            <span style="display:flex;align-items:center;gap:3px;">
+              <span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:rgba(236,72,153,0.25);"></span>
+              <span data-i18n="periodBarChartLegendCycle">周期长度</span>
+            </span>
+            <span style="display:flex;align-items:center;gap:3px;">
+              <span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:rgba(236,72,153,0.7);"></span>
+              <span data-i18n="periodBarChartLegendDuration">持续天数</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- 周期记录（时间轴） -->
+        <div style="margin-top:14px;">
+          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;" data-i18n="periodCycleTableTitle">周期记录</div>
+          <div id="periodCycleTable" style="max-height:220px;overflow-y:auto;padding-right:4px;"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- 功能开关侧边栏 -->
     <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="功能设置" data-i18n-title="funcSettings">⚙</button>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -3816,6 +4695,16 @@
           <div class="sb-track"></div><div class="sb-thumb"></div>
         </label>
       </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-left">
+          <div class="sidebar-item-icon period-icon">🩸</div>
+          <span class="sidebar-item-name" data-i18n="periodModule">经期记录</span>
+        </div>
+        <label class="sb-toggle">
+          <input type="checkbox" id="sbPeriod" checked />
+          <div class="sb-track"></div><div class="sb-thumb"></div>
+        </label>
+      </div>
 
       <!-- 提醒管理 -->
       <div class="reminder-section" id="reminderSection">
@@ -3849,6 +4738,10 @@
         <button class="default-tab-opt" data-tab="pee" title="撒尿" data-i18n-title="peeModule">
           <span style="font-size:16px;">🚽</span>
           <span data-i18n="tabNamePee">撒尿</span>
+        </button>
+        <button class="default-tab-opt" data-tab="period" title="经期" data-i18n-title="periodModule">
+          <span style="font-size:16px;">🩸</span>
+          <span data-i18n="tabNamePeriod">经期</span>
         </button>
       </div>
 
@@ -3953,6 +4846,15 @@
       <div class="tooltip-records" id="tooltipRecords"></div>
     </div>
 
+    <!-- 经期记录悬浮卡片 -->
+    <div id="periodTooltip">
+      <div class="pt-date"></div>
+      <div class="pt-item" id="ptMood"></div>
+      <div class="pt-item" id="ptSymptoms"></div>
+      <div class="pt-item" id="ptBlood"></div>
+      <div class="pt-remark" id="ptRemark"></div>
+    </div>
+
     <!-- 今日喝水数量编辑弹窗 -->
     <div class="drink-edit-overlay" id="drinkEditOverlay">
       <div class="drink-edit-box">
@@ -4022,6 +4924,7 @@
       <div class="nav-dot drink" id="navDrink"></div>
       <div class="nav-dot poop" id="navPoop"></div>
       <div class="nav-dot pee" id="navPee"></div>
+      <div class="nav-dot period" id="navPeriod"></div>
     </div>
 
     <div class="toast" id="toast"></div>

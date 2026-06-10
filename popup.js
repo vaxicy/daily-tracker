@@ -107,17 +107,20 @@ let currentTab = "eat";
 let isFirstTabSwitch = true;
 let isSwitching = false;
 
-function switchTab(tab) {
-  if (!isFirstTabSwitch && tab === currentTab) return;
+function switchTab(tab, force = false) {
+  if (!force && !isFirstTabSwitch && tab === currentTab) return;
   if (isSwitching) return; // 防止动画期间重复切换
   isSwitching = true;
   const oldTab = currentTab;
   currentTab = tab;
 
   // 导航高亮
-  ["eat", "drink", "poop", "pee"].forEach(tabName => {
-    document.getElementById(`nav${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`).classList.toggle("active", tabName === tab);
-  });
+    ["eat", "drink", "poop", "pee", "period"].forEach(tabName => {
+      const navEl = document.getElementById(`nav${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+      if (navEl) {
+        navEl.classList.toggle("active", tabName === tab);
+      }
+    });
 
   const oldPage = document.getElementById(`page${oldTab.charAt(0).toUpperCase() + oldTab.slice(1)}`);
   const newPage = document.getElementById(`page${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
@@ -177,6 +180,16 @@ function switchTab(tab) {
     clearPeeAmount();
     renderPeeColorSelector();
     clearPeeColor();
+  }
+  if (tab === "period") {
+    updatePeriodToggleBtn();
+    renderPeriodCalendar();
+    updatePeriodStats();
+    renderPeriodBarChart();
+    renderPeriodCycleTable();
+    initPeriodMoodBtns();
+    initPeriodSymptomBtns();
+    initPeriodBloodColorBtns();
   }
 }
 
@@ -2653,7 +2666,8 @@ function updatePoopTodayStatus() {
       poopRecordsList.innerHTML = todayRecord.map((rec, idx) => `
         <div class="record-item" data-index="${idx}">
           <span class="record-time">${rec.time}</span>
-          <span class="record-remark">${rec.remark || t('noRemark')}${rec.color ? ` <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${POOP_COLOR_MAP[rec.color - 1] || '#eee'};vertical-align:middle;" title="${poopColors[rec.color - 1] || ""}"></span>` : ""}</span>
+          <span class="record-remark">${rec.remark || t('noRemark')}</span>
+          ${rec.color ? `<span class="record-color-dot" style="background:${POOP_COLOR_MAP[rec.color - 1] || '#eee'};" title="${poopColors[rec.color - 1] || ""}"></span>` : ""}
           <div class="record-actions">
             <button class="record-action-btn edit-poop-record" data-index="${idx}" title="${t('editTitle')}">✏️</button>
             <button class="record-action-btn delete-poop-record" data-index="${idx}" title="${t('deleteTitle')}">🗑️</button>
@@ -3321,11 +3335,12 @@ function updatePeeTodayStatus() {
       const peeColors = t("peeColors") || [];
       peeRecordsList.innerHTML = todayRecord.map((rec, idx) => {
         const amountText = rec.amount ? ` 💧${peeAmounts[rec.amount - 1] || ""}` : "";
-        const colorText = rec.color ? ` <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${PEE_COLOR_MAP[rec.color - 1] || '#eee'};vertical-align:middle;" title="${peeColors[rec.color - 1] || ""}"></span>` : "";
+        const colorDot = rec.color ? `<span class="record-color-dot" style="background:${PEE_COLOR_MAP[rec.color - 1] || '#eee'};" title="${peeColors[rec.color - 1] || ""}"></span>` : "";
         return `
         <div class="record-item" data-index="${idx}">
           <span class="record-time pee-time">${rec.time}</span>
-          <span class="record-remark">${rec.remark || t('noRemark')}${amountText}${colorText}</span>
+          <span class="record-remark">${rec.remark || t('noRemark')}${amountText}</span>
+          ${colorDot}
           <div class="record-actions">
             <button class="record-action-btn edit-pee-record" data-index="${idx}" title="${t('editTitle')}">✏️</button>
             <button class="record-action-btn delete-pee-record" data-index="${idx}" title="${t('deleteTitle')}">🗑️</button>
@@ -3763,6 +3778,8 @@ const THEME_PRESETS = {
       "--primary2": "#34d399",
       "--secondary": "#065f46",
       "--secondary2": "#6ee7b7",
+      "--period": "#059669",
+      "--period2": "#34d399",
       "--eat": "#F59E0B",
       "--eat2": "#FBBF24",
       "--pee": "#10B981",
@@ -3925,6 +3942,7 @@ document.getElementById("navEat").addEventListener("click", () => switchTab("eat
 document.getElementById("navDrink").addEventListener("click", () => switchTab("drink"));
 document.getElementById("navPoop").addEventListener("click", () => switchTab("poop"));
 document.getElementById("navPee").addEventListener("click", () => switchTab("pee"));
+document.getElementById("navPeriod").addEventListener("click", () => switchTab("period"));
 
 // 事件委托：今日记录列表（只绑定一次，避免每次渲染都绑定）
 (function () {
@@ -4022,6 +4040,8 @@ document.querySelectorAll(".lang-opt").forEach(btn => {
     document.querySelectorAll(".lang-opt").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     showToast(t("toastDefaultLang", { lang: lang === "zh" ? t("langZh") : t("langEn") }));
+    // 强制刷新当前 tab 的动态内容
+    switchTab(currentTab, true);
   });
 });
 
@@ -4280,3 +4300,831 @@ if (donateQrOverlay) {
     }
   });
 }
+
+// ==================== 经期记录功能（开关式） ====================
+let periodCalendarYear = new Date().getFullYear();
+let periodCalendarMonth = new Date().getMonth();
+let periodCycles = []; // { startDate, endDate, mood, symptoms, remark }
+let selectedMood = 0;
+let selectedSymptoms = [];
+
+// 迁移旧数据（periodRecords → periodCycles）
+function migratePeriodData(records, callback) {
+  const dates = Object.keys(records)
+    .filter(d => records[d] && records[d].flow > 0)
+    .sort();
+  if (dates.length === 0) return callback([]);
+  const cycles = [];
+  let curStart = dates[0], curEnd = dates[0];
+  for (let i = 1; i < dates.length; i++) {
+    const prev = new Date(curEnd);
+    const curr = new Date(dates[i]);
+    const gap = Math.round((curr - prev) / 86400000);
+    if (gap <= 2) {
+      curEnd = dates[i];
+    } else {
+      cycles.push({ startDate: curStart, endDate: curEnd });
+      curStart = dates[i];
+      curEnd = dates[i];
+    }
+  }
+  cycles.push({ startDate: curStart, endDate: curEnd });
+  callback(cycles);
+}
+
+// 加载经期周期数据
+function loadPeriodCycles(callback) {
+  chrome.storage.local.get(["periodCycles", "periodRecords"], (data) => {
+    if (data.periodCycles) {
+      periodCycles = data.periodCycles;
+      // 兼容旧数据：将 mood/symptoms/remark 迁移到 days 中
+      periodCycles.forEach(c => {
+        if (c.mood !== undefined || c.symptoms !== undefined || c.remark !== undefined) {
+          if (!c.days) c.days = {};
+          if (c.startDate && !c.days[c.startDate]) {
+            c.days[c.startDate] = {
+              mood: c.mood !== undefined ? c.mood : undefined,
+              symptoms: c.symptoms || [],
+              remark: c.remark || ""
+            };
+          }
+          // 清除旧字段
+          delete c.mood;
+          delete c.symptoms;
+          delete c.remark;
+        }
+        if (!c.days) c.days = {};
+      });
+      // 保存迁移后的数据
+      chrome.storage.local.set({ periodCycles });
+      if (callback) callback();
+    } else if (data.periodRecords) {
+      migratePeriodData(data.periodRecords, (cycles) => {
+        periodCycles = cycles;
+        // 同样做旧数据迁移
+        periodCycles.forEach(c => {
+          if (!c.days) c.days = {};
+        });
+        chrome.storage.local.set({ periodCycles }, () => {
+          chrome.storage.local.remove(["periodRecords"]);
+          if (callback) callback();
+        });
+      });
+    } else {
+      periodCycles = [];
+      if (callback) callback();
+    }
+  });
+}
+
+// 保存经期周期数据
+function savePeriodCycles() {
+  chrome.storage.local.set({ periodCycles }, () => {
+    renderPeriodCalendar();
+    updatePeriodStats();
+    renderPeriodBarChart();
+    renderPeriodCycleTable();
+  });
+}
+
+// 获取进行中的经期
+function getActivePeriod() {
+  return periodCycles.find(c => c.endDate === null);
+}
+
+// 格式化日期为 YYYY-MM-DD
+function formatDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// 获取日期范围内的所有日期字符串
+function getDatesInRange(startDate, endDate) {
+  const dates = [];
+  const start = new Date(startDate);
+  const end = endDate ? new Date(endDate) : new Date(getToday());
+  const cur = new Date(start);
+  while (cur <= end) {
+    dates.push(formatDateStr(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates;
+}
+
+// 当前选中的经期日期（用于按天记录心情/症状）
+let selectedPeriodDate = null;
+
+// 未保存标记
+let periodUnsaved = false;
+function markPeriodUnsaved() {
+  periodUnsaved = true;
+  const btn = document.getElementById("periodSaveMoodBtn");
+  if (btn) btn.classList.add("unsaved");
+}
+function clearPeriodUnsaved() {
+  periodUnsaved = false;
+  const btn = document.getElementById("periodSaveMoodBtn");
+  if (btn) btn.classList.remove("unsaved");
+}
+
+// 渲染经期日历
+function renderPeriodCalendar() {
+  const calendarDays = document.getElementById("periodCalendarDays");
+  if (!calendarDays) return;
+  calendarDays.innerHTML = "";
+
+  const firstDay = new Date(periodCalendarYear, periodCalendarMonth, 1);
+  const lastDay = new Date(periodCalendarYear, periodCalendarMonth + 1, 0);
+  const startDay = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+  const today = getToday();
+
+  // 前置空白填充
+  for (let i = 0; i < startDay; i++) {
+    const emptyCell = document.createElement("div");
+    emptyCell.className = "day-cell empty";
+    emptyCell.style.width = "36px";
+    emptyCell.style.height = "36px";
+    calendarDays.appendChild(emptyCell);
+  }
+
+  // 添加本月日期
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${periodCalendarYear}-${String(periodCalendarMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const day = document.createElement("div");
+    day.className = "day-cell";
+    day.textContent = d;
+    day.dataset.date = dateStr;
+
+    if (dateStr === today) {
+      day.classList.add("today");
+    }
+
+    // 检查是否属于某个经期周期并着色
+    let inCycle = false;
+    for (let i = 0; i < periodCycles.length; i++) {
+      const cycle = periodCycles[i];
+      const range = getDatesInRange(cycle.startDate, cycle.endDate);
+      if (range.includes(dateStr)) {
+        const idx = range.indexOf(dateStr);
+        const intensity = Math.min(4, Math.ceil((idx + 1) / 2));
+        day.classList.add(`period-day-${intensity}`);
+        inCycle = true;
+
+        // 显示该天的心情 emoji
+        const dayData = (cycle.days || {})[dateStr];
+        if (dayData && dayData.mood !== undefined && dayData.mood >= 0) {
+          const moodEmojis = t("periodMoodEmojis") || [];
+          const moodEmoji = moodEmojis[dayData.mood] || "";
+          if (moodEmoji) {
+            const moodEl = document.createElement("span");
+            moodEl.className = "day-mood";
+            moodEl.textContent = moodEmoji;
+            day.appendChild(moodEl);
+          }
+        }
+        break;
+      }
+    }
+
+    // 经期日期：悬浮显示 tooltip，点击进入编辑
+    if (inCycle) {
+      day.classList.add("period-date");
+      // 悬浮显示 tooltip
+      day.addEventListener("mouseenter", (e) => {
+        const targetCycle = periodCycles.find(c => {
+          const range = getDatesInRange(c.startDate, c.endDate);
+          return range.includes(dateStr);
+        });
+        const dayData = targetCycle ? ((targetCycle.days || {})[dateStr] || {}) : {};
+        showPeriodTooltip(e, dateStr, targetCycle, dayData, day, idx + 1);
+      });
+      day.addEventListener("mouseleave", () => {
+        hidePeriodTooltip();
+      });
+      // 点击选中日期，进入编辑模式（先检查未保存）
+      day.addEventListener("click", () => {
+        if (periodUnsaved) {
+          if (!confirm(t("periodUnsavedConfirm") || "当前有未保存的修改，切换将丢失。确定放弃并切换？")) {
+            return;
+          }
+          clearPeriodUnsaved();
+        }
+        selectPeriodDate(dateStr);
+      });
+      if (selectedPeriodDate === dateStr) {
+        day.classList.add("selected-period-day");
+      }
+    }
+
+    calendarDays.appendChild(day);
+  }
+
+  // 更新日历标题
+  const titleEl = document.getElementById("periodCalendarTitle");
+  if (titleEl) {
+    titleEl.textContent = t("yearMonth", {
+      y: periodCalendarYear,
+      m: periodCalendarMonth + 1
+    });
+  }
+
+  // 如果没有选中任何经期日期，默认选中今天或最近经期日期
+  if (!selectedPeriodDate || !getCycleByDate(selectedPeriodDate)) {
+    const active = getActivePeriod();
+    if (active) {
+      selectPeriodDate(getToday());
+    } else if (periodCycles.length > 0) {
+      const last = periodCycles[periodCycles.length - 1];
+      if (last.endDate) selectPeriodDate(last.endDate);
+    }
+  }
+}
+
+// 根据日期找到所属周期
+function getCycleByDate(dateStr) {
+  return periodCycles.find(c => {
+    const range = getDatesInRange(c.startDate, c.endDate);
+    return range.includes(dateStr);
+  });
+}
+
+// 选中某个经期日期，加载该天的心情/症状/备注
+function selectPeriodDate(dateStr) {
+  const cycle = getCycleByDate(dateStr);
+  if (!cycle) return;
+  selectedPeriodDate = dateStr;
+
+  // 更新日历高亮
+  document.querySelectorAll("#periodCalendarDays .day-cell").forEach(el => {
+    el.classList.toggle("selected-period-day", el.dataset.date === dateStr);
+  });
+
+  // 加载该天数据
+  const dayData = (cycle.days || {})[dateStr] || {};
+  selectMood(dayData.mood !== undefined ? dayData.mood : -1);
+  selectSymptoms(dayData.symptoms || []);
+  selectBloodColor(dayData.bloodColor !== undefined ? dayData.bloodColor : -1);
+
+  const remarkInput = document.getElementById("periodRemarkInput");
+  if (remarkInput) remarkInput.value = dayData.remark || "";
+
+  // 显示心情/症状卡片
+  const moodCard = document.getElementById("periodMoodCard");
+  if (moodCard) moodCard.style.display = "block";
+  clearPeriodUnsaved();
+}
+
+// ==================== 经期日历悬浮 tooltip ====================
+let periodTooltipTimeout = null;
+
+function showPeriodTooltip(e, dateStr, cycle, dayData, targetElement, dayIndex) {
+  clearTimeout(periodTooltipTimeout);
+  const tooltip = document.getElementById("periodTooltip");
+  if (!tooltip) return;
+
+  // 日期 + 第几天
+  const dateEl = tooltip.querySelector(".pt-date");
+  if (dateEl) {
+    let dateText = formatDateDisplay(dateStr);
+    if (dayIndex !== undefined && dayIndex >= 1) {
+      dateText += ` · ${t("periodDay", { n: dayIndex })}`;
+    }
+    dateEl.textContent = dateText;
+  }
+
+  // 心情
+  const moodEl = document.getElementById("ptMood");
+  if (moodEl) {
+    if (dayData && dayData.mood !== undefined && dayData.mood >= 0) {
+      const moodTexts = t("periodMoods") || [];
+      const moodEmojis = t("periodMoodEmojis") || [];
+      moodEl.innerHTML = `<span class="pt-label">${t("periodMoodLabel")}</span><span>${moodEmojis[dayData.mood] || ""} ${moodTexts[dayData.mood] || ""}</span>`;
+      moodEl.style.display = "flex";
+    } else {
+      moodEl.style.display = "none";
+    }
+  }
+
+  // 症状
+  const symptomsEl = document.getElementById("ptSymptoms");
+  if (symptomsEl) {
+    if (dayData && dayData.symptoms && dayData.symptoms.length > 0) {
+      const symptomTexts = t("periodSymptoms") || [];
+      const symptomEmojis = t("periodSymptomEmojis") || [];
+      const symptomsHtml = dayData.symptoms.map(s => {
+        return `${symptomEmojis[s] || ""} ${symptomTexts[s] || ""}`;
+      }).join(" ");
+      symptomsEl.innerHTML = `<span class="pt-label">${t("periodSymptomsLabel")}</span><span>${symptomsHtml}</span>`;
+      symptomsEl.style.display = "flex";
+    } else {
+      symptomsEl.style.display = "none";
+    }
+  }
+
+  // 血的颜色
+  const bloodEl = document.getElementById("ptBlood");
+  if (bloodEl) {
+    if (dayData && dayData.bloodColor !== undefined && dayData.bloodColor >= 0) {
+      const colorNames = t("periodBloodColors") || [];
+      const colorValues = BLOOD_COLOR_VALUES;
+      const idx = dayData.bloodColor;
+      bloodEl.innerHTML = `<span class="pt-label">${t("periodBloodColorLabel")}</span><span style="display:inline-flex;align-items:center;gap:4px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorValues[idx]};border:1px solid rgba(0,0,0,0.12);"></span>${colorNames[idx] || ""}</span>`;
+      bloodEl.style.display = "flex";
+    } else {
+      bloodEl.style.display = "none";
+    }
+  }
+
+  // 备注
+  const remarkEl = document.getElementById("ptRemark");
+  if (remarkEl) {
+    if (dayData && dayData.remark) {
+      remarkEl.textContent = dayData.remark;
+      remarkEl.style.display = "block";
+    } else {
+      remarkEl.style.display = "none";
+    }
+  }
+
+  // 定位 tooltip
+  positionPeriodTooltip(e, targetElement);
+  tooltip.classList.add("show");
+}
+
+function hidePeriodTooltip() {
+  clearTimeout(periodTooltipTimeout);
+  periodTooltipTimeout = setTimeout(() => {
+    const tooltip = document.getElementById("periodTooltip");
+    if (tooltip) tooltip.classList.remove("show");
+  }, 150);
+}
+
+function positionPeriodTooltip(e, targetElement) {
+  const tooltip = document.getElementById("periodTooltip");
+  if (!tooltip) return;
+
+  // 临时显示以获取尺寸
+  tooltip.style.visibility = "hidden";
+  tooltip.style.display = "block";
+  const tooltipRect = tooltip.getBoundingClientRect();
+  tooltip.style.display = "";
+  tooltip.style.visibility = "";
+
+  let left, top;
+  if (targetElement) {
+    // 基于目标元素定位：在元素下方居中
+    const rect = targetElement.getBoundingClientRect();
+    left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+    if (left < 8) left = 8;
+    top = rect.bottom + 8;
+    // 如果超出视口下方，则显示在元素上方
+    if (top + tooltipRect.height > window.innerHeight - 8) {
+      top = rect.top - tooltipRect.height - 8;
+    }
+  } else {
+    // 回退到鼠标位置定位
+    const x = e.clientX;
+    const y = e.clientY;
+    const offsetX = 12;
+    const offsetY = 12;
+    left = x + offsetX;
+    top = y + offsetY;
+    if (left + tooltipRect.width > window.innerWidth) {
+      left = x - tooltipRect.width - offsetX;
+    }
+    if (top + tooltipRect.height > window.innerHeight) {
+      top = y - tooltipRect.height - offsetY;
+    }
+  }
+
+  if (left + tooltipRect.width > window.innerWidth - 8) {
+    left = window.innerWidth - tooltipRect.width - 8;
+  }
+  if (top < 8) top = 8;
+
+  tooltip.style.left = left + "px";
+  tooltip.style.top = top + "px";
+}
+
+// 更新经期开关状态
+function updatePeriodToggleBtn() {
+  const input = document.getElementById("periodToggleInput");
+  if (!input) return;
+  input.checked = !!getActivePeriod();
+}
+
+// 选择心情
+function selectMood(mood) {
+  selectedMood = mood;
+  const btns = document.querySelectorAll("#periodMoodBtns .period-mood-btn");
+  btns.forEach((btn, idx) => {
+    btn.classList.toggle("active", idx === mood && mood >= 0);
+  });
+}
+
+// 选择症状
+function selectSymptoms(symptoms) {
+  selectedSymptoms = symptoms || [];
+  const btns = document.querySelectorAll("#periodSymptomBtns .period-symptom-btn");
+  btns.forEach((btn, idx) => {
+    btn.classList.toggle("active", selectedSymptoms.includes(idx));
+  });
+}
+
+// 初始化心情按钮
+function initPeriodMoodBtns() {
+  const container = document.getElementById("periodMoodBtns");
+  if (!container) return;
+  const moodEmojis = t("periodMoodEmojis");
+  container.innerHTML = "";
+  moodEmojis.forEach((emoji, idx) => {
+    const btn = document.createElement("button");
+    btn.className = "period-mood-btn";
+    btn.textContent = emoji;
+    btn.dataset.mood = idx;
+    btn.addEventListener("click", () => {
+      selectMood(idx);
+      markPeriodUnsaved();
+    });
+    container.appendChild(btn);
+  });
+}
+
+// 初始化症状按钮
+function initPeriodSymptomBtns() {
+  const container = document.getElementById("periodSymptomBtns");
+  if (!container) return;
+  const symptoms = t("periodSymptoms");
+  const symptomEmojis = t("periodSymptomEmojis");
+  container.innerHTML = "";
+  symptoms.forEach((symptom, idx) => {
+    const btn = document.createElement("button");
+    btn.className = "period-symptom-btn";
+    btn.innerHTML = `${symptomEmojis[idx]} ${symptom}`;
+    btn.dataset.symptom = idx;
+    btn.addEventListener("click", () => {
+      const symptomIdx = parseInt(btn.dataset.symptom);
+      if (selectedSymptoms.includes(symptomIdx)) {
+        selectedSymptoms = selectedSymptoms.filter(s => s !== symptomIdx);
+      } else {
+        selectedSymptoms.push(symptomIdx);
+      }
+      selectSymptoms(selectedSymptoms);
+      markPeriodUnsaved();
+    });
+    container.appendChild(btn);
+  });
+}
+
+// 初始化血的颜色按钮
+const BLOOD_COLOR_VALUES = ["#e53e3e", "#8b0000", "#8b4513", "#ffb6c1", "#ffa500"];
+function initPeriodBloodColorBtns() {
+  const container = document.getElementById("periodBloodColorBtns");
+  if (!container) return;
+  const colors = t("periodBloodColors");
+  container.innerHTML = "";
+  colors.forEach((name, idx) => {
+    const btn = document.createElement("button");
+    btn.className = "period-blood-btn";
+    btn.dataset.colorIdx = idx;
+    btn.innerHTML = `<span class="period-blood-swatch" style="background:${BLOOD_COLOR_VALUES[idx]}"></span>`;
+    btn.title = name;
+    btn.addEventListener("click", () => { selectBloodColor(idx); markPeriodUnsaved(); });
+    container.appendChild(btn);
+  });
+}
+
+// 选择血的颜色
+let selectedBloodColor = -1;
+function selectBloodColor(idx) {
+  if (selectedBloodColor === idx) {
+    selectedBloodColor = -1;
+  } else {
+    selectedBloodColor = idx;
+  }
+  document.querySelectorAll("#periodBloodColorBtns .period-blood-btn").forEach(btn => {
+    btn.classList.toggle("selected", parseInt(btn.dataset.colorIdx) === selectedBloodColor);
+  });
+}
+
+// 更新经期统计
+function updatePeriodStats() {
+  const completed = periodCycles.filter(c => c.endDate !== null);
+  const total = completed.length;
+  document.getElementById("periodTotalCycles").textContent = total || "--";
+
+  if (total === 0) {
+    document.getElementById("periodAvgCycle").textContent = "--";
+    document.getElementById("periodAvgDuration").textContent = "--";
+    document.getElementById("periodAbnormalCount").textContent = "--";
+    return;
+  }
+
+  // 计算周期长度（相邻周期起始日间隔）
+  const cycleLengths = [];
+  for (let i = 1; i < periodCycles.length; i++) {
+    if (periodCycles[i].endDate !== null && periodCycles[i - 1].endDate !== null) {
+      const prevStart = new Date(periodCycles[i - 1].startDate);
+      const currStart = new Date(periodCycles[i].startDate);
+      const len = Math.round((currStart - prevStart) / 86400000);
+      if (len > 20 && len < 45) cycleLengths.push(len);
+    }
+  }
+
+  const avgCycle = cycleLengths.length > 0
+    ? Math.round(cycleLengths.reduce((a, b) => a + b, 0) / cycleLengths.length)
+    : 28;
+  document.getElementById("periodAvgCycle").textContent = avgCycle + " " + t("periodBarChartDay");
+
+  // 计算经期持续时间
+  const durations = completed.map(c => {
+    return Math.round((new Date(c.endDate) - new Date(c.startDate)) / 86400000) + 1;
+  });
+
+  const avgDuration = durations.length > 0
+    ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+    : 5;
+  document.getElementById("periodAvgDuration").textContent = avgDuration + " " + t("periodBarChartDay");
+
+  // 合并异常次数（周期长度异常 + 经期天数异常）
+  let cycleAbnormal = 0;
+  cycleLengths.forEach(len => { if (Math.abs(len - avgCycle) > 3) cycleAbnormal++; });
+  let durationAbnormal = 0;
+  durations.forEach(d => { if (Math.abs(d - avgDuration) > 1) durationAbnormal++; });
+  const totalAbnormal = cycleAbnormal + durationAbnormal;
+  document.getElementById("periodAbnormalCount").textContent = totalAbnormal + " " + t("periodBarChartDay");
+}
+
+// 渲染周期趋势条形图（圆角胶囊形）
+function renderPeriodBarChart() {
+  const container = document.getElementById("periodBarChart");
+  if (!container) return;
+
+  // 获取最近6个已完成周期（按时间倒序）
+  const completed = periodCycles.filter(c => c.endDate !== null);
+  if (completed.length === 0) {
+    container.innerHTML = `<div style="color:var(--muted);text-align:center;padding:8px 0;font-size:11px;">${t("periodNoRecord")}</div>`;
+    return;
+  }
+
+  const recent = completed.slice(-6); // 最近6个
+  const sorted = [...recent].reverse(); // 倒序显示（最新的在上方）
+
+  // 计算每条周期的周期长度和持续天数
+  const chartData = sorted.map((cycle, idx) => {
+    const duration = Math.round((new Date(cycle.endDate) - new Date(cycle.startDate)) / 86400000) + 1;
+    let cycleLen = null;
+    const ci = periodCycles.indexOf(cycle);
+    if (ci > 0 && periodCycles[ci - 1].endDate) {
+      const prev = new Date(periodCycles[ci - 1].startDate);
+      const curr = new Date(cycle.startDate);
+      cycleLen = Math.round((curr - prev) / 86400000);
+      if (cycleLen <= 20 || cycleLen >= 45) cycleLen = null;
+    }
+    return { cycle, duration, cycleLen };
+  });
+
+  // 计算参考基准和异常阈值
+  const allCycleLens = chartData.filter(d => d.cycleLen).map(d => d.cycleLen);
+  const avgCycle = allCycleLens.length > 0
+    ? Math.round(allCycleLens.reduce((a, b) => a + b, 0) / allCycleLens.length)
+    : 28;
+  const allDurations = chartData.map(d => d.duration);
+  const avgDuration = allDurations.length > 0
+    ? Math.round(allDurations.reduce((a, b) => a + b, 0) / allDurations.length)
+    : 5;
+
+  // 最大周期长度（用于宽度百分比计算）
+  const maxCycleLen = Math.max(...allCycleLens, 35); // 最小参考35天
+  const maxDuration = Math.max(...allDurations, 8); // 最小参考8天
+
+  let html = "";
+  chartData.forEach((d, idx) => {
+    const seq = completed.length - periodCycles.indexOf(d.cycle);
+    const cycleWidth = d.cycleLen ? Math.max(8, (d.cycleLen / maxCycleLen) * 100) : 0;
+    const durationWidth = (d.duration / maxDuration) * 100;
+    const cycleAbnormal = d.cycleLen ? Math.abs(d.cycleLen - avgCycle) > 3 : false;
+    const durationAbnormal = Math.abs(d.duration - avgDuration) > 1;
+
+    html += `<div class="bar-row">
+      <div class="bar-label">#${seq}</div>
+      <div class="bar-track">
+        <div class="bar-fill bar-fill-cycle${cycleAbnormal ? ' bar-abnormal' : ''}" style="width:${cycleWidth}%;">
+          ${d.cycleLen !== null ? d.cycleLen : '--'}
+          ${cycleAbnormal ? '<span class="bar-abnormal-dot"></span>' : ''}
+        </div>
+        <div class="bar-fill bar-fill-duration${durationAbnormal ? ' bar-abnormal' : ''}" style="width:${durationWidth}%;">
+          ${d.duration}
+          ${durationAbnormal ? '<span class="bar-abnormal-dot"></span>' : ''}
+        </div>
+      </div>
+    </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+// 渲染周期记录时间轴
+function renderPeriodCycleTable() {
+  const container = document.getElementById("periodCycleTable");
+  if (!container) return;
+  if (periodCycles.length === 0) {
+    container.innerHTML = `<div class="tl-empty">
+      <div class="tl-empty-icon">🩸</div>
+      <div>${t("periodNoRecord")}</div>
+    </div>`;
+    return;
+  }
+
+  const active = getActivePeriod();
+  const avgDuration = (() => {
+    const completed = periodCycles.filter(c => c.endDate !== null);
+    if (completed.length === 0) return 5;
+    const durs = completed.map(c => Math.round((new Date(c.endDate) - new Date(c.startDate)) / 86400000) + 1);
+    return Math.round(durs.reduce((a, b) => a + b, 0) / durs.length);
+  })();
+
+  // 所有周期倒序显示（最新的在上方）
+  const sorted = [...periodCycles].reverse();
+
+  let html = `<div class="tl-list"><div class="tl-line"></div>`;
+
+  sorted.forEach((cycle) => {
+    const isActive = active && active.startDate === cycle.startDate;
+    const ci = periodCycles.indexOf(cycle);
+
+    // 计算持续天数（统一归零时间，避免时分秒误差）
+    let duration = null;
+    let rangeStr = "";
+    const cycleStart = new Date(cycle.startDate + "T00:00:00");
+    if (cycle.endDate) {
+      const endDate = new Date(cycle.endDate + "T00:00:00");
+      duration = Math.floor((endDate - cycleStart) / 86400000) + 1;
+      const endFmt = cycle.endDate.slice(5); // MM-DD
+      rangeStr = `${cycle.startDate.slice(5)} ~ ${endFmt}`;
+    } else if (isActive) {
+      const today = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00");
+      duration = Math.floor((today - cycleStart) / 86400000) + 1;
+      rangeStr = t("periodActiveShort");
+    }
+
+    // 计算周期长度（与上一个周期间隔）
+    let cycleLenStr = "--";
+    if (ci > 0 && periodCycles[ci - 1].endDate) {
+      const prev = new Date(periodCycles[ci - 1].startDate + "T00:00:00");
+      const curr = new Date(cycle.startDate + "T00:00:00");
+      const len = Math.round((curr - prev) / 86400000);
+      if (len > 20 && len < 45) cycleLenStr = len + " " + t("periodBarChartDay");
+    }
+
+    // 进度百分比（仅进行中）
+    let progressPct = 0;
+    if (isActive) {
+      progressPct = Math.min(100, Math.round((duration / avgDuration) * 100));
+    }
+
+    const cardClass = isActive ? "tl-card active" : "tl-card";
+    const dotClass = isActive ? "tl-dot active" : "tl-dot";
+    const titleText = isActive
+      ? t("periodActive").replace("{n}", duration)
+      : cycle.startDate;
+
+    html += `<div class="tl-item">
+      <div class="${dotClass}"></div>
+      <div class="${cardClass}">
+        <div class="tl-card-title">${titleText}</div>
+        <div class="tl-card-range">${rangeStr ? rangeStr : cycle.startDate}</div>
+        <div class="tl-card-meta">${t("periodCycleTableDuration")}: ${duration !== null ? duration + " " + t("periodBarChartDay") : '--'}  ·  ${t("periodCycleTableCycleLen")}: ${cycleLenStr}</div>
+        ${isActive ? `<div class="tl-progress-bar"><div class="tl-progress-fill" data-pct="${progressPct}"></div></div>` : ""}
+      </div>
+    </div>`;
+  });
+
+  html += `</div>`;
+  container.innerHTML = html;
+
+  // 进度条动画（延迟一帧让 DOM 先渲染）
+  requestAnimationFrame(() => {
+    container.querySelectorAll(".tl-progress-fill").forEach(el => {
+      el.style.width = el.getAttribute("data-pct") + "%";
+    });
+  });
+}
+
+// 初始化经期记录功能
+function initPeriodTracker() {
+  loadPeriodCycles(() => {
+    renderPeriodCalendar();
+    updatePeriodStats();
+    renderPeriodBarChart();
+    renderPeriodCycleTable();
+    updatePeriodToggleBtn();
+    const moodCard = document.getElementById("periodMoodCard");
+    if (moodCard) {
+      moodCard.style.display = (getActivePeriod() || periodCycles.length > 0) ? "block" : "none";
+    }
+  });
+
+  // 初始化按钮
+  initPeriodMoodBtns();
+  initPeriodSymptomBtns();
+  initPeriodBloodColorBtns();
+
+  // 备注输入标记未保存
+  const remarkInput = document.getElementById("periodRemarkInput");
+  if (remarkInput) {
+    remarkInput.addEventListener("input", markPeriodUnsaved);
+  }
+
+  // Tooltip 悬浮延迟处理（鼠标移到 tooltip 上不立即消失）
+  const periodTooltipEl = document.getElementById("periodTooltip");
+  if (periodTooltipEl) {
+    periodTooltipEl.addEventListener("mouseenter", () => { clearTimeout(periodTooltipTimeout); });
+    periodTooltipEl.addEventListener("mouseleave", () => { hidePeriodTooltip(); });
+  }
+
+  // 月份切换
+  const prevBtn = document.getElementById("periodPrevMonth");
+  const nextBtn = document.getElementById("periodNextMonth");
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      periodCalendarMonth--;
+      if (periodCalendarMonth < 0) { periodCalendarMonth = 11; periodCalendarYear--; }
+      renderPeriodCalendar();
+    });
+  }
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      periodCalendarMonth++;
+      if (periodCalendarMonth > 11) { periodCalendarMonth = 0; periodCalendarYear++; }
+      renderPeriodCalendar();
+    });
+  }
+
+  // 经期开关 Toggle（开始/结束经期）
+  const toggleInput = document.getElementById("periodToggleInput");
+  if (toggleInput) {
+    toggleInput.addEventListener("change", () => {
+      if (periodUnsaved) {
+        showToast(t("periodPleaseSaveFirst") || "请先保存当前修改");
+        toggleInput.checked = !toggleInput.checked;
+        return;
+      }
+      const active = getActivePeriod();
+      if (toggleInput.checked) {
+        // 开启经期
+        if (!active) {
+          const today = getToday();
+          periodCycles.push({ startDate: today, endDate: null, days: {} });
+          savePeriodCycles();
+          updatePeriodToggleBtn();
+          selectPeriodDate(today);
+          showToast(t("toastPeriodRecorded"));
+          clearPeriodUnsaved();
+        }
+      } else {
+        // 关闭经期（需要确认）
+        if (active) {
+          if (!confirm(t("periodEndConfirm"))) {
+            toggleInput.checked = true;
+            return;
+          }
+          active.endDate = getToday();
+          savePeriodCycles();
+          updatePeriodToggleBtn();
+          const moodCard = document.getElementById("periodMoodCard");
+          if (moodCard) moodCard.style.display = "none";
+          selectedPeriodDate = null;
+          clearPeriodUnsaved();
+        }
+      }
+    });
+  }
+
+  // 保存心情/症状按钮（按天保存）
+  const saveMoodBtn = document.getElementById("periodSaveMoodBtn");
+  if (saveMoodBtn) {
+    saveMoodBtn.addEventListener("click", () => {
+      const dateToSave = selectedPeriodDate || getToday();
+      const cycle = getCycleByDate(dateToSave);
+      if (!cycle) {
+        showToast(t("periodSelectDay") || "请先点击日历选择一个经期日期");
+        return;
+      }
+      if (!cycle.days) cycle.days = {};
+      cycle.days[dateToSave] = {
+        mood: selectedMood >= 0 ? selectedMood : undefined,
+        symptoms: [...selectedSymptoms],
+        bloodColor: selectedBloodColor >= 0 ? selectedBloodColor : undefined,
+        remark: (document.getElementById("periodRemarkInput") || {}).value || ""
+      };
+      savePeriodCycles();
+      clearPeriodUnsaved();
+      renderPeriodCalendar(); // 重新渲染日历以显示心情 emoji
+      showToast(t("periodDaySaved") || "该天记录已保存");
+    });
+  }
+}
+
+initPeriodTracker();
+
