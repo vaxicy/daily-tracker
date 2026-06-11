@@ -2024,11 +2024,12 @@
         width: 40px;
         height: 40px;
         border-radius: 12px;
-        background: linear-gradient(135deg, #FCE7F3, #FBCFE8);
+        background: linear-gradient(135deg, #F687B3, #F472B6);
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 20px;
+        color: #FFFFFF;
         box-shadow: 0 4px 12px rgba(236,72,153,0.15);
       }
       .period-title { font-size: 16px; font-weight: 700; }
@@ -3707,6 +3708,7 @@
       }
       [data-theme="dark"] .period-icon {
         background: linear-gradient(135deg, #4a1a3a, #6b2d52);
+        color: #FFFFFF;
         box-shadow: 0 4px 12px rgba(244,114,182,0.15);
       }
       [data-theme="dark"] .day-cell.period-day-1 { background: rgba(244,114,182,0.15); }
@@ -4269,8 +4271,9 @@
         box-shadow: 0 4px 16px rgba(5,150,105,0.1);
       }
       [data-theme="forest"] .period-icon {
-        background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-        box-shadow: 0 4px 12px rgba(5,150,105,0.15);
+        background: linear-gradient(135deg, #F687B3, #F472B6);
+        color: #FFFFFF;
+        box-shadow: 0 4px 12px rgba(236,72,153,0.15);
       }
         border-color: rgba(5,150,105,0.2);
       }
@@ -4401,6 +4404,83 @@
         background: rgba(5,150,105,0.1);
       }
 
+      /* 快捷餐次标签样式 - 使用伪元素显示 emoji，2×2 网格布局 */
+      .meal-quick-tags {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 4px !important;
+        margin-top: 6px !important;
+      }
+      .meal-quick-tag {
+        font-size: 10px !important;
+        padding: 3px 4px !important;
+        border-radius: 10px !important;
+        border: 1px solid rgba(245,158,11,0.2) !important;
+        background: rgba(245,158,11,0.06) !important;
+        color: var(--text) !important;
+        cursor: pointer !important;
+        transition: all 0.15s !important;
+        white-space: nowrap !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 2px !important;
+        position: relative !important;
+        padding-left: 18px !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      .meal-quick-tag::before {
+        position: absolute !important;
+        left: 4px !important;
+        font-size: 10px !important;
+      }
+      .meal-quick-tag[data-meal-type="breakfast"]::before { content: "🌅"; }
+      .meal-quick-tag[data-meal-type="lunch"]::before { content: "🌞"; }
+      .meal-quick-tag[data-meal-type="dinner"]::before { content: "🌙"; }
+      .meal-quick-tag[data-meal-type="snack"]::before { content: "🍪"; }
+
+      /* 编辑弹窗中的快捷标签 */
+      .edit-quick-tag {
+        font-size: 9px !important;
+        padding: 2px 4px !important;
+        border-radius: 8px !important;
+        border: 1px solid rgba(245,158,11,0.2) !important;
+        background: rgba(245,158,11,0.06) !important;
+        color: var(--text) !important;
+        cursor: pointer !important;
+        transition: all 0.15s !important;
+        white-space: nowrap !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 2px !important;
+        position: relative !important;
+        padding-left: 16px !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      .edit-quick-tag::before {
+        position: absolute !important;
+        left: 3px !important;
+        font-size: 9px !important;
+      }
+      .edit-quick-tag[data-meal-type="breakfast"]::before { content: "🌅"; }
+      .edit-quick-tag[data-meal-type="lunch"]::before { content: "🌞"; }
+      .edit-quick-tag[data-meal-type="dinner"]::before { content: "🌙"; }
+      .edit-quick-tag[data-meal-type="snack"]::before { content: "🍪"; }
+
+      /* 编辑区域的标签容器也用 2×2 网格布局 */
+      [id^="eatAddQuickTags"],
+      [id^="eatAppendQuickTags"] {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 4px !important;
+        margin-top: 4px !important;
+      }
+
     </style>
   </head>
   <body>
@@ -4440,10 +4520,10 @@
       <div class="card">
         <div class="meal-input-row">
           <select class="meal-type-select" id="mealType">
-          <option value="breakfast" data-i18n="breakfast">🌅 早餐</option>
-          <option value="lunch" data-i18n="lunch">☀️ 午餐</option>
-          <option value="dinner" data-i18n="dinner">🌙 晚餐</option>
-          <option value="snack" data-i18n="snack">🍪 加餐</option>
+          <option value="breakfast" data-i18n="breakfast">早餐</option>
+          <option value="lunch" data-i18n="lunch">午餐</option>
+          <option value="dinner" data-i18n="dinner">晚餐</option>
+          <option value="snack" data-i18n="snack">加餐</option>
           </select>
           <input class="meal-input" id="mealInput" type="text" placeholder="今天吃了什么？" maxlength="100" data-i18n-placeholder="eatPlaceholder" />
         </div>
@@ -4451,6 +4531,19 @@
         <!-- 备注输入框 -->
         <div class="meal-input-row" style="margin-top: 8px;">
           <input class="meal-input" id="mealRemarkInput" type="text" placeholder="添加备注（可选）" maxlength="50" style="font-size: 12px;" data-i18n-placeholder="remarkPlaceholder" />
+        </div>
+
+        <!-- 时间选择行 + 快捷标签 -->
+        <div class="meal-input-row" style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <input type="time" class="meal-input" id="mealTimeInput" style="width:120px;font-size:12px;padding:5px 8px;" />
+          <button class="meal-settings-btn" id="openMealDefaultSettings" style="font-size:14px;padding:4px 8px;background:rgba(245,158,11,0.08);color:var(--eat);border:1px solid rgba(245,158,11,0.2);border-radius:6px;cursor:pointer;white-space:nowrap;" title="设置默认时间">⚙️</button>
+        </div>
+        <!-- 餐次快捷标签 -->
+        <div class="meal-quick-tags" id="mealQuickTags">
+          <button class="meal-quick-tag" data-meal-type="breakfast"><span data-i18n="breakfast">早餐</span> <span class="tag-time">07:30</span></button>
+          <button class="meal-quick-tag" data-meal-type="lunch"><span data-i18n="lunch">午餐</span> <span class="tag-time">12:00</span></button>
+          <button class="meal-quick-tag" data-meal-type="dinner"><span data-i18n="dinner">晚餐</span> <span class="tag-time">18:30</span></button>
+          <button class="meal-quick-tag" data-meal-type="snack"><span data-i18n="snack">加餐</span> <span class="tag-time">15:00</span></button>
         </div>
         
         <!-- 评价功能 -->
@@ -4503,6 +4596,40 @@
             <div class="tag-modal-footer">
               <button class="tag-modal-btn tag-modal-cancel" id="tagModalCancel" data-i18n="cancel">取消</button>
               <button class="tag-modal-btn tag-modal-confirm" id="tagModalConfirm" data-i18n="confirm">确定</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 饮食默认时间设置弹窗 -->
+        <div class="tag-modal" id="mealDefaultTimeModal">
+          <div class="tag-modal-content">
+            <div class="tag-modal-header">
+              <span data-i18n="mealDefaultTimesTitle">🍽️ 饮食默认时间</span>
+              <button class="tag-modal-close" id="mealDefaultTimeModalClose">&times;</button>
+            </div>
+            <div class="tag-modal-body" style="max-height:200px;">
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;">
+                  <span style="font-size:12px;" data-i18n="breakfast">早餐</span>
+                  <input type="time" id="modalDefaultTimeBreakfast" style="font-size:11px;padding:3px 6px;width:90px;border-radius:6px;border:1px solid rgba(245,158,11,0.2);" />
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;">
+                  <span style="font-size:12px;" data-i18n="lunch">午餐</span>
+                  <input type="time" id="modalDefaultTimeLunch" style="font-size:11px;padding:3px 6px;width:90px;border-radius:6px;border:1px solid rgba(245,158,11,0.2);" />
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;">
+                  <span style="font-size:12px;" data-i18n="dinner">晚餐</span>
+                  <input type="time" id="modalDefaultTimeDinner" style="font-size:11px;padding:3px 6px;width:90px;border-radius:6px;border:1px solid rgba(245,158,11,0.2);" />
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;">
+                  <span style="font-size:12px;" data-i18n="snack">加餐</span>
+                  <input type="time" id="modalDefaultTimeSnack" style="font-size:11px;padding:3px 6px;width:90px;border-radius:6px;border:1px solid rgba(245,158,11,0.2);" />
+                </div>
+              </div>
+            </div>
+            <div class="tag-modal-footer">
+              <button class="tag-modal-btn tag-modal-cancel" id="mealDefaultTimeModalCancel" data-i18n="cancel">取消</button>
+              <button class="tag-modal-btn tag-modal-confirm" id="mealDefaultTimeModalConfirm" data-i18n="confirm">确定</button>
             </div>
           </div>
         </div>

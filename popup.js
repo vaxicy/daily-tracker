@@ -202,6 +202,123 @@ const mealCount = document.getElementById("mealCount");
 const mealRemarkInput = document.getElementById("mealRemarkInput");
 const mealRating = document.getElementById("mealRating");
 const mealRatingText = document.getElementById("mealRatingText");
+const mealTimeInput = document.getElementById("mealTimeInput");
+const applyMealTimeBtn = document.getElementById("applyMealTimeBtn");
+
+// 饮食默认时间（早餐/午餐/晚餐/加餐）
+let mealDefaultTimes = { breakfast: "07:30", lunch: "12:00", dinner: "18:30", snack: "15:00" };
+
+function loadMealDefaultTimes(callback) {
+  chrome.storage.local.get(["mealDefaultTimes"], (data) => {
+    if (data.mealDefaultTimes) {
+      mealDefaultTimes = { ...mealDefaultTimes, ...data.mealDefaultTimes };
+    } else {
+      // 首次使用，保存默认值
+      chrome.storage.local.set({ mealDefaultTimes });
+    }
+    if (callback) callback();
+  });
+}
+
+// 根据当前餐次应用默认时间到时间输入框
+function applyMealDefaultTimeToInput(type) {
+  if (!mealTimeInput) return;
+  const mealType = type || (mealTypeSelect ? mealTypeSelect.value : "breakfast");
+  mealTimeInput.value = mealDefaultTimes[mealType] || "12:00";
+  // 高亮对应的快捷标签
+  updateMealQuickTagHighlight(mealType);
+}
+
+// 更新快捷标签高亮状态
+function updateMealQuickTagHighlight(type) {
+  const quickTags = document.querySelectorAll("#mealQuickTags .meal-quick-tag");
+  quickTags.forEach(tag => {
+    if (tag.dataset.mealType === type) {
+      tag.style.background = "rgba(245,158,11,0.2)";
+      tag.style.borderColor = "var(--eat)";
+      tag.style.color = "var(--eat)";
+    } else {
+      tag.style.background = "rgba(245,158,11,0.06)";
+      tag.style.borderColor = "rgba(245,158,11,0.2)";
+      tag.style.color = "var(--text)";
+    }
+  });
+}
+
+// 餐次切换时自动应用默认时间并高亮标签
+if (mealTypeSelect) {
+  mealTypeSelect.addEventListener("change", (e) => {
+    applyMealDefaultTimeToInput(e.target.value);
+  });
+}
+
+// 快捷标签点击事件
+function initMealQuickTags() {
+  const quickTags = document.querySelectorAll("#mealQuickTags .meal-quick-tag");
+  quickTags.forEach(tag => {
+    tag.addEventListener("click", () => {
+      const type = tag.dataset.mealType;
+      applyMealDefaultTimeToInput(type);
+    });
+  });
+}
+
+// 打开默认时间设置弹窗
+function openMealDefaultSettingsModal() {
+  const modal = document.getElementById("mealDefaultTimeModal");
+  if (!modal) return;
+  
+  // 填充当前默认值
+  const ids = { breakfast: "modalDefaultTimeBreakfast", lunch: "modalDefaultTimeLunch", dinner: "modalDefaultTimeDinner", snack: "modalDefaultTimeSnack" };
+  Object.entries(ids).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = mealDefaultTimes[key] || "12:00";
+  });
+  
+  modal.classList.add("active");
+}
+
+// 关闭默认时间设置弹窗
+function closeMealDefaultSettingsModal() {
+  const modal = document.getElementById("mealDefaultTimeModal");
+  if (modal) modal.classList.remove("active");
+}
+
+// 保存默认时间设置
+function saveMealDefaultSettings() {
+  const ids = { breakfast: "modalDefaultTimeBreakfast", lunch: "modalDefaultTimeLunch", dinner: "modalDefaultTimeDinner", snack: "modalDefaultTimeSnack" };
+  Object.entries(ids).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (el) mealDefaultTimes[key] = el.value;
+  });
+  chrome.storage.local.set({ mealDefaultTimes });
+  
+  // 更新快捷标签显示的时间
+  updateMealQuickTagsDisplay();
+  // 如果当前时间输入框显示的是某个餐次的默认时间，则更新它
+  applyMealDefaultTimeToInput();
+  
+  closeMealDefaultSettingsModal();
+  showToast(t("toastSettingsSaved") || "设置已保存");
+}
+
+// 更新快捷标签显示的时间
+function updateMealQuickTagsDisplay() {
+  const quickTags = document.querySelectorAll("#mealQuickTags .meal-quick-tag");
+  quickTags.forEach(tag => {
+    const type = tag.dataset.mealType;
+    const timeSpan = tag.querySelector(".tag-time");
+    if (timeSpan && mealDefaultTimes[type]) {
+      timeSpan.textContent = mealDefaultTimes[type];
+    }
+  });
+}
+
+// 初始化：绑定设置按钮事件
+const openMealDefaultSettingsBtn = document.getElementById("openMealDefaultSettings");
+if (openMealDefaultSettingsBtn) {
+  openMealDefaultSettingsBtn.addEventListener("click", openMealDefaultSettingsModal);
+}
 
 let currentMealRating = 0; // 当前选中的评分
 
@@ -376,10 +493,25 @@ function autoDetectTags(remark) {
 }
 
 // 初始化饮食页面
+/**
+ * 根据当前时间判断餐次
+ * 早餐 04:00-10:00、午餐 10:00-15:00、晚餐 15:00-21:00、加餐 21:00-04:00
+ */
+function getCurrentMealTypeByTime() {
+  const hour = new Date().getHours();
+  if (hour >= 4 && hour < 10) return "breakfast";
+  if (hour >= 10 && hour < 15) return "lunch";
+  if (hour >= 15 && hour < 21) return "dinner";
+  return "snack";
+}
+
 async function initEatPage() {
   // 先迁移旧数据，等待完成后再渲染
   await migrateFullnessData();
-  
+
+  // 加载饮食默认时间
+  await new Promise(resolve => loadMealDefaultTimes(resolve));
+
   renderFullnessSelector();
   loadCustomTags(() => {
     renderMealTags();
@@ -391,6 +523,25 @@ async function initEatPage() {
       }
     });
   }
+
+  // 根据当前时间自动识别餐次
+  const autoMealType = getCurrentMealTypeByTime();
+  if (mealTypeSelect) {
+    mealTypeSelect.value = autoMealType;
+  }
+
+  // 初始化时间输入框为当前餐次的默认时间
+  applyMealDefaultTimeToInput();
+
+  // 初始化快捷标签
+  initMealQuickTags();
+  // 更新快捷标签显示的时间
+  updateMealQuickTagsDisplay();
+  // 高亮当前选中的餐次
+  if (mealTypeSelect) {
+    updateMealQuickTagHighlight(mealTypeSelect.value);
+  }
+
   renderEatCalendar();
   updateMealRecords();
   renderEatStats();
@@ -737,7 +888,10 @@ addMealBtn.addEventListener("click", () => {
   }
 
   const today = getToday();
-  const time = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
+  // 使用时间输入框的值，若为空则取当前时间
+  const time = mealTimeInput && mealTimeInput.value
+    ? mealTimeInput.value
+    : new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
   const type = mealTypeSelect.value;
   const remark = mealRemarkInput ? mealRemarkInput.value.trim() : "";
   const rating = currentMealRating;
@@ -880,6 +1034,8 @@ function showEatEditModal(dateStr, dayRecords) {
     const now = new Date();
     const defaultTimeStr = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
     
+    // 获取当前选中餐次的默认时间
+    const addDefaultTime = mealDefaultTimes[typeLabel] || defaultTimeStr;
     editModalBody.innerHTML = `
       <div class="edit-empty" style="margin-bottom: 12px;">${t('noMeal')}</div>
       <div class="edit-input-row">
@@ -891,18 +1047,14 @@ function showEatEditModal(dateStr, dayRecords) {
         </select>
       </div>
       <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
-        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;">
-          <input type="radio" name="eatTimeMode" value="default" checked /> ${t('defaultTime')}
-        </label>
-        <span id="eatDefaultTimeDisplay" style="font-size:12px;color:#999;font-weight:500;">${defaultTimeStr}</span>
+        <input type="time" class="edit-input" id="eatAddTime" value="${addDefaultTime}" style="width:120px;font-size:12px;padding:4px 8px;" />
+        <button class="edit-apply-time-btn" id="eatAddOpenSettings" style="font-size:14px;padding:4px 8px;background:rgba(245,158,11,0.08);color:var(--eat);border:1px solid rgba(245,158,11,0.2);border-radius:6px;cursor:pointer;white-space:nowrap;" title="设置默认时间">⚙️</button>
       </div>
-      <div class="edit-input-row" id="eatCustomTimeRow" style="display:none;">
-        <input type="time" class="edit-input" id="eatCustomTime" value="${defaultTimeStr}" />
-      </div>
-      <div class="edit-input-row">
-        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
-          <input type="radio" name="eatTimeMode" value="custom" /> ${t('customTime')}
-        </label>
+      <div class="edit-input-row" id="eatAddQuickTags">
+        <button class="edit-quick-tag" data-meal-type="breakfast">${t('breakfast')} <span class="tag-time">${mealDefaultTimes['breakfast'] || '07:30'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="lunch">${t('lunch')} <span class="tag-time">${mealDefaultTimes['lunch'] || '12:00'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="dinner">${t('dinner')} <span class="tag-time">${mealDefaultTimes['dinner'] || '18:30'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="snack">${t('snack')} <span class="tag-time">${mealDefaultTimes['snack'] || '15:00'}</span></button>
       </div>
       <div class="edit-input-row">
         <input class="edit-input" type="text" id="eatAddContent" placeholder="${t('eatPlaceholder')}" />
@@ -982,60 +1134,68 @@ function showEatEditModal(dateStr, dayRecords) {
     }
   }
     
-    // 切换时间模式
-    document.querySelectorAll('input[name="eatTimeMode"]').forEach(r => {
-      r.addEventListener("change", () => {
-        const isCustom = r.value === "custom";
-        document.getElementById("eatDefaultTimeRow").style.display = isCustom ? "none" : "flex";
-        document.getElementById("eatCustomTimeRow").style.display = isCustom ? "flex" : "none";
+    // 添加记录区域：绑定设置按钮和快捷标签
+    const eatAddTypeEl = document.getElementById("eatAddType");
+    const eatAddTimeEl = document.getElementById("eatAddTime");
+    
+    // 根据当前时间自动识别餐次
+    if (eatAddTypeEl) {
+      eatAddTypeEl.value = getCurrentMealTypeByTime();
+      // 触发change事件以更新默认时间
+      eatAddTypeEl.dispatchEvent(new Event('change'));
+    }
+    const eatAddOpenSettingsBtn = document.getElementById("eatAddOpenSettings");
+    
+    // 绑定设置按钮
+    if (eatAddOpenSettingsBtn) {
+      eatAddOpenSettingsBtn.addEventListener("click", openMealDefaultSettingsModal);
+    }
+    
+    // 切换餐次时更新默认时间和高亮
+    if (eatAddTypeEl && eatAddTimeEl) {
+      eatAddTypeEl.addEventListener("change", () => {
+        eatAddTimeEl.value = mealDefaultTimes[eatAddTypeEl.value] || "12:00";
+        updateEditQuickTagHighlight('eatAddQuickTags', eatAddTypeEl.value);
       });
-    });
+    }
     
-    // 更新默认时间显示
-    setInterval(() => {
-      if (!document.querySelector('input[name="eatTimeMode"]:checked')) return;
-      if (document.querySelector('input[name="eatTimeMode"]:checked').value === "default") {
-        const now2 = new Date();
-        document.getElementById("eatDefaultTimeDisplay").textContent =
-          `${String(now2.getHours()).padStart(2,"0")}:${String(now2.getMinutes()).padStart(2,"0")}`;
-      }
-    }, 30000);
-    
+    // 绑定快捷标签
+    bindEditQuickTags('eatAddQuickTags', 'eatAddTime');
+    // 初始高亮
+    if (eatAddTypeEl) {
+      updateEditQuickTagHighlight('eatAddQuickTags', eatAddTypeEl.value);
+    }
+
     document.getElementById("eatAddBtn").addEventListener("click", () => {
       const type = document.getElementById("eatAddType").value;
       const content = document.getElementById("eatAddContent").value.trim();
       if (!content) { showToast(t("toastInputMeal")); return; }
-      
-      // 获取时间
+
+      // 获取时间：优先用时间输入框的值
       let recordTime;
-      const timeMode = document.querySelector('input[name="eatTimeMode"]:checked')?.value;
-      if (timeMode === "custom") {
-        const customVal = document.getElementById("eatCustomTime").value;
-        if (customVal) {
-          const [h, m] = customVal.split(":");
-          recordTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
-        } else {
-          recordTime = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
-        }
+      const timeVal = document.getElementById("eatAddTime").value;
+      if (timeVal) {
+        const [h, m] = timeVal.split(":");
+        recordTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
       } else {
-        recordTime = isToday ? new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" }) : t("makeUpCheckin");
+        recordTime = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
       }
-      
+
       // 获取备注和评价
       const remark = document.getElementById("eatAddRemark") ? document.getElementById("eatAddRemark").value.trim() : "";
       const rating = addRating || 0;
-      
+
       chrome.storage.local.get(["mealRecords"], (data) => {
         const records = data.mealRecords || {};
         if (!records[dateStr]) records[dateStr] = [];
-        records[dateStr].push({ 
-          content, 
-          time: recordTime, 
-          type, 
-          remark, 
-          rating, 
-          timestamp: Date.now(), 
-          isBackfill: !isToday 
+        records[dateStr].push({
+          content,
+          time: recordTime,
+          type,
+          remark,
+          rating,
+          timestamp: Date.now(),
+          isBackfill: !isToday
         });
         chrome.storage.local.set({ mealRecords: records }, () => {
           showToast(isToday ? t('toastMealAdded') : "🍽️ " + t('makeUpCheckinSuccess'));
@@ -1088,9 +1248,15 @@ function showEatEditModal(dateStr, dayRecords) {
           <option value="snack" ${rec.type === 'snack' ? 'selected' : ''}>${t('snack')}</option>
         </select>
       </div>
-      <div class="edit-input-row" id="eatEditFormTime${idx}" style="display:none;align-items:center;">
-        <input type="time" class="edit-input" id="eatEditTime${idx}" value="${parsedTime}" placeholder="HH:mm" style="width:auto;flex:none;" />
-        <span style="font-size:11px;color:#999;white-space:nowrap;margin-left:12px;">${t('modifyRecordTime')}</span>
+      <div class="edit-input-row" id="eatEditFormTime${idx}" style="display:none;align-items:center;gap:8px;">
+        <input type="time" class="edit-input" id="eatEditTime${idx}" value="${parsedTime}" placeholder="HH:mm" style="width:120px;font-size:12px;padding:4px 8px;" />
+        <button class="edit-apply-time-btn" id="eatEditOpenSettings${idx}" style="font-size:14px;padding:4px 8px;background:rgba(245,158,11,0.08);color:var(--eat);border:1px solid rgba(245,158,11,0.2);border-radius:6px;cursor:pointer;white-space:nowrap;" title="设置默认时间">⚙️</button>
+      </div>
+      <div class="edit-input-row" id="eatEditQuickTags${idx}" style="display:none;">
+        <button class="edit-quick-tag" data-meal-type="breakfast" data-index="${idx}">${t('breakfast')} <span class="tag-time">${mealDefaultTimes['breakfast'] || '07:30'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="lunch" data-index="${idx}">${t('lunch')} <span class="tag-time">${mealDefaultTimes['lunch'] || '12:00'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="dinner" data-index="${idx}">${t('dinner')} <span class="tag-time">${mealDefaultTimes['dinner'] || '18:30'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="snack" data-index="${idx}">${t('snack')} <span class="tag-time">${mealDefaultTimes['snack'] || '15:00'}</span></button>
       </div>
       <div class="edit-input-row" id="eatEditFormContent${idx}" style="display:none;">
         <input class="edit-input" type="text" id="eatEditContent${idx}" value="${rec.content}" placeholder="${t('editContentPlaceholder')}" />
@@ -1155,18 +1321,14 @@ function showEatEditModal(dateStr, dayRecords) {
         </select>
       </div>
       <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
-        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;">
-          <input type="radio" name="eatAppendTimeMode" value="default" checked /> ${t('defaultTime')}
-        </label>
-        <span id="eatAppendDefaultTimeDisplay" style="font-size:12px;color:#999;font-weight:500;">${new Date().getHours().toString().padStart(2,"0")}:${new Date().getMinutes().toString().padStart(2,"0")}</span>
+        <input type="time" class="edit-input" id="eatAppendTime" value="${mealDefaultTimes[document.getElementById('eatAppendType')?.value || 'breakfast'] || '12:00'}" style="width:120px;font-size:12px;padding:4px 8px;" />
+        <button class="edit-apply-time-btn" id="eatAppendOpenSettings" style="font-size:14px;padding:4px 8px;background:rgba(245,158,11,0.08);color:var(--eat);border:1px solid rgba(245,158,11,0.2);border-radius:6px;cursor:pointer;white-space:nowrap;" title="设置默认时间">⚙️</button>
       </div>
-      <div class="edit-input-row" id="eatAppendCustomTimeRow" style="display:none;">
-        <input type="time" class="edit-input" id="eatAppendCustomTime" value="" placeholder="HH:mm" />
-      </div>
-      <div class="edit-input-row">
-        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
-          <input type="radio" name="eatAppendTimeMode" value="custom" /> ${t('customTime')}
-        </label>
+      <div class="edit-input-row" id="eatAppendQuickTags">
+        <button class="edit-quick-tag" data-meal-type="breakfast">${t('breakfast')} <span class="tag-time">${mealDefaultTimes['breakfast'] || '07:30'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="lunch">${t('lunch')} <span class="tag-time">${mealDefaultTimes['lunch'] || '12:00'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="dinner">${t('dinner')} <span class="tag-time">${mealDefaultTimes['dinner'] || '18:30'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="snack">${t('snack')} <span class="tag-time">${mealDefaultTimes['snack'] || '15:00'}</span></button>
       </div>
       <div class="edit-input-row">
         <input class="edit-input" type="text" id="eatAppendContent" placeholder="${t('eatPlaceholder')}" />
@@ -1175,12 +1337,26 @@ function showEatEditModal(dateStr, dayRecords) {
     </div>
   `;
 
-  // 追加时间模式切换
-  document.querySelectorAll('input[name="eatAppendTimeMode"]').forEach(r => {
-    r.addEventListener("change", () => {
-      document.getElementById("eatAppendCustomTimeRow").style.display = r.value === "custom" ? "flex" : "none";
+  // 追加：切换餐次时更新默认时间 + 绑定快捷标签和设置按钮
+  const eatAppendTypeEl = document.getElementById("eatAppendType");
+  const eatAppendTimeEl = document.getElementById("eatAppendTime");
+  const eatAppendOpenSettingsBtn = document.getElementById("eatAppendOpenSettings");
+  
+  // 绑定设置按钮
+  if (eatAppendOpenSettingsBtn) {
+    eatAppendOpenSettingsBtn.addEventListener("click", openMealDefaultSettingsModal);
+  }
+  
+  // 切换餐次时更新默认时间
+  if (eatAppendTypeEl && eatAppendTimeEl) {
+    eatAppendTypeEl.addEventListener("change", () => {
+      eatAppendTimeEl.value = mealDefaultTimes[eatAppendTypeEl.value] || "12:00";
+      updateEditQuickTagHighlight('eatAppendQuickTags', eatAppendTypeEl.value);
     });
-  });
+  }
+  
+  // 绑定追加区域的快捷标签
+  bindEditQuickTags('eatAppendQuickTags', 'eatAppendTime');
 
   // 追加按钮事件
   document.getElementById("eatAppendBtn").addEventListener("click", () => {
@@ -1188,18 +1364,14 @@ function showEatEditModal(dateStr, dayRecords) {
     const content = document.getElementById("eatAppendContent").value.trim();
     if (!content) { showToast(t("toastInputMeal")); return; }
 
+    // 获取时间：优先用时间输入框的值
     let recordTime;
-    const timeMode = document.querySelector('input[name="eatAppendTimeMode"]:checked')?.value;
-    if (timeMode === "custom") {
-      const customVal = document.getElementById("eatAppendCustomTime").value;
-      if (customVal) {
-        const [h, m] = customVal.split(":");
-        recordTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
-      } else {
-        recordTime = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
-      }
+    const timeVal = document.getElementById("eatAppendTime").value;
+    if (timeVal) {
+      const [h, m] = timeVal.split(":");
+      recordTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
     } else {
-      recordTime = isToday ? new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" }) : t("makeUpCheckin");
+      recordTime = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
     }
 
     chrome.storage.local.get(["mealRecords"], (data) => {
@@ -1221,22 +1393,99 @@ function showEatEditModal(dateStr, dayRecords) {
 function openEatEditForm(idx) {
   document.getElementById("eatEditForm" + idx).style.display = "block";
   document.getElementById("eatContent" + idx).style.display = "none";
+
+  // 显示快捷标签并设置grid布局
+  const quickTags = document.getElementById("eatEditQuickTags" + idx);
+  if (quickTags) {
+    quickTags.style.display = "grid";
+  }
+
+  // 绑定设置按钮事件
+  const settingsBtn = document.getElementById("eatEditOpenSettings" + idx);
+  if (settingsBtn) {
+    settingsBtn.onclick = () => openMealDefaultSettingsModal();
+  }
+  
+  // 绑定快捷标签事件
+  bindEditQuickTags('eatEditQuickTags' + idx, 'eatEditTime' + idx);
+  
+  // 根据当前选中的餐次高亮快捷标签
+  const typeEl = document.getElementById("eatEditType" + idx);
+  if (typeEl) {
+    updateEditQuickTagHighlight('eatEditQuickTags' + idx, typeEl.value);
+    // 餐次切换时更新高亮
+    typeEl.addEventListener("change", () => {
+      updateEditQuickTagHighlight('eatEditQuickTags' + idx, typeEl.value);
+    });
+  }
+}
+
+// 绑定编辑区域快捷标签的点击事件
+function bindEditQuickTags(containerId, timeInputId) {
+  const container = document.getElementById(containerId);
+  const timeInput = document.getElementById(timeInputId);
+  if (!container || !timeInput) return;
+  
+  const quickTags = container.querySelectorAll(".edit-quick-tag");
+  quickTags.forEach(tag => {
+    tag.addEventListener("click", () => {
+      const type = tag.dataset.mealType;
+      timeInput.value = mealDefaultTimes[type] || "12:00";
+      updateEditQuickTagHighlight(containerId, type);
+    });
+  });
+}
+
+// 更新编辑区域快捷标签的高亮状态
+function updateEditQuickTagHighlight(containerId, type) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  const quickTags = container.querySelectorAll(".edit-quick-tag");
+  quickTags.forEach(tag => {
+    if (tag.dataset.mealType === type) {
+      tag.style.background = "rgba(245,158,11,0.2)";
+      tag.style.borderColor = "var(--eat)";
+      tag.style.color = "var(--eat)";
+    } else {
+      tag.style.background = "rgba(245,158,11,0.06)";
+      tag.style.borderColor = "rgba(245,158,11,0.2)";
+      tag.style.color = "var(--text)";
+    }
+  });
 }
 
 function saveEatRecord(idx) {
   const newType = document.getElementById("eatEditType" + idx).value;
   const newContent = document.getElementById("eatEditContent" + idx).value.trim();
-  
+  const newTime = document.getElementById("eatEditTime" + idx).value;
+  const newRemark = document.getElementById("eatEditRemark" + idx).value.trim();
+  const newRating = parseInt(document.getElementById("eatEditRating" + idx).value) || 0;
+  const newFullness = parseInt(document.getElementById("eatEditFullness" + idx).value) || 0;
+
   if (!newContent) {
     showToast(t("toastInputEmpty"));
     return;
   }
-  
+
+  // 处理时间格式
+  let recordTime = newTime;
+  if (recordTime) {
+    const [h, m] = recordTime.split(":");
+    recordTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
+  } else {
+    recordTime = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
+  }
+
   chrome.storage.local.get(["mealRecords"], (data) => {
     const records = data.mealRecords || {};
     if (records[currentEditDate] && records[currentEditDate][idx]) {
       records[currentEditDate][idx].type = newType;
       records[currentEditDate][idx].content = newContent;
+      records[currentEditDate][idx].time = recordTime;
+      records[currentEditDate][idx].remark = newRemark || undefined;
+      records[currentEditDate][idx].rating = newRating || undefined;
+      records[currentEditDate][idx].fullness = newFullness || undefined;
       chrome.storage.local.set({ mealRecords: records }, () => {
         showToast(t("toastEditSuccess"));
         renderEatCalendar();
@@ -3472,6 +3721,12 @@ editModalBody.addEventListener("click", (e) => {
     document.getElementById("eatEditFormButtons" + idx).style.display = "block";
     document.getElementById("eatContent" + idx).style.display = "none";
 
+    // 显示快捷标签并设置grid布局
+    const quickTags = document.getElementById("eatEditQuickTags" + idx);
+    if (quickTags) {
+      quickTags.style.display = "grid";
+    }
+
     // 绑定星级交互（5颗星，支持半星）
     const starContainer = document.getElementById("eatEditRatingStars" + idx);
     if (starContainer && !starContainer.dataset.bound) {
@@ -4030,6 +4285,14 @@ document.getElementById("tagModalCancel")?.addEventListener("click", closeTagMod
 document.getElementById("tagModalConfirm")?.addEventListener("click", confirmAddCustomTag);
 document.getElementById("tagModal")?.addEventListener("click", (e) => {
   if (e.target.id === "tagModal") closeTagModal();
+});
+
+// 饮食默认时间设置弹窗事件
+document.getElementById("mealDefaultTimeModalClose")?.addEventListener("click", closeMealDefaultSettingsModal);
+document.getElementById("mealDefaultTimeModalCancel")?.addEventListener("click", closeMealDefaultSettingsModal);
+document.getElementById("mealDefaultTimeModalConfirm")?.addEventListener("click", saveMealDefaultSettings);
+document.getElementById("mealDefaultTimeModal")?.addEventListener("click", (e) => {
+  if (e.target.id === "mealDefaultTimeModal") closeMealDefaultSettingsModal();
 });
 
 // 语言切换按钮事件
