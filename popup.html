@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -2044,24 +2044,24 @@
         margin-bottom: 12px;
       }
 
+      .period-pain-row,
       .period-flow-row {
         display: flex;
-        align-items: center;
-        gap: 8px;
-        margin: 10px 0;
+        flex-direction: column;
+        gap: 6px;
+        margin: 8px 0;
       }
-      .period-flow-label {
-        font-size: 12px;
+      .period-slider-title {
+        font-size: 11px;
         color: var(--muted);
-        white-space: nowrap;
-        min-width: 50px;
+        font-weight: 600;
+        align-self: flex-start;
+        margin-bottom: 2px;
       }
-      .period-flow-btns {
         display: flex;
         gap: 6px;
         flex-wrap: wrap;
       }
-      .period-flow-btn {
         padding: 4px 10px;
         border-radius: 12px;
         border: 1px solid rgba(236,72,153,0.2);
@@ -2073,11 +2073,9 @@
         user-select: none;
         white-space: nowrap;
       }
-      .period-flow-btn:hover {
         border-color: var(--period);
         color: var(--period);
       }
-      .period-flow-btn.active {
         background: var(--period);
         color: #fff;
         border-color: var(--period);
@@ -2087,7 +2085,7 @@
       .period-mood-row {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 10px;
         margin: 8px 0;
       }
       .period-mood-label {
@@ -2100,14 +2098,14 @@
         gap: 10px;
       }
       .period-mood-btn {
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         border: 1.5px solid rgba(236,72,153,0.18);
         background: rgba(255,255,255,0.8);
         cursor: pointer;
         transition: all 0.2s;
-        font-size: 18px;
+        font-size: 16px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -2126,8 +2124,8 @@
       .period-symptom-row {
         display: flex;
         flex-direction: column;
-        gap: 4px;
-        margin: 6px 0;
+        gap: 6px;
+        margin: 8px 0;
       }
       .period-symptom-label {
         font-size: 11px;
@@ -2137,20 +2135,22 @@
       .period-symptom-btns {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
-        gap: 2px;
+        gap: 4px;
         width: 100%;
       }
       .period-symptom-btn {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 2px;
-        padding: 4px 3px;
+        gap: 4px;
+        padding: 6px 8px;
+        height: 32px;
+        box-sizing: border-box;
         border-radius: 8px;
-        border: 1px solid rgba(236,72,153,0.15);
+        border: 1.5px solid rgba(236,72,153,0.2);
         background: rgba(236,72,153,0.04);
         color: var(--text);
-        font-size: 9px;
+        font-size: 11px;
         cursor: pointer;
         transition: all 0.2s;
         user-select: none;
@@ -2169,6 +2169,79 @@
         color: var(--period);
         font-weight: 600;
         box-shadow: 0 0 0 2px rgba(236,72,153,0.08);
+      }
+
+      /* 痛感/流量 Slider 样式 */
+      .period-slider-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        width: 100%;
+        padding: 6px 0;
+      }
+      .period-slider-emoji,
+      .period-slider-label,
+      .period-slider-ticks {
+        align-self: center;
+      }
+      .period-slider-emoji {
+        font-size: 20px;
+        line-height: 1;
+      }
+      .period-slider-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        transition: color 0.15s;
+      }
+      .period-slider {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 6px;
+        border-radius: 3px;
+        background: linear-gradient(to right, #e2e8f0, #fecdd3);
+        outline: none;
+        cursor: pointer;
+        margin: 4px 0;
+      }
+      .period-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--period);
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(236,72,153,0.4);
+        border: 2px solid #fff;
+        transition: transform 0.15s;
+      }
+      .period-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+      }
+      .period-slider::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--period);
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(236,72,153,0.4);
+        border: 2px solid #fff;
+      }
+      .period-slider-ticks {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        font-size: 12px;
+        color: var(--muted);
+        padding: 0 2px;
+        line-height: 1.2;
+      }
+      .period-slider-ticks span {
+        text-align: center;
+        flex: 1;
       }
 
       .period-remark-input {
@@ -2522,18 +2595,18 @@
       /* 日期单元格删除按钮（右上角，悬停显示） */
       .period-cell-delete-btn {
         position: absolute;
-        top: 0;
-        right: 0;
-        width: 16px;
-        height: 16px;
+        top: -2px;
+        right: -2px;
+        width: 14px;
+        height: 14px;
         border: none;
         background: rgba(239, 68, 68, 0.9);
         color: white;
-        font-size: 14px;
+        font-size: 10px;
         font-weight: bold;
-        line-height: 16px;
+        line-height: 14px;
         text-align: center;
-        border-radius: 0 0 0 4px;
+        border-radius: 50%;
         cursor: pointer;
         opacity: 0;
         transition: opacity 0.15s;
@@ -2566,7 +2639,10 @@
       }
       /* 血的颜色选择区 */
       .period-blood-row {
-        margin: 6px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin: 8px 0;
       }
       .period-blood-label {
         font-size: 11px;
@@ -2599,8 +2675,8 @@
         background: rgba(236,72,153,0.1);
       }
       .period-blood-swatch {
-        width: 18px;
-        height: 18px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
         border: 1.5px solid rgba(0,0,0,0.12);
         box-sizing: border-box;
@@ -2618,7 +2694,6 @@
         color: var(--period);
         font-weight: 600;
       }
-
       /* 经期记录 tooltip */
       #periodTooltip {
         position: fixed;
@@ -3568,6 +3643,62 @@
       [data-theme="dark"] .period-blood-btn.selected .period-blood-name {
         color: #f472b6;
       }
+      /* 暗色主题 - 痛感按钮 */
+        background: rgba(236,72,153,0.08);
+        border-color: rgba(236,72,153,0.25);
+        color: #e2e8f0;
+      }
+        background: rgba(236,72,153,0.18);
+        border-color: rgba(236,72,153,0.4);
+      }
+        background: rgba(236,72,153,0.25);
+        border-color: #f472b6;
+        color: #f472b6;
+      }
+      /* 暗色主题 - 流量按钮 */
+        background: rgba(236,72,153,0.08);
+        border-color: rgba(236,72,153,0.25);
+        color: #e2e8f0;
+      }
+        background: rgba(236,72,153,0.18);
+        border-color: rgba(236,72,153,0.4);
+      }
+        background: rgba(236,72,153,0.25);
+        border-color: #f472b6;
+        color: #f472b6;
+      }
+      /* 暗色主题 - Slider */
+      [data-theme="dark"] .period-slider-wrap {
+        background: transparent;
+      }
+      [data-theme="dark"] .period-slider-emoji {
+        color: #e2e8f0;
+      }
+      [data-theme="dark"] .period-slider-label {
+        color: #94a3b8;
+      }
+      [data-theme="dark"] .period-slider-label[style*="var(--period)"] {
+        color: #f472b6 !important;
+      }
+      [data-theme="dark"] .period-slider {
+        background: linear-gradient(to right, #334155, #f472b6);
+        opacity: 0.9;
+      }
+      [data-theme="dark"] .period-slider::-webkit-slider-thumb {
+        background: #f472b6;
+        border-color: #e2e8f0;
+        box-shadow: 0 2px 6px rgba(244,114,182,0.5);
+      }
+      [data-theme="dark"] .period-slider::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        background: #f472b6;
+        border-color: #e2e8f0;
+        box-shadow: 0 2px 6px rgba(244,114,182,0.5);
+      }
+      [data-theme="dark"] .period-slider-ticks {
+        color: #94a3b8;
+      }
 
       /* 暗色主题 - 经期页面增强 */
       [data-theme="dark"] .period-card {
@@ -4141,7 +4272,6 @@
         background: linear-gradient(135deg, #d1fae5, #a7f3d0);
         box-shadow: 0 4px 12px rgba(5,150,105,0.15);
       }
-      [data-theme="forest"] .period-flow-btn {
         border-color: rgba(5,150,105,0.2);
       }
       [data-theme="forest"] .period-mood-btn {
@@ -4199,6 +4329,65 @@
       [data-theme="forest"] .period-blood-btn.selected .period-blood-name {
         color: var(--period);
       }
+      /* 森林绿主题 - 痛感按钮 */
+        background: rgba(5,150,105,0.06);
+        border-color: rgba(5,150,105,0.18);
+        color: var(--text, #0a2923);
+      }
+        background: rgba(5,150,105,0.12);
+        border-color: rgba(5,150,105,0.3);
+      }
+        background: rgba(5,150,105,0.15);
+        border-color: var(--period);
+        color: var(--period);
+        box-shadow: 0 0 0 2px rgba(5,150,105,0.08);
+      }
+      /* 森林绿主题 - 流量按钮 */
+        background: rgba(5,150,105,0.06);
+        border-color: rgba(5,150,105,0.18);
+        color: var(--text, #0a2923);
+      }
+        background: rgba(5,150,105,0.12);
+        border-color: rgba(5,150,105,0.3);
+      }
+        background: rgba(5,150,105,0.15);
+        border-color: var(--period);
+        color: var(--period);
+        box-shadow: 0 0 0 2px rgba(5,150,105,0.08);
+      }
+      /* 森林绿主题 - Slider */
+      [data-theme="forest"] .period-slider-wrap {
+        background: transparent;
+      }
+      [data-theme="forest"] .period-slider-emoji {
+        color: var(--text, #0a2923);
+      }
+      [data-theme="forest"] .period-slider-label {
+        color: var(--muted, rgba(10,41,35,0.55));
+      }
+      [data-theme="forest"] .period-slider-label[style*="var(--period)"] {
+        color: var(--period) !important;
+      }
+      [data-theme="forest"] .period-slider {
+        background: linear-gradient(to right, rgba(5,150,105,0.2), rgba(5,150,105,0.6));
+        opacity: 0.9;
+      }
+      [data-theme="forest"] .period-slider::-webkit-slider-thumb {
+        background: var(--period);
+        border-color: var(--bg, #f0fdf4);
+        box-shadow: 0 2px 6px rgba(5,150,105,0.4);
+      }
+      [data-theme="forest"] .period-slider::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        background: var(--period);
+        border-color: var(--bg, #f0fdf4);
+        box-shadow: 0 2px 6px rgba(5,150,105,0.4);
+      }
+      [data-theme="forest"] .period-slider-ticks {
+        color: var(--muted, rgba(10,41,35,0.55));
+      }
+
       [data-theme="forest"] .period-toggle-wrap {
         border-color: rgba(5,150,105,0.18);
       }
@@ -4677,9 +4866,35 @@
 
           <div style="height:1px;background:rgba(236,72,153,0.1);margin:8px 0;"></div>
 
+          <!-- 痛感行 -->
+          <div class="period-pain-row">
+            <div class="period-slider-wrap">
+              <div class="period-slider-title" data-i18n="periodPainLabel">痛感</div>
+              <div class="period-slider-emoji" id="periodPainEmoji">😊</div>
+              <div class="period-slider-label" id="periodPainLabel">无明显痛感</div>
+              <input type="range" class="period-slider" id="periodPainSlider" min="-1" max="4" value="-1" step="1" />
+              <div class="period-slider-ticks" id="periodPainTicks"></div>
+            </div>
+          </div>
+
+          <div style="height:1px;background:rgba(236,72,153,0.1);margin:8px 0;"></div>
+
           <div class="period-symptom-row">
             <div class="period-symptom-label" data-i18n="periodSymptomsLabel">症状</div>
             <div class="period-symptom-btns" id="periodSymptomBtns"></div>
+          </div>
+
+          <div style="height:1px;background:rgba(236,72,153,0.1);margin:8px 0;"></div>
+
+          <!-- 流量行 -->
+          <div class="period-flow-row">
+            <div class="period-slider-wrap">
+              <div class="period-slider-title" data-i18n="periodFlowLabel">流量</div>
+              <div class="period-slider-emoji" id="periodFlowEmoji">🩲</div>
+              <div class="period-slider-label" id="periodFlowLabel">很少</div>
+              <input type="range" class="period-slider" id="periodFlowSlider" min="-1" max="4" value="-1" step="1" />
+              <div class="period-slider-ticks" id="periodFlowTicks"></div>
+            </div>
           </div>
 
           <div style="height:1px;background:rgba(236,72,153,0.1);margin:8px 0;"></div>
@@ -4944,7 +5159,9 @@
     <div id="periodTooltip">
       <div class="pt-date"></div>
       <div class="pt-item" id="ptMood"></div>
+      <div class="pt-item" id="ptPain"></div>
       <div class="pt-item" id="ptSymptoms"></div>
+      <div class="pt-item" id="ptFlow"></div>
       <div class="pt-item" id="ptBlood"></div>
       <div class="pt-remark" id="ptRemark"></div>
     </div>

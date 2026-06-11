@@ -4304,9 +4304,11 @@ if (donateQrOverlay) {
 // ==================== 经期记录功能（开关式） ====================
 let periodCalendarYear = new Date().getFullYear();
 let periodCalendarMonth = new Date().getMonth();
-let periodCycles = []; // { startDate, endDate, mood, symptoms, remark }
+let periodCycles = []; // { startDate, endDate, days }
 let selectedMood = 0;
+let selectedPain = -1;
 let selectedSymptoms = [];
+let selectedFlow = -1;
 
 // 迁移旧数据（periodRecords → periodCycles）
 function migratePeriodData(records, callback) {
@@ -4630,7 +4632,9 @@ function selectPeriodDate(dateStr) {
   // 加载该天数据
   const dayData = (cycle.days || {})[dateStr] || {};
   selectMood(dayData.mood !== undefined ? dayData.mood : -1);
+  setPainSlider(dayData.pain !== undefined ? dayData.pain : -1);
   selectSymptoms(dayData.symptoms || []);
+  setFlowSlider(dayData.flow !== undefined ? dayData.flow : -1);
   selectBloodColor(dayData.bloodColor !== undefined ? dayData.bloodColor : -1);
 
   const remarkInput = document.getElementById("periodRemarkInput");
@@ -4678,6 +4682,19 @@ function showPeriodTooltip(e, dateStr, cycle, dayData, targetElement, dayIndex) 
       }
     }
 
+    // 痛感
+    const painEl = document.getElementById("ptPain");
+    if (painEl) {
+      if (dayData && dayData.pain !== undefined && dayData.pain >= 0) {
+        const painTexts = t("periodPainLevels") || [];
+        const painEmojis = t("periodPainEmojis") || [];
+        painEl.innerHTML = `<span class="pt-label">${t("periodPainLabel")}</span><span>${painEmojis[dayData.pain] || ""} ${painTexts[dayData.pain] || ""}</span>`;
+        painEl.style.display = "flex";
+      } else {
+        painEl.style.display = "none";
+      }
+    }
+
     // 症状
     const symptomsEl = document.getElementById("ptSymptoms");
     if (symptomsEl) {
@@ -4691,6 +4708,19 @@ function showPeriodTooltip(e, dateStr, cycle, dayData, targetElement, dayIndex) 
         symptomsEl.style.display = "flex";
       } else {
         symptomsEl.style.display = "none";
+      }
+    }
+
+    // 流量
+    const flowEl = document.getElementById("ptFlow");
+    if (flowEl) {
+      if (dayData && dayData.flow !== undefined && dayData.flow >= 0) {
+        const flowTexts = t("periodFlowLevels") || [];
+        const flowEmojis = t("periodFlowEmojis") || [];
+        flowEl.innerHTML = `<span class="pt-label">${t("periodFlowLabel")}</span><span>${flowEmojis[dayData.flow] || ""} ${flowTexts[dayData.flow] || ""}</span>`;
+        flowEl.style.display = "flex";
+      } else {
+        flowEl.style.display = "none";
       }
     }
 
@@ -4907,6 +4937,170 @@ function selectBloodColor(idx) {
     btn.classList.toggle("selected", parseInt(btn.dataset.colorIdx) === selectedBloodColor);
   });
 }
+
+// 痛感 Slider 逻辑 - 动态读取 i18n
+function getPainEmojis() {
+  const lang = currentLang || "zh";
+  const raw = (I18N[lang] && I18N[lang]["periodPainEmojis"]) || I18N["zh"]["periodPainEmojis"];
+  return raw || ["😊", "🙂", "😣", "😫", "😭"];
+}
+function getPainLevels() {
+  const lang = currentLang || "zh";
+  const raw = (I18N[lang] && I18N[lang]["periodPainLevels"]) || I18N["zh"]["periodPainLevels"];
+  return raw || ["无明显痛感", "轻微疼痛", "中度疼痛", "重度疼痛", "剧烈疼痛"];
+}
+
+function initPeriodPainSlider() {
+  const slider = document.getElementById("periodPainSlider");
+  const emojiEl = document.getElementById("periodPainEmoji");
+  const labelEl = document.getElementById("periodPainLabel");
+  const ticksEl = document.getElementById("periodPainTicks");
+  if (!slider || !emojiEl || !labelEl) return;
+
+  // 动态生成 emoji ticks
+  if (ticksEl) {
+    const emojis = getPainEmojis();
+    ticksEl.innerHTML = emojis.map(e => `<span>${e}</span>`).join("");
+  }
+
+  function updatePainDisplay(val) {
+    const v = parseInt(val);
+    const emojis = getPainEmojis();
+    const levels = getPainLevels();
+    if (v < 0) {
+      emojiEl.textContent = emojis[0] || "😊";
+      labelEl.textContent = t("periodNotSelected");
+      labelEl.style.color = "var(--muted)";
+    } else {
+      emojiEl.textContent = emojis[v] || "";
+      labelEl.textContent = levels[v] || "";
+      labelEl.style.color = "var(--period)";
+    }
+    selectedPain = v;
+  }
+
+  slider.addEventListener("input", (e) => {
+    updatePainDisplay(e.target.value);
+    markPeriodUnsaved();
+  });
+
+  // 初始化显示
+  updatePainDisplay(slider.value);
+}
+
+function setPainSlider(val) {
+  const slider = document.getElementById("periodPainSlider");
+  if (!slider) return;
+  slider.value = val;
+  const v = parseInt(val);
+  const emojiEl = document.getElementById("periodPainEmoji");
+  const labelEl = document.getElementById("periodPainLabel");
+  const emojis = getPainEmojis();
+  const levels = getPainLevels();
+  if (emojiEl) emojiEl.textContent = v < 0 ? (emojis[0] || "😊") : (emojis[v] || "");
+  if (labelEl) {
+    labelEl.textContent = v < 0 ? t("periodNotSelected") : (levels[v] || "");
+    labelEl.style.color = v < 0 ? "var(--muted)" : "var(--period)";
+  }
+  selectedPain = v;
+}
+
+// 流量 Slider 逻辑 - 动态读取 i18n
+function getFlowEmojis() {
+  const lang = currentLang || "zh";
+  const raw = (I18N[lang] && I18N[lang]["periodFlowEmojis"]) || I18N["zh"]["periodFlowEmojis"];
+  return raw || ["🩲", "🩹", "💧", "💦", "🌊"];
+}
+function getFlowLevels() {
+  const lang = currentLang || "zh";
+  const raw = (I18N[lang] && I18N[lang]["periodFlowLevels"]) || I18N["zh"]["periodFlowLevels"];
+  return raw || ["很少", "少", "中", "多", "很多"];
+}
+
+function initPeriodFlowSlider() {
+  const slider = document.getElementById("periodFlowSlider");
+  const emojiEl = document.getElementById("periodFlowEmoji");
+  const labelEl = document.getElementById("periodFlowLabel");
+  const ticksEl = document.getElementById("periodFlowTicks");
+  if (!slider || !emojiEl || !labelEl) return;
+
+  // 动态生成 emoji ticks
+  if (ticksEl) {
+    const emojis = getFlowEmojis();
+    ticksEl.innerHTML = emojis.map(e => `<span>${e}</span>`).join("");
+  }
+
+  function updateFlowDisplay(val) {
+    const v = parseInt(val);
+    const emojis = getFlowEmojis();
+    const levels = getFlowLevels();
+    if (v < 0) {
+      emojiEl.textContent = emojis[0] || "🩲";
+      labelEl.textContent = t("periodNotSelected");
+      labelEl.style.color = "var(--muted)";
+    } else {
+      emojiEl.textContent = emojis[v] || "";
+      labelEl.textContent = levels[v] || "";
+      labelEl.style.color = "var(--period)";
+    }
+    selectedFlow = v;
+  }
+
+  slider.addEventListener("input", (e) => {
+    updateFlowDisplay(e.target.value);
+    markPeriodUnsaved();
+  });
+
+  // 初始化显示
+  updateFlowDisplay(slider.value);
+}
+
+function setFlowSlider(val) {
+  const slider = document.getElementById("periodFlowSlider");
+  if (!slider) return;
+  slider.value = val;
+  const v = parseInt(val);
+  const emojiEl = document.getElementById("periodFlowEmoji");
+  const labelEl = document.getElementById("periodFlowLabel");
+  const emojis = getFlowEmojis();
+  const levels = getFlowLevels();
+  if (emojiEl) emojiEl.textContent = v < 0 ? (emojis[0] || "🩲") : (emojis[v] || "");
+  if (labelEl) {
+    labelEl.textContent = v < 0 ? t("periodNotSelected") : (levels[v] || "");
+    labelEl.style.color = v < 0 ? "var(--muted)" : "var(--period)";
+  }
+  selectedFlow = v;
+}
+
+// 监听语言切换，刷新 slider 显示
+document.addEventListener("i18nApplied", () => {
+  const painSlider = document.getElementById("periodPainSlider");
+  const flowSlider = document.getElementById("periodFlowSlider");
+  if (painSlider) {
+    const v = parseInt(painSlider.value);
+    const emojiEl = document.getElementById("periodPainEmoji");
+    const labelEl = document.getElementById("periodPainLabel");
+    const emojis = getPainEmojis();
+    const levels = getPainLevels();
+    if (emojiEl) emojiEl.textContent = v < 0 ? (emojis[0] || "😊") : (emojis[v] || "");
+    if (labelEl) {
+      labelEl.textContent = v < 0 ? t("periodNotSelected") : (levels[v] || "");
+      labelEl.style.color = v < 0 ? "var(--muted)" : "var(--period)";
+    }
+  }
+  if (flowSlider) {
+    const v = parseInt(flowSlider.value);
+    const emojiEl = document.getElementById("periodFlowEmoji");
+    const labelEl = document.getElementById("periodFlowLabel");
+    const emojis = getFlowEmojis();
+    const levels = getFlowLevels();
+    if (emojiEl) emojiEl.textContent = v < 0 ? (emojis[0] || "🩲") : (emojis[v] || "");
+    if (labelEl) {
+      labelEl.textContent = v < 0 ? t("periodNotSelected") : (levels[v] || "");
+      labelEl.style.color = v < 0 ? "var(--muted)" : "var(--period)";
+    }
+  }
+});
 
 // 更新经期统计
 function updatePeriodStats() {
@@ -5133,7 +5327,9 @@ function initPeriodTracker() {
 
   // 初始化按钮
   initPeriodMoodBtns();
+  initPeriodPainSlider();
   initPeriodSymptomBtns();
+  initPeriodFlowSlider();
   initPeriodBloodColorBtns();
 
   // 备注输入标记未保存
@@ -5220,7 +5416,9 @@ function initPeriodTracker() {
       if (!cycle.days) cycle.days = {};
       cycle.days[dateToSave] = {
         mood: selectedMood >= 0 ? selectedMood : undefined,
+        pain: selectedPain >= 0 ? selectedPain : undefined,
         symptoms: [...selectedSymptoms],
+        flow: selectedFlow >= 0 ? selectedFlow : undefined,
         bloodColor: selectedBloodColor >= 0 ? selectedBloodColor : undefined,
         remark: (document.getElementById("periodRemarkInput") || {}).value || ""
       };

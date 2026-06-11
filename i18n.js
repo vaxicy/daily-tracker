@@ -168,9 +168,15 @@ const I18N = {
     periodMoodLabel: "心情",
     periodMoods: ["很差", "不好", "一般", "不错", "很好"],
     periodMoodEmojis: ["😢", "😟", "😐", "🙂", "😊"],
+    periodPainLabel: "痛感",
+    periodPainLevels: ["无明显痛感", "轻微疼痛", "中度疼痛", "重度疼痛", "剧烈疼痛"],
+    periodPainEmojis: ["😊", "🙂", "😣", "😫", "😭"],
     periodSymptomsLabel: "症状",
-    periodSymptoms: ["痛经", "腰酸", "头痛", "情绪波动", "疲劳", "胸胀"],
-    periodSymptomEmojis: ["🩸", "💢", "🤕", "😤", "😴", "🎀"],
+    periodSymptoms: ["腰酸", "头痛", "情绪波动", "疲劳", "胸胀", "恶心"],
+    periodSymptomEmojis: ["💢", "🤕", "😤", "😴", "🎀", "🤢"],
+    periodFlowLabel: "流量",
+    periodFlowLevels: ["很少", "少", "中", "多", "很多"],
+    periodFlowEmojis: ["🩲", "🩹", "💧", "💦", "🌊"],
     periodRemarkPlaceholder: "添加备注（可选）",
     periodBloodColorLabel: "颜色记录",
     periodBloodColors: ["鲜红", "暗红", "棕色", "粉色", "橙色"],
@@ -209,6 +215,7 @@ const I18N = {
     periodBackdateConfirm: "确定将 {date} 作为经期第一天吗？",
     periodDateInCycle: "该日期已在某个经期内",
     periodBackdateHint: "点击可补签为经期第一天",
+    periodNotSelected: "未选择",
 
     // 设置页
     funcSettings: "功能设置",
@@ -485,9 +492,15 @@ const I18N = {
     periodMoodLabel: "Mood",
     periodMoods: ["Awful", "Bad", "Okay", "Good", "Great"],
     periodMoodEmojis: ["😢", "😟", "😐", "🙂", "😊"],
+    periodPainLabel: "Pain",
+    periodPainLevels: ["No Pain", "Mild Pain", "Moderate Pain", "Severe Pain", "Extreme Pain"],
+    periodPainEmojis: ["😊", "🙂", "😣", "😫", "😭"],
     periodSymptomsLabel: "Symptoms",
-    periodSymptoms: ["Cramps", "Backache", "Headache", "Mood Swings", "Fatigue", "Breast Pain"],
-    periodSymptomEmojis: ["🩸", "💢", "🤕", "😤", "😴", "🎀"],
+    periodSymptoms: ["Backache", "Headache", "Mood Swings", "Fatigue", "Breast Pain", "Nausea"],
+    periodSymptomEmojis: ["💢", "🤕", "😤", "😴", "🎀", "🤢"],
+    periodFlowLabel: "Flow",
+    periodFlowLevels: ["Very Light", "Light", "Medium", "Heavy", "Very Heavy"],
+    periodFlowEmojis: ["🩲", "🩹", "💧", "💦", "🌊"],
     periodRemarkPlaceholder: "Add remark (optional)",
     periodBloodColorLabel: "Color Record",
     periodBloodColors: ["Bright Red", "Dark Red", "Brown", "Pink", "Orange"],
@@ -526,6 +539,7 @@ const I18N = {
     periodBackdateConfirm: "Start period on {date}?",
     periodDateInCycle: "This date is already in a period",
     periodBackdateHint: "Click to backdate as period start",
+    periodNotSelected: "Not selected",
 
     // Settings
     funcSettings: "Feature Settings",
@@ -743,4 +757,7 @@ function applyI18n() {
   });
   // 更新 HTML lang 属性
   document.documentElement.lang = currentLang === "en" ? "en" : "zh-CN";
+
+  // 通知其他模块 i18n 已更新
+  document.dispatchEvent(new CustomEvent("i18nApplied"));
 }
