@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "吃喝拉撒 - Daily Habit Tracker 健康习惯追踪",
     "description": "记录饮食、饮水、排便、排尿，全方位健康习惯追踪器。Free daily health habit tracker for Chrome - track diet, water, bowel, bladder.",
-    "version": "3.0.2",
+    "version": "3.1.0",
     "action": {
       "default_popup": "popup.html",
       "default_title": "吃喝拉撒 - Health Tracker",
