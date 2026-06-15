@@ -2972,20 +2972,68 @@
         color: var(--text);
       }
       .donate-qr-body {
-        padding: 20px;
+        padding: 20px 16px;
         text-align: center;
       }
+      .donate-qr-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 16px;
+        border-radius: 10px;
+        overflow: hidden;
+        background: rgba(12,42,77,0.06);
+      }
+      .donate-qr-tab {
+        flex: 1;
+        padding: 8px 0;
+        border: none;
+        background: transparent;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .donate-qr-tab.active {
+        background: var(--primary);
+        color: #fff;
+      }
+      .donate-qr-panel { display: none; }
+      .donate-qr-panel.active { display: block; }
       .donate-qr-img {
-        width: 200px;
-        height: 200px;
+        width: 180px;
+        height: 180px;
         object-fit: contain;
         border-radius: 8px;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
       }
       .donate-qr-tip {
-        font-size: 13px;
+        font-size: 12px;
         color: var(--muted);
         line-height: 1.5;
+      }
+      .donate-paypal-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 28px;
+        border-radius: 24px;
+        border: none;
+        background: linear-gradient(135deg, #ffc439, #f7b731);
+        color: #111;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        box-shadow: 0 2px 8px rgba(255,196,57,0.3);
+      }
+      .donate-paypal-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(255,196,57,0.4);
+      }
+      .donate-paypal-wrap {
+        padding: 20px 0 10px;
       }
       .edit-modal-body {
         padding: 10px;
@@ -5288,7 +5336,8 @@
         <div style="display:flex;gap:8px;">
           <button class="backup-btn" id="exportBtn" data-i18n="backupExport">📤 导出备份</button>
           <button class="backup-btn" id="importBtn" data-i18n="backupImport">📥 导入备份</button>
-        <input type="file" id="importFile" accept=".json" style="display:none;" />
+          <input type="file" id="importFile" accept=".json" style="display:none;" />
+        </div>
       </div>
 
       <!-- 支持开发者 -->
@@ -5310,8 +5359,23 @@
           <button class="donate-qr-close" id="donateQrClose">×</button>
         </div>
         <div class="donate-qr-body">
-          <img class="donate-qr-img" src="donate-qr.png" alt="赞赏码" />
-          <div class="donate-qr-tip" data-i18n="donateQrTip">扫码支持，感谢你的鼓励！</div>
+          <div class="donate-qr-tabs">
+            <button class="donate-qr-tab active" data-tab="wechat">💬 微信</button>
+            <button class="donate-qr-tab" data-tab="paypal">💳 PayPal</button>
+          </div>
+          <div class="donate-qr-panel active" id="donatePanelWechat">
+            <img class="donate-qr-img" src="donate-qr.png" alt="微信赞赏码" />
+            <div class="donate-qr-tip" data-i18n="donateQrTip">扫码支持，感谢你的鼓励！</div>
+          </div>
+          <div class="donate-qr-panel" id="donatePanelPaypal">
+            <div class="donate-paypal-wrap">
+              <a class="donate-paypal-btn" id="donatePaypalBtn" href="https://www.paypal.com/ncp/payment/4WSMFVKGCDFRS" target="_blank">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.93 4.778-4.005 7.201-9.138 7.201h-2.19a.563.563 0 0 0-.556.479l-1.187 7.527h-.506l-.24 1.516a.56.56 0 0 0 .554.647h3.882c.46 0 .85-.334.922-.788.06-.26.76-4.852.816-5.09a.932.932 0 0 1 .923-.788h.58c3.76 0 6.705-1.528 7.565-5.946.36-1.847.174-3.388-.777-4.471z" fill="#111"/></svg>
+                PayPal
+              </a>
+            </div>
+            <div class="donate-qr-tip">PayPal 支持信用卡付款</div>
+          </div>
         </div>
       </div>
     </div>

@@ -4565,6 +4565,17 @@ if (donateQrOverlay) {
   });
 }
 
+// 捐赠弹窗 tab 切换
+document.querySelectorAll(".donate-qr-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".donate-qr-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".donate-qr-panel").forEach(p => p.classList.remove("active"));
+    tab.classList.add("active");
+    const panel = document.getElementById("donatePanel" + tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1));
+    if (panel) panel.classList.add("active");
+  });
+});
+
 // ==================== 经期记录功能（开关式） ====================
 let periodCalendarYear = new Date().getFullYear();
 let periodCalendarMonth = new Date().getMonth();
