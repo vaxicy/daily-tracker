@@ -356,11 +356,12 @@
       .fullness-row {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         margin: 6px 0 10px;
-        padding: 6px 14px;
+        padding: 6px 10px;
         background: rgba(245,158,11,0.04);
         border-radius: 8px;
+        flex-wrap: wrap;
       }
       .fullness-label {
         font-size: 11px;
@@ -369,7 +370,8 @@
       }
       .fullness-btns {
         display: flex;
-        gap: 4px;
+        flex-wrap: wrap;
+        gap: 3px;
       }
       .fullness-btn {
         padding: 3px 6px;
@@ -425,21 +427,21 @@
         transform: rotate(-90deg);
       }
       .meal-tags-row {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
       }
       .meal-tag-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 2px;
-        padding: 4px 2px;
+        padding: 4px 6px;
         border-radius: 10px;
         border: 1px solid rgba(245,158,11,0.2);
         background: rgba(245,158,11,0.06);
         color: var(--text);
-        font-size: 11px;
+        font-size: 10px;
         cursor: pointer;
         transition: all 0.2s;
         user-select: none;
@@ -480,7 +482,7 @@
         align-items: center;
         justify-content: center;
         gap: 2px;
-        padding: 4px 2px;
+        padding: 4px 6px;
         border-radius: 10px;
         border: 1px dashed rgba(245,158,11,0.4);
         background: rgba(245,158,11,0.03);
@@ -1310,11 +1312,12 @@
       .poop-amount-row {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         margin: 10px 0 4px;
-        padding: 6px 12px;
+        padding: 6px 10px;
         background: color-mix(in srgb, var(--poop), transparent 96%);
         border-radius: 8px;
+        flex-wrap: wrap;
       }
       .poop-amount-label {
         font-size: 11px;
@@ -1324,15 +1327,15 @@
       .poop-amount-btns {
         display: flex;
         gap: 3px;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
       }
       .poop-amount-btn {
-        padding: 3px 6px;
+        padding: 2px 5px;
         border-radius: 12px;
         border: 1px solid color-mix(in srgb, var(--poop), transparent 80%);
         background: rgba(255,255,255,0.8);
         color: var(--muted);
-        font-size: 11px;
+        font-size: 10px;
         cursor: pointer;
         transition: all 0.2s;
         user-select: none;
@@ -3321,20 +3324,22 @@
       }
       .theme-options {
         display: flex;
-        gap: 8px;
+        flex-wrap: wrap;
+        gap: 6px;
       }
       .theme-opt {
-        flex: 1;
+        flex: 1 1 0;
+        min-width: 64px;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 5px;
-        padding: 8px 6px;
+        gap: 4px;
+        padding: 7px 5px;
         border-radius: 10px;
         border: 2px solid transparent;
         background: rgba(12,42,77,0.04);
         color: var(--muted);
-        font-size: 11.5px;
+        font-size: 11px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -3351,6 +3356,35 @@
       .theme-dot {
         width: 14px;
         height: 14px;
+      }
+
+      /* 数据备份按钮 */
+      .backup-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .backup-tip {
+        font-size: 10px;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+      .backup-btn {
+        flex: 1;
+        padding: 7px 0;
+        border-radius: 8px;
+        border: 1px solid rgba(11,107,255,0.25);
+        background: rgba(11,107,255,0.05);
+        color: var(--primary);
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .backup-btn:hover {
+        background: rgba(11,107,255,0.12);
+        border-color: var(--primary);
       }
 
       /* 捐赠卡片 */
@@ -3436,7 +3470,7 @@
       /* 默认首页选择器 */
       .default-tab-options {
         display: flex;
-        gap: 8px;
+        gap: 6px;
       }
       .default-tab-opt {
         flex: 1;
@@ -3444,12 +3478,12 @@
         flex-direction: column;
         align-items: center;
         gap: 4px;
-        padding: 8px 4px;
+        padding: 8px 2px;
         border-radius: 10px;
         border: 2px solid transparent;
         background: rgba(12,42,77,0.04);
         color: var(--muted);
-        font-size: 10px;
+        font-size: 10.5px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -5189,8 +5223,8 @@
         <span class="sidebar-title" data-i18n="language">🌐 语言设置</span>
       </div>
       <div class="lang-options" id="langOptions">
-        <button class="lang-opt active" data-lang="zh" title="中文">🇨🇳 中文</button>
-        <button class="lang-opt" data-lang="en" title="English">🇺🇸 English</button>
+        <button class="lang-opt active" data-lang="zh" title="中文">🇨🇳 中文 Chinese</button>
+        <button class="lang-opt" data-lang="en" title="English">🇺🇸 English 英语</button>
       </div>
 
       <!-- 分隔线 -->
@@ -5247,6 +5281,15 @@
 
       <!-- 分隔线 -->
       <div class="theme-divider"></div>
+
+      <!-- 数据备份 -->
+      <div class="backup-row">
+        <div class="backup-tip" data-i18n="backupTip">💡 移动扩展文件夹或重装前，建议先导出备份以防数据丢失</div>
+        <div style="display:flex;gap:8px;">
+          <button class="backup-btn" id="exportBtn" data-i18n="backupExport">📤 导出备份</button>
+          <button class="backup-btn" id="importBtn" data-i18n="backupImport">📥 导入备份</button>
+        <input type="file" id="importFile" accept=".json" style="display:none;" />
+      </div>
 
       <!-- 支持开发者 -->
       <div class="donate-section" id="donateSection">

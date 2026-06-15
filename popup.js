@@ -5696,3 +5696,55 @@ function initPeriodTracker() {
 
 initPeriodTracker();
 
+// ============ 数据导出/导入备份 ============
+function exportBackup() {
+  chrome.storage.local.get(null, (data) => {
+    const backup = {
+      version: 1,
+      exportTime: new Date().toISOString(),
+      data: data
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `daily-tracker-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(t("backupExportSuccess"));
+  });
+}
+
+function importBackup(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const backup = JSON.parse(e.target.result);
+      if (!backup.data || typeof backup.data !== "object") {
+        showToast(t("backupImportInvalid"));
+        return;
+      }
+      if (!confirm(t("backupImportConfirm"))) return;
+      chrome.storage.local.set(backup.data, () => {
+        showToast(t("backupImportSuccess"));
+        setTimeout(() => location.reload(), 800);
+      });
+    } catch (err) {
+      showToast(t("backupImportInvalid"));
+    }
+  };
+  reader.readAsText(file);
+}
+
+const exportBtn = document.getElementById("exportBtn");
+const importBtn = document.getElementById("importBtn");
+const importFile = document.getElementById("importFile");
+if (exportBtn) exportBtn.addEventListener("click", exportBackup);
+if (importBtn) importBtn.addEventListener("click", () => importFile && importFile.click());
+if (importFile) importFile.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) importBackup(file);
+  e.target.value = "";
+});
+
+
