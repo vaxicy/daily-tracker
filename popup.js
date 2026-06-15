@@ -2998,10 +2998,11 @@ function updatePoopStats() {
         html += `<span class="stats-detail-item">${t('hardCount', { n: hardCount }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
         html += `<span class="stats-detail-item">${t('softCount', { n: softCount }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
       }
-      // 连续理想天数
+      // 连续理想天数（最多回溯 365 天，防止空数据时无限循环）
       let streak = 0;
       const d = new Date(today);
-      while (true) {
+      const maxLookback = 365;
+      for (let i = 0; i < maxLookback; i++) {
         const ds = formatDate(d);
         const dayRecords = records[ds] || [];
         const hasIdeal = dayRecords.some(rec => rec.bristolType && rec.bristolType >= 3 && rec.bristolType <= 4);
