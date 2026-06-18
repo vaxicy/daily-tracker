@@ -1259,9 +1259,11 @@
 
       /* 布里斯托大便分类 - 主界面选择器 */
       .bristol-main-row {
-        margin-top: 10px;
+        margin-top: 12px;
         margin-bottom: 8px;
-        padding: 0 12px;
+        padding: 8px 12px;
+        background: color-mix(in srgb, var(--poop), transparent 96%);
+        border-radius: 8px;
       }
       .bristol-main-header {
         display: flex;
@@ -1330,9 +1332,9 @@
       .poop-amount-row {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         margin: 10px 0 4px;
-        padding: 6px 10px;
+        padding: 8px 12px;
         background: color-mix(in srgb, var(--poop), transparent 96%);
         border-radius: 8px;
         flex-wrap: wrap;
@@ -1374,8 +1376,8 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        margin: 6px 0 4px;
-        padding: 6px 12px;
+        margin: 10px 0 4px;
+        padding: 8px 12px;
         background: color-mix(in srgb, var(--poop), transparent 96%);
         border-radius: 8px;
       }
@@ -1637,7 +1639,6 @@
         justify-content: center;
         transition: all 0.2s;
         margin-left: 12px;
-        margin-right: 12px;
         flex-shrink: 0;
       }
       .btn-toggle::after {
@@ -1695,7 +1696,7 @@
       .today-records-list {
         max-height: 200px;
         overflow-y: auto;
-        padding: 0 12px 12px;
+        padding: 0 14px 12px;
       }
       .today-records-list.collapsed {
         display: none;
@@ -2846,7 +2847,7 @@
         margin-top: 4px;
         display: flex;
         flex-direction: column;
-        gap: 3px;
+        gap: 4px;
         font-size: 11px;
         color: var(--muted);
       }

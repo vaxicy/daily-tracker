@@ -2688,7 +2688,7 @@ function showPoopTooltip(e, dateStr) {
           let bristolInfo = "";
           if (rec.bristolType) {
             const bt = bristolTypes[rec.bristolType - 1] || "";
-            bristolInfo = `🎯 Bristol ${rec.bristolType}: ${bt}`;
+            bristolInfo = `Bristol ${rec.bristolType}: ${bt}`;
           }
           const amountHtml = rec.amount ? `💩 ${t('poopAmountLabel')}: ${poopAmounts[rec.amount - 1] || ""}` : "";
           let colorHtml = "";
@@ -2696,17 +2696,19 @@ function showPoopTooltip(e, dateStr) {
             const colorHex = POOP_COLOR_MAP[rec.color - 1] || '#eee';
             const poopColors = t("poopColors") || [];
             const colorLabel = poopColors[rec.color - 1] || "";
-            colorHtml = `🟤 ${t('poopColorLabel')}: <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorHex};vertical-align:middle;" title="${colorLabel}"></span> ${colorLabel}`;
+            colorHtml = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorHex};vertical-align:middle;margin-right:4px;" title="${colorLabel}"></span>${colorLabel}`;
           }
-          const remarkHtml = rec.remark ? `📝 ${rec.remark}` : `📝 ${t('noRemark')}`;
+          const remarkHtml = rec.remark ? rec.remark : '';
+          const lines = [];
+          if (bristolInfo) lines.push(`🎯 ${bristolInfo}`);
+          if (amountHtml) lines.push(amountHtml);
+          if (colorHtml) lines.push(`🟤 ${t('poopColorLabel')}: ${colorHtml}`);
+          lines.push(`📝 ${remarkHtml || t('noRemark')}`);
           return `
             <div class="tooltip-record">
               <div class="tooltip-record-time">${t('poopRecord', { num: i + 1, time: rec.time })}</div>
               <div class="tooltip-record-detail">
-                ${bristolInfo ? `<span>🎯 ${bristolInfo}</span>` : ''}
-                ${amountHtml ? `<span>${amountHtml}</span>` : ''}
-                ${colorHtml ? `<span>${colorHtml}</span>` : ''}
-                <span>${remarkHtml}</span>
+                ${lines.map(l => `<div>${l}</div>`).join("")}
               </div>
             </div>
           `;
