@@ -19,11 +19,13 @@
         --poop: #7c3aed;
       }
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      html, body {
+      html, body, .sidebar-panel {
         width: 320px;
         min-height: 480px;
         overflow-x: hidden;
         overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-color, #0b6bff) transparent;
       }
       body {
         font-family: ui-sans-serif, system-ui, -apple-system,
@@ -3690,8 +3692,11 @@
       }
 
       /* ============ 暗色主题覆盖 ============ */
-      [data-theme="dark"] body {
+      [data-theme="dark"] html,
+      [data-theme="dark"] body,
+      [data-theme="dark"] .sidebar-panel {
         background: linear-gradient(150deg, #0f172a 0%, #1e293b 100%) !important;
+        scrollbar-color: var(--scrollbar-color, #94A3B8) rgba(255,255,255,0.04);
       }
 
       [data-theme="dark"] .card,
@@ -3980,16 +3985,26 @@
         background: rgba(51,65,85,0.4);
       }
 
-      [data-theme="dark"]::-webkit-scrollbar-track {
-        background: rgba(15,23,42,0.3);
+      /* ===== 全局滚动条基础样式（统一宽度和圆角） ===== */
+      *::-webkit-scrollbar { width: 6px; }
+      *::-webkit-scrollbar-track {
+        background: transparent;
+        border-radius: 3px;
+        margin: 2px;
+      }
+      *::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-color, #0b6bff);
+        border-radius: 3px;
+        transition: background 0.2s ease;
+        border: none;
+      }
+      *::-webkit-scrollbar-thumb:hover {
+        background: var(--scrollbar-hover, #20c6ff);
       }
 
-      [data-theme="dark"]::-webkit-scrollbar-thumb {
-        background: var(--scrollbar-thumb, rgba(148,163,184,0.3));
-      }
-
-      [data-theme="dark"]::-webkit-scrollbar-thumb:hover {
-        background: rgba(148,163,184,0.5);
+      /* ===== 夜间模式滚动条轨道 ===== */
+      [data-theme="dark"] *::-webkit-scrollbar-track {
+        background: rgba(255,255,255,0.04) !important;
       }
 
       [data-theme="dark"] .switch-row {

@@ -3933,7 +3933,9 @@ const THEME_PRESETS = {
       "--eat": "#F59E0B",
       "--eat2": "#FBBF24",
       "--pee": "#10B981",
-      "--pee2": "#34D399"
+      "--pee2": "#34D399",
+      "--scrollbar-color": "#0b6bff",
+      "--scrollbar-hover": "#20c6ff"
     },
     bgGradient: "linear-gradient(150deg, #eaf5ff 0%, #daeaff 100%)"
   },
@@ -3951,7 +3953,9 @@ const THEME_PRESETS = {
       "--pee": "#C084FC",
       "--pee2": "#E9D5FF",
       "--poop": "#DB2777",
-      "--poop2": "#F9A8D4"
+      "--poop2": "#F9A8D4",
+      "--scrollbar-color": "#EC4899",
+      "--scrollbar-hover": "#F472B6"
     },
     bgGradient: "linear-gradient(150deg, #fce7f3 0%, #fbcfe8 100%)"
   },
@@ -3979,7 +3983,8 @@ const THEME_PRESETS = {
       "--hover-bg": "rgba(148,163,184,0.1)",
       "--day-hover": "rgba(148,163,184,0.2)",
       "--day-today": "rgba(51,65,85,0.8)",
-      "--scrollbar-thumb": "rgba(148,163,184,0.3)"
+      "--scrollbar-color": "#94A3B8",
+      "--scrollbar-hover": "#CBD5E1"
     },
     bgGradient: "linear-gradient(150deg, #0f172a 0%, #1e293b 100%)"
   },
@@ -3997,7 +4002,9 @@ const THEME_PRESETS = {
       "--eat": "#F59E0B",
       "--eat2": "#FBBF24",
       "--pee": "#10B981",
-      "--pee2": "#34D399"
+      "--pee2": "#34D399",
+      "--scrollbar-color": "#10B981",
+      "--scrollbar-hover": "#34D399"
     },
     bgGradient: "linear-gradient(150deg, #ecfdf5 0%, #d1fae5 100%)"
   }
@@ -4070,7 +4077,7 @@ document.querySelectorAll(".default-tab-opt").forEach(btn => {
     const tabId = btn.dataset.tab;
     applyDefaultTab(tabId);
     chrome.storage.local.set({ defaultTab: tabId }, () => {
-      const tabNames = { eat: t("tabNameEat"), drink: t("tabNameDrink"), poop: t("tabNamePoop"), pee: t("tabNamePee") };
+      const tabNames = { eat: t("tabNameEat"), drink: t("tabNameDrink"), poop: t("tabNamePoop"), pee: t("tabNamePee"), period: t("tabNamePeriod") };
       showToast(t("toastDefaultPage", { page: tabNames[tabId] }));
     });
   });
@@ -4118,7 +4125,7 @@ function applyModuleVisibility() {
   });
   
   // 如果当前 tab 被隐藏了，切换到第一个可见的 tab
-  if (document.getElementById(moduleMap[currentTab].page)?.classList.contains("hidden-module")) {
+  if (moduleMap[currentTab] && document.getElementById(moduleMap[currentTab].page)?.classList.contains("hidden-module")) {
     const visibleTab = Object.keys(moduleMap).find(k => 
       document.getElementById(moduleMap[k].switch).checked
     );
