@@ -220,8 +220,8 @@ const I18N = {
     // 设置页
     funcSettings: "功能设置",
     badgeSettings: "🔢 角标设置",
-    badgeToggle: "🔢 角标显示",
-    badgeContent: "角标内容",
+    badgeToggle: "显示",
+    badgeContent: "内容",
     badgeOptDrinkToday: "今日喝水",
     badgeOptDrinkWeek: "本周喝水",
     badgeOptDrinkMonth: "本月喝水",

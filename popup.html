@@ -186,7 +186,7 @@
         padding: 8px 10px;
         background: rgba(245,158,11,0.08);
         border-radius: 8px;
-        margin-bottom: 6px;
+        margin-bottom: 10px;
         font-size: 12px;
         position: relative;
       }
@@ -407,7 +407,7 @@
         justify-content: space-between;
         font-size: 11px;
         color: var(--muted);
-        margin-bottom: 6px;
+        margin-bottom: 10px;
         cursor: pointer;
         user-select: none;
       }
@@ -502,22 +502,40 @@
       .tag-modal {
         display: none;
         position: fixed;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 200;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.35);
+        backdrop-filter: blur(2px);
+        animation: none;
       }
-      .tag-modal.active { display: block; }
+      .tag-modal.active {
+        display: flex !important;
+        animation: fadeIn 0.2s ease;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+      }
       .tag-modal-content {
         background: #fff;
         border-radius: 16px;
-        padding: 12px 14px;
+        padding: 14px 16px;
         width: 244px;
-        max-height: 300px;
+        max-height: 320px;
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+        animation: modalScaleIn 0.2s ease;
+      }
+      @keyframes modalScaleIn {
+        from { transform: scale(0.95); opacity: 0; }
+        to   { transform: scale(1);    opacity: 1; }
       }
       .tag-modal-header {
         display: flex;
@@ -556,7 +574,7 @@
         display: block;
         font-size: 10px;
         color: var(--muted);
-        margin-bottom: 6px;
+        margin-bottom: 10px;
         font-weight: 500;
       }
       .emoji-grid {
@@ -1249,7 +1267,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 6px;
+        margin-bottom: 10px;
       }
       .bristol-main-label {
         font-size: 11px;
@@ -1688,7 +1706,7 @@
         padding: 8px 10px;
         background: rgba(255,255,255,0.6);
         border-radius: 8px;
-        margin-bottom: 6px;
+        margin-bottom: 10px;
         font-size: 12px;
         gap: 8px;
         position: relative;
@@ -2722,7 +2740,7 @@
         font-size: 13px;
         font-weight: 700;
         color: var(--text);
-        margin-bottom: 6px;
+        margin-bottom: 10px;
         padding-bottom: 6px;
         border-bottom: 1px solid rgba(236,72,153,0.2);
       }
@@ -2828,7 +2846,7 @@
         margin-top: 4px;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 3px;
         font-size: 11px;
         color: var(--muted);
       }
@@ -2860,7 +2878,7 @@
         white-space: normal;
         max-width: 90%;
         text-align: center;
-        z-index: 200;
+        z-index: 700;
       }
       .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -2883,8 +2901,8 @@
       .edit-modal-content {
         background: #fff;
         border-radius: 16px;
-        width: 280px;
-        max-height: 480px;
+        width: 300px;
+        max-height: 500px;
         overflow: hidden;
         box-shadow: 0 8px 32px rgba(12,42,77,0.25);
       }
@@ -3044,7 +3062,7 @@
         background: rgba(12,42,77,0.04);
         border-radius: 10px;
         padding: 10px;
-        margin-bottom: 6px;
+        margin-bottom: 10px;
       }
       .edit-record-item:last-child {
         margin-bottom: 0;
@@ -3159,11 +3177,11 @@
         line-height: 1.4;
       }
       .edit-input-row {
-        margin-bottom: 6px;
+        margin-bottom: 8px;
       }
       .edit-input {
         width: 100%;
-        padding: 8px 10px;
+        padding: 6px 10px;
         border-radius: 8px;
         border: 1px solid rgba(12,42,77,0.2);
         background: #fff;
@@ -3177,7 +3195,7 @@
       }
       .edit-save-btn {
         width: 100%;
-        padding: 8px;
+        padding: 6px 10px;
         border-radius: 8px;
         border: none;
         background: var(--primary);
@@ -3186,14 +3204,13 @@
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
-        margin-top: 8px;
+        margin-top: 6px;
       }
       .edit-save-btn:hover {
         background: #0a5ce6;
       }
       .edit-type-select {
-        width: 100%;
-        padding: 8px 10px;
+        padding: 6px 10px;
         border-radius: 8px;
         border: 1px solid rgba(12,42,77,0.2);
         background: #fff;
@@ -3201,7 +3218,6 @@
         font-size: 12px;
         color: var(--text);
         outline: none;
-        margin-bottom: 8px;
         cursor: pointer;
       }
       .edit-empty {
@@ -3217,12 +3233,11 @@
 
       /* 追加记录区域 */
       .edit-add-new-section {
-        margin-top: 12px;
-        padding-top: 12px;
+        margin-top: 16px;
         border-top: 1px dashed rgba(245,158,11,0.25);
         background: rgba(245,158,11,0.04);
         border-radius: 10px;
-        padding: 12px;
+        padding: 14px;
       }
 
       /* ============ 功能开关侧边栏 ============ */
@@ -3306,7 +3321,7 @@
         justify-content: space-between;
         padding: 10px 10px;
         border-radius: 10px;
-        margin-bottom: 6px;
+        margin-bottom: 10px;
         background: rgba(12,42,77,0.03);
         transition: background 0.2s;
       }
@@ -3447,7 +3462,7 @@
         font-size: 12px;
         font-weight: 700;
         color: var(--text);
-        margin-bottom: 6px;
+        margin-bottom: 10px;
         display: flex;
         align-items: center;
         gap: 4px;
@@ -4616,25 +4631,7 @@
           </select>
           <input class="meal-input" id="mealInput" type="text" placeholder="今天吃了什么？" maxlength="100" data-i18n-placeholder="eatPlaceholder" />
         </div>
-        
-        <!-- 备注输入框 -->
-        <div class="meal-input-row" style="margin-top: 8px;">
-          <input class="meal-input" id="mealRemarkInput" type="text" placeholder="添加备注（可选）" maxlength="50" style="font-size: 12px;" data-i18n-placeholder="remarkPlaceholder" />
-        </div>
 
-        <!-- 时间选择行 + 快捷标签 -->
-        <div class="meal-input-row" style="display:flex;align-items:center;gap:8px;margin-top:8px;">
-          <input type="time" class="meal-input" id="mealTimeInput" style="width:120px;font-size:12px;padding:5px 8px;" />
-          <button class="meal-settings-btn" id="openMealDefaultSettings" style="font-size:14px;padding:4px 8px;background:rgba(245,158,11,0.08);color:var(--eat);border:1px solid rgba(245,158,11,0.2);border-radius:6px;cursor:pointer;white-space:nowrap;" title="设置默认时间">⚙️</button>
-        </div>
-        <!-- 餐次快捷标签 -->
-        <div class="meal-quick-tags" id="mealQuickTags">
-          <button class="meal-quick-tag" data-meal-type="breakfast"><span data-i18n="breakfast">早餐</span> <span class="tag-time">07:30</span></button>
-          <button class="meal-quick-tag" data-meal-type="lunch"><span data-i18n="lunch">午餐</span> <span class="tag-time">12:00</span></button>
-          <button class="meal-quick-tag" data-meal-type="dinner"><span data-i18n="dinner">晚餐</span> <span class="tag-time">18:30</span></button>
-          <button class="meal-quick-tag" data-meal-type="snack"><span data-i18n="snack">加餐</span> <span class="tag-time">15:00</span></button>
-        </div>
-        
         <!-- 评价功能 -->
         <div class="meal-rating-row">
           <span class="rating-label" data-i18n="ratingLabel">评价今天的菜：</span>
@@ -4667,7 +4664,7 @@
 
         <!-- 自定义标签弹窗 -->
         <div class="tag-modal" id="tagModal">
-          <div class="tag-modal-content">
+          <div class="tag-modal-content" data-modal-inner="1">
             <div class="tag-modal-header">
               <span data-i18n="addCustomTag">添加自定义标签</span>
               <button class="tag-modal-close" id="tagModalClose">&times;</button>
@@ -4691,7 +4688,7 @@
 
         <!-- 饮食默认时间设置弹窗 -->
         <div class="tag-modal" id="mealDefaultTimeModal">
-          <div class="tag-modal-content">
+          <div class="tag-modal-content" data-modal-inner="1">
             <div class="tag-modal-header">
               <span data-i18n="mealDefaultTimesTitle">🍽️ 饮食默认时间</span>
               <button class="tag-modal-close" id="mealDefaultTimeModalClose">&times;</button>

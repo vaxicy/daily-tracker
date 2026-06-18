@@ -199,7 +199,6 @@ const mealTypeSelect = document.getElementById("mealType");
 const addMealBtn = document.getElementById("addMealBtn");
 const mealRecordsList = document.getElementById("mealRecordsList");
 const mealCount = document.getElementById("mealCount");
-const mealRemarkInput = document.getElementById("mealRemarkInput");
 const mealRating = document.getElementById("mealRating");
 const mealRatingText = document.getElementById("mealRatingText");
 const mealTimeInput = document.getElementById("mealTimeInput");
@@ -225,41 +224,12 @@ function applyMealDefaultTimeToInput(type) {
   if (!mealTimeInput) return;
   const mealType = type || (mealTypeSelect ? mealTypeSelect.value : "breakfast");
   mealTimeInput.value = mealDefaultTimes[mealType] || "12:00";
-  // 高亮对应的快捷标签
-  updateMealQuickTagHighlight(mealType);
 }
 
-// 更新快捷标签高亮状态
-function updateMealQuickTagHighlight(type) {
-  const quickTags = document.querySelectorAll("#mealQuickTags .meal-quick-tag");
-  quickTags.forEach(tag => {
-    if (tag.dataset.mealType === type) {
-      tag.style.background = "rgba(245,158,11,0.2)";
-      tag.style.borderColor = "var(--eat)";
-      tag.style.color = "var(--eat)";
-    } else {
-      tag.style.background = "rgba(245,158,11,0.06)";
-      tag.style.borderColor = "rgba(245,158,11,0.2)";
-      tag.style.color = "var(--text)";
-    }
-  });
-}
-
-// 餐次切换时自动应用默认时间并高亮标签
+// 餐次切换时自动应用默认时间
 if (mealTypeSelect) {
   mealTypeSelect.addEventListener("change", (e) => {
     applyMealDefaultTimeToInput(e.target.value);
-  });
-}
-
-// 快捷标签点击事件
-function initMealQuickTags() {
-  const quickTags = document.querySelectorAll("#mealQuickTags .meal-quick-tag");
-  quickTags.forEach(tag => {
-    tag.addEventListener("click", () => {
-      const type = tag.dataset.mealType;
-      applyMealDefaultTimeToInput(type);
-    });
   });
 }
 
@@ -293,25 +263,11 @@ function saveMealDefaultSettings() {
   });
   chrome.storage.local.set({ mealDefaultTimes });
   
-  // 更新快捷标签显示的时间
-  updateMealQuickTagsDisplay();
   // 如果当前时间输入框显示的是某个餐次的默认时间，则更新它
   applyMealDefaultTimeToInput();
   
   closeMealDefaultSettingsModal();
   showToast(t("toastSettingsSaved") || "设置已保存");
-}
-
-// 更新快捷标签显示的时间
-function updateMealQuickTagsDisplay() {
-  const quickTags = document.querySelectorAll("#mealQuickTags .meal-quick-tag");
-  quickTags.forEach(tag => {
-    const type = tag.dataset.mealType;
-    const timeSpan = tag.querySelector(".tag-time");
-    if (timeSpan && mealDefaultTimes[type]) {
-      timeSpan.textContent = mealDefaultTimes[type];
-    }
-  });
 }
 
 // 初始化：绑定设置按钮事件
@@ -532,15 +488,6 @@ async function initEatPage() {
 
   // 初始化时间输入框为当前餐次的默认时间
   applyMealDefaultTimeToInput();
-
-  // 初始化快捷标签
-  initMealQuickTags();
-  // 更新快捷标签显示的时间
-  updateMealQuickTagsDisplay();
-  // 高亮当前选中的餐次
-  if (mealTypeSelect) {
-    updateMealQuickTagHighlight(mealTypeSelect.value);
-  }
 
   renderEatCalendar();
   updateMealRecords();
@@ -888,12 +835,10 @@ addMealBtn.addEventListener("click", () => {
   }
 
   const today = getToday();
-  // 使用时间输入框的值，若为空则取当前时间
-  const time = mealTimeInput && mealTimeInput.value
-    ? mealTimeInput.value
-    : new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
+  // 时间自动取当前时间，不再需要手动选择
+  const time = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
   const type = mealTypeSelect.value;
-  const remark = mealRemarkInput ? mealRemarkInput.value.trim() : "";
+  const remark = "";  // 备注功能移至编辑弹窗
   const rating = currentMealRating;
 
   chrome.storage.local.get(["mealRecords"], (data) => {
@@ -917,7 +862,6 @@ addMealBtn.addEventListener("click", () => {
 
     chrome.storage.local.set({ mealRecords: records }, () => {
       mealInput.value = "";
-      if (mealRemarkInput) mealRemarkInput.value = "";
       currentMealRating = 0;
       if (mealRating) {
         mealRating.querySelectorAll(".star").forEach(s => {
@@ -1025,8 +969,8 @@ function renderEatCalendar() {
 }
 
 function showEatEditModal(dateStr, dayRecords) {
-  const typeLabel = { breakfast: t("breakfast"), lunch: t("lunch"), dinner: t("dinner"), snack: t("snack") };
   const isToday = dateStr === getToday();
+  const typeLabel = { breakfast: t("breakfast"), lunch: t("lunch"), dinner: t("dinner"), snack: t("snack") };
   showEditModal("🍽️ " + formatDateDisplay(dateStr) + " " + t("mealEditTitleSuffix"), dateStr, "eat");
   
   // 如果没有记录，显示添加表单
@@ -1034,46 +978,46 @@ function showEatEditModal(dateStr, dayRecords) {
     const now = new Date();
     const defaultTimeStr = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
     
-    // 获取当前选中餐次的默认时间
-    const addDefaultTime = mealDefaultTimes[typeLabel] || defaultTimeStr;
     editModalBody.innerHTML = `
       <div class="edit-empty" style="margin-bottom: 12px;">${t('noMeal')}</div>
-      <div class="edit-input-row">
-        <select class="edit-type-select" id="eatAddType">
+      <!-- 餐次+时间一行 -->
+      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
+        <select class="edit-type-select" id="eatAddType" style="flex:1;min-width:0;padding:6px 10px;">
           <option value="breakfast">${t('breakfast')}</option>
           <option value="lunch">${t('lunch')}</option>
           <option value="dinner">${t('dinner')}</option>
           <option value="snack">${t('snack')}</option>
         </select>
+        <input type="time" class="edit-input" id="eatAddTime" value="${defaultTimeStr}" style="width:110px;font-size:12px;padding:6px 8px;" />
+        <button class="edit-apply-time-btn" id="eatAddOpenSettings" style="font-size:14px;padding:6px 6px;background:rgba(245,158,11,0.08);color:var(--eat);border:1px solid rgba(245,158,11,0.2);border-radius:6px;cursor:pointer;flex-shrink:0;" title="设置默认时间">⚙️</button>
       </div>
-      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
-        <input type="time" class="edit-input" id="eatAddTime" value="${addDefaultTime}" style="width:120px;font-size:12px;padding:4px 8px;" />
-        <button class="edit-apply-time-btn" id="eatAddOpenSettings" style="font-size:14px;padding:4px 8px;background:rgba(245,158,11,0.08);color:var(--eat);border:1px solid rgba(245,158,11,0.2);border-radius:6px;cursor:pointer;white-space:nowrap;" title="设置默认时间">⚙️</button>
+      <!-- 快捷标签2列网格 -->
+      <div class="edit-input-row" id="eatAddQuickTags" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+        <button class="edit-quick-tag" data-meal-type="breakfast" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('breakfast')} <span class="tag-time">${mealDefaultTimes['breakfast'] || '07:30'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="lunch" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('lunch')} <span class="tag-time">${mealDefaultTimes['lunch'] || '12:00'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="dinner" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('dinner')} <span class="tag-time">${mealDefaultTimes['dinner'] || '18:30'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="snack" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('snack')} <span class="tag-time">${mealDefaultTimes['snack'] || '15:00'}</span></button>
       </div>
-      <div class="edit-input-row" id="eatAddQuickTags">
-        <button class="edit-quick-tag" data-meal-type="breakfast">${t('breakfast')} <span class="tag-time">${mealDefaultTimes['breakfast'] || '07:30'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="lunch">${t('lunch')} <span class="tag-time">${mealDefaultTimes['lunch'] || '12:00'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="dinner">${t('dinner')} <span class="tag-time">${mealDefaultTimes['dinner'] || '18:30'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="snack">${t('snack')} <span class="tag-time">${mealDefaultTimes['snack'] || '15:00'}</span></button>
+      <!-- 内容+备注 -->
+      <div class="edit-input-row">
+        <input class="edit-input" type="text" id="eatAddContent" placeholder="${t('eatPlaceholder')}" style="font-size:12px;" />
       </div>
       <div class="edit-input-row">
-        <input class="edit-input" type="text" id="eatAddContent" placeholder="${t('eatPlaceholder')}" />
+        <input class="edit-input" type="text" id="eatAddRemark" placeholder="${t('remarkPlaceholder')}" maxlength="50" style="font-size:11px;" />
       </div>
-      <div class="edit-input-row">
-        <input class="edit-input" type="text" id="eatAddRemark" placeholder="${t('remarkPlaceholder')}" maxlength="50" />
-      </div>
-      <div class="edit-input-row" style="align-items:center;gap:8px;">
+      <!-- 评分+饱腹感一行 -->
+      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <span style="font-size:11px;color:var(--muted);">${t('rateLabelShort')}：</span>
         <div class="rating-stars" id="eatAddRating" style="display:flex;gap:2px;">
-          <span class="star" data-value="1" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
-          <span class="star" data-value="2" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
-          <span class="star" data-value="3" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
-          <span class="star" data-value="4" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
-          <span class="star" data-value="5" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="star" data-value="1" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:20px;width:20px;"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="star" data-value="2" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:20px;width:20px;"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="star" data-value="3" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:20px;width:20px;"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="star" data-value="4" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:20px;width:20px;"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="star" data-value="5" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:20px;width:20px;"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
         </div>
         <span class="rating-text" id="eatAddRatingText" style="font-size:10px;color:var(--eat);font-weight:600;">${t('ratingNone')}</span>
       </div>
-      <button class="edit-save-btn" id="eatAddBtn" style="background: var(--eat);">${t('addRecordBtn')}</button>
+      <button class="edit-save-btn" id="eatAddBtn" style="background: var(--eat);font-size:12px;padding:6px 12px;">${t('addRecordBtn')}</button>
     `;
     
     // 评价星级交互（5颗星，支持半星）
@@ -1231,47 +1175,45 @@ function showEatEditModal(dateStr, dayRecords) {
           <button class="edit-btn-delete" data-action="delete-eat" data-index="${idx}">${t('delete')}</button>
         </div>
       </div>
-      <div class="edit-record-content" id="eatContent${idx}">
+      <div class="edit-record-content" id="eatContent${idx}" style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px;">
         ${rec.content}
-        <div style="font-size:10px;color:var(--muted);margin-top:4px;">
-          <div>📝 ${t('remarkLabel')}: ${remarkHtml}</div>
-          <div>⭐ ${t('rateLabelShort')}: <span style="display:inline-flex;align-items:center;gap:4px;">${ratingStarsHtml}</span></div>
-          ${rec.fullness ? `<div>🍽️ ${t('fullnessLabel')}: ${t('fullnessLevels')[rec.fullness - 1] || ""}</div>` : ''}
-          ${rec.tags && rec.tags.length > 0 ? `<div>🏷 ${t('autoTagHint')}: ${rec.tags.map(tag => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--eat);font-size:10px;margin-right:3px;">${tag}</span>`).join("")}</div>` : ''}
-        </div>
       </div>
-      <div class="edit-input-row" id="eatEditForm${idx}" style="display:none;">
-        <select class="edit-type-select" id="eatEditType${idx}">
-          <option value="breakfast" ${rec.type === 'breakfast' ? 'selected' : ''}>${t('breakfast')}</option>
-          <option value="lunch" ${rec.type === 'lunch' ? 'selected' : ''}>${t('lunch')}</option>
-          <option value="dinner" ${rec.type === 'dinner' ? 'selected' : ''}>${t('dinner')}</option>
-          <option value="snack" ${rec.type === 'snack' ? 'selected' : ''}>${t('snack')}</option>
-        </select>
+      <div style="font-size:11px;color:var(--muted);background:rgba(0,0,0,0.03);border-radius:6px;padding:8px 10px;margin-bottom:12px;">
+        <div style="margin-bottom:3px;">📝 ${t('remarkLabel')}: ${remarkHtml}</div>
+        <div style="margin-bottom:3px;">⭐ ${t('rateLabelShort')}: <span style="display:inline-flex;align-items:center;gap:4px;">${ratingStarsHtml}</span></div>
+        ${rec.fullness ? `<div style="margin-bottom:3px;">🍽️ ${t('fullnessLabel')}: ${t('fullnessLevels')[rec.fullness - 1] || ""}</div>` : ''}
+        ${rec.tags && rec.tags.length > 0 ? `<div>🏷 ${t('autoTagHint')}: ${rec.tags.map(tag => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--eat);font-size:10px;margin-right:3px;">${tag}</span>`).join("")}</div>` : ''}
       </div>
-      <div class="edit-input-row" id="eatEditFormTime${idx}" style="display:none;align-items:center;gap:8px;">
-        <input type="time" class="edit-input" id="eatEditTime${idx}" value="${parsedTime}" placeholder="HH:mm" style="width:120px;font-size:12px;padding:4px 8px;" />
-        <button class="edit-apply-time-btn" id="eatEditOpenSettings${idx}" style="font-size:14px;padding:4px 8px;background:rgba(245,158,11,0.08);color:var(--eat);border:1px solid rgba(245,158,11,0.2);border-radius:6px;cursor:pointer;white-space:nowrap;" title="设置默认时间">⚙️</button>
+      <div class="edit-input-row" id="eatEditForm${idx}" style="display:none;margin-top:10px;">
+          <select class="edit-type-select" id="eatEditType${idx}" style="flex:1;min-width:0;padding:6px 10px;">
+            <option value="breakfast" ${rec.type === 'breakfast' ? 'selected' : ''}>${t('breakfast')}</option>
+            <option value="lunch" ${rec.type === 'lunch' ? 'selected' : ''}>${t('lunch')}</option>
+            <option value="dinner" ${rec.type === 'dinner' ? 'selected' : ''}>${t('dinner')}</option>
+            <option value="snack" ${rec.type === 'snack' ? 'selected' : ''}>${t('snack')}</option>
+          </select>
+          <input type="time" class="edit-input" id="eatEditTime${idx}" value="${parsedTime}" placeholder="HH:mm" style="width:110px;font-size:12px;padding:6px 8px;" />
+          <button class="edit-apply-time-btn" id="eatEditOpenSettings${idx}" style="font-size:14px;padding:6px 6px;background:rgba(245,158,11,0.08);color:var(--eat);border:1px solid rgba(245,158,11,0.2);border-radius:6px;cursor:pointer;flex-shrink:0;" title="设置默认时间">⚙️</button>
       </div>
-      <div class="edit-input-row" id="eatEditQuickTags${idx}" style="display:none;">
-        <button class="edit-quick-tag" data-meal-type="breakfast" data-index="${idx}">${t('breakfast')} <span class="tag-time">${mealDefaultTimes['breakfast'] || '07:30'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="lunch" data-index="${idx}">${t('lunch')} <span class="tag-time">${mealDefaultTimes['lunch'] || '12:00'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="dinner" data-index="${idx}">${t('dinner')} <span class="tag-time">${mealDefaultTimes['dinner'] || '18:30'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="snack" data-index="${idx}">${t('snack')} <span class="tag-time">${mealDefaultTimes['snack'] || '15:00'}</span></button>
+      <div class="edit-input-row" id="eatEditQuickTags${idx}" style="display:none;grid-template-columns:1fr 1fr;gap:4px;">
+        <button class="edit-quick-tag" data-meal-type="breakfast" data-index="${idx}" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('breakfast')} <span class="tag-time">${mealDefaultTimes['breakfast'] || '07:30'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="lunch" data-index="${idx}" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('lunch')} <span class="tag-time">${mealDefaultTimes['lunch'] || '12:00'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="dinner" data-index="${idx}" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('dinner')} <span class="tag-time">${mealDefaultTimes['dinner'] || '18:30'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="snack" data-index="${idx}" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('snack')} <span class="tag-time">${mealDefaultTimes['snack'] || '15:00'}</span></button>
       </div>
       <div class="edit-input-row" id="eatEditFormContent${idx}" style="display:none;">
-        <input class="edit-input" type="text" id="eatEditContent${idx}" value="${rec.content}" placeholder="${t('editContentPlaceholder')}" />
+        <input class="edit-input" type="text" id="eatEditContent${idx}" value="${rec.content}" placeholder="${t('editContentPlaceholder')}" style="font-size:12px;" />
       </div>
       <div class="edit-input-row" id="eatEditFormRemark${idx}" style="display:none;">
-        <input class="edit-input" type="text" id="eatEditRemark${idx}" value="${rec.remark || ''}" placeholder="${t('editRemarkPlaceholder')}" maxlength="50" />
+        <input class="edit-input" type="text" id="eatEditRemark${idx}" value="${rec.remark || ''}" placeholder="${t('editRemarkPlaceholder')}" maxlength="50" style="font-size:11px;" />
       </div>
-      <div class="edit-input-row" id="eatEditFormRating${idx}" style="display:none;align-items:center;gap:8px;">
+      <div class="edit-input-row" id="eatEditFormRating${idx}" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
         <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${t('rateLabelShort')}：</span>
         <div class="edit-rating-stars" id="eatEditRatingStars${idx}" style="display:flex;gap:2px;">
-          <span class="edit-star" data-value="1" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
-          <span class="edit-star" data-value="2" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
-          <span class="edit-star" data-value="3" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
-          <span class="edit-star" data-value="4" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
-          <span class="edit-star" data-value="5" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:22px;width:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="18" height="18" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="edit-star" data-value="1" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:20px;width:20px;"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="edit-star" data-value="2" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:20px;width:20px;"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="edit-star" data-value="3" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:20px;width:20px;"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="edit-star" data-value="4" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:20px;width:20px;"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="edit-star" data-value="5" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:20px;width:20px;"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
         </div>
         <span class="edit-rating-text" id="eatEditRatingText${idx}" style="font-size:10px;color:var(--eat);font-weight:600;">${getRatingText(rec.rating)}</span>
         <input type="hidden" id="eatEditRating${idx}" value="${rec.rating || 0}" />
@@ -1302,38 +1244,41 @@ function showEatEditModal(dateStr, dayRecords) {
         </div>
       </div>
       <div class="edit-input-row" id="eatEditFormButtons${idx}" style="display:none;">
-        <button class="edit-save-btn" data-action="save-eat" data-index="${idx}">${t('saveEdit')}</button>
+        <button class="edit-save-btn" data-action="save-eat" data-index="${idx}" style="background:var(--eat);font-size:12px;padding:6px 12px;">${t('saveEdit')}</button>
       </div>
     </div>
   `;
   }).join("") + `
     <!-- 追加新记录区域 -->
-    <div class="edit-add-new-section" style="margin-top:12px;padding-top:12px;border-top:1px dashed rgba(245,158,11,0.25);">
-      <div style="font-size:12px;font-weight:600;color:var(--eat);margin-bottom:8px;display:flex;align-items:center;gap:4px;">
+    <div class="edit-add-new-section" style="margin-top:10px;padding:14px;border-top:1px dashed rgba(245,158,11,0.25);">
+      <div style="font-size:13px;font-weight:600;color:var(--eat);margin-bottom:10px;display:flex;align-items:center;gap:4px;">
         ${t('appendRecord')}
       </div>
-      <div class="edit-input-row">
-        <select class="edit-type-select" id="eatAppendType">
+      <!-- 餐次+时间一行 -->
+      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
+        <select class="edit-type-select" id="eatAppendType" style="flex:1;min-width:0;padding:6px 10px;">
           <option value="breakfast">${t('breakfast')}</option>
           <option value="lunch">${t('lunch')}</option>
           <option value="dinner">${t('dinner')}</option>
           <option value="snack">${t('snack')}</option>
         </select>
+        <input type="time" class="edit-input" id="eatAppendTime" value="${mealDefaultTimes[document.getElementById('eatAppendType')?.value || 'breakfast'] || '12:00'}" style="width:110px;font-size:12px;padding:6px 8px;" />
+        <button class="edit-apply-time-btn" id="eatAppendOpenSettings" style="font-size:14px;padding:6px 6px;background:rgba(245,158,11,0.08);color:var(--eat);border:1px solid rgba(245,158,11,0.2);border-radius:6px;cursor:pointer;flex-shrink:0;" title="设置默认时间">⚙️</button>
       </div>
-      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
-        <input type="time" class="edit-input" id="eatAppendTime" value="${mealDefaultTimes[document.getElementById('eatAppendType')?.value || 'breakfast'] || '12:00'}" style="width:120px;font-size:12px;padding:4px 8px;" />
-        <button class="edit-apply-time-btn" id="eatAppendOpenSettings" style="font-size:14px;padding:4px 8px;background:rgba(245,158,11,0.08);color:var(--eat);border:1px solid rgba(245,158,11,0.2);border-radius:6px;cursor:pointer;white-space:nowrap;" title="设置默认时间">⚙️</button>
-      </div>
-      <div class="edit-input-row" id="eatAppendQuickTags">
-        <button class="edit-quick-tag" data-meal-type="breakfast">${t('breakfast')} <span class="tag-time">${mealDefaultTimes['breakfast'] || '07:30'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="lunch">${t('lunch')} <span class="tag-time">${mealDefaultTimes['lunch'] || '12:00'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="dinner">${t('dinner')} <span class="tag-time">${mealDefaultTimes['dinner'] || '18:30'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="snack">${t('snack')} <span class="tag-time">${mealDefaultTimes['snack'] || '15:00'}</span></button>
+      <!-- 快捷标签2列网格 -->
+      <div class="edit-input-row" id="eatAppendQuickTags" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+        <button class="edit-quick-tag" data-meal-type="breakfast" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('breakfast')} <span class="tag-time">${mealDefaultTimes['breakfast'] || '07:30'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="lunch" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('lunch')} <span class="tag-time">${mealDefaultTimes['lunch'] || '12:00'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="dinner" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('dinner')} <span class="tag-time">${mealDefaultTimes['dinner'] || '18:30'}</span></button>
+        <button class="edit-quick-tag" data-meal-type="snack" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('snack')} <span class="tag-time">${mealDefaultTimes['snack'] || '15:00'}</span></button>
       </div>
       <div class="edit-input-row">
-        <input class="edit-input" type="text" id="eatAppendContent" placeholder="${t('eatPlaceholder')}" />
+        <input class="edit-input" type="text" id="eatAppendContent" placeholder="${t('eatPlaceholder')}" style="font-size:12px;" />
       </div>
-      <button class="edit-save-btn" id="eatAppendBtn" style="background:var(--eat);">${t('appendRecordBtn')}</button>
+      <div class="edit-input-row">
+        <input class="edit-input" type="text" id="eatAppendRemark" placeholder="${t('remarkPlaceholder')}" maxlength="50" style="font-size:11px;" />
+      </div>
+      <button class="edit-save-btn" id="eatAppendBtn" style="background:var(--eat);font-size:12px;padding:6px 12px;">${t('appendRecordBtn')}</button>
     </div>
   `;
 
@@ -1362,6 +1307,7 @@ function showEatEditModal(dateStr, dayRecords) {
   document.getElementById("eatAppendBtn").addEventListener("click", () => {
     const type = document.getElementById("eatAppendType").value;
     const content = document.getElementById("eatAppendContent").value.trim();
+    const remark = document.getElementById("eatAppendRemark")?.value.trim() || "";
     if (!content) { showToast(t("toastInputMeal")); return; }
 
     // 获取时间：优先用时间输入框的值
@@ -1377,9 +1323,11 @@ function showEatEditModal(dateStr, dayRecords) {
     chrome.storage.local.get(["mealRecords"], (data) => {
       const records = data.mealRecords || {};
       if (!records[dateStr]) records[dateStr] = [];
-      records[dateStr].push({ content, time: recordTime, type, timestamp: Date.now(), isBackfill: !isToday });
+      records[dateStr].push({ content, time: recordTime, type, remark, timestamp: Date.now(), isBackfill: !isToday });
       chrome.storage.local.set({ mealRecords: records }, () => {
         showToast(isToday ? t('toastMealAdded') : "🍽️ " + t('makeUpCheckinSuccess'));
+        document.getElementById("eatAppendContent").value = "";
+        document.getElementById("eatAppendRemark").value = "";
         renderEatCalendar();
         updateMealRecords();
         chrome.storage.local.get(["mealRecords"], (d) => {
@@ -1391,13 +1339,19 @@ function showEatEditModal(dateStr, dayRecords) {
 }
 
 function openEatEditForm(idx) {
-  document.getElementById("eatEditForm" + idx).style.display = "block";
+  const formRow = document.getElementById("eatEditForm" + idx);
+  formRow.style.display = "flex";
+  formRow.style.alignItems = "center";
+  formRow.style.gap = "8px";
+  formRow.style.marginBottom = "8px";
   document.getElementById("eatContent" + idx).style.display = "none";
 
   // 显示快捷标签并设置grid布局
   const quickTags = document.getElementById("eatEditQuickTags" + idx);
   if (quickTags) {
     quickTags.style.display = "grid";
+    quickTags.style.gridTemplateColumns = "1fr 1fr";
+    quickTags.style.gap = "4px";
   }
 
   // 绑定设置按钮事件
@@ -2558,21 +2512,23 @@ function showPoopEditModal(dateStr, dayRecords) {
           <button class="edit-btn-delete" data-action="delete-poop" data-index="${idx}">${t('delete')}</button>
         </div>
       </div>
-      <div class="edit-record-content" id="poopContent${idx}">${rec.remark || t('noRemark')}</div>
-      <div class="bristol-selector" data-record-idx="${idx}">${bristolBtns}</div>
-      <div class="bristol-type-label" id="bristolLabel${idx}">${bristolLabel}</div>
-      <div class="poop-amount-selector" data-record-idx="${idx}" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <div class="edit-record-content" id="poopContent${idx}" style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px;">
+        ${rec.remark ? rec.remark : (bristolLabel ? `💩 ${bristolLabel}` : t('noRemark'))}
+      </div>
+      <div style="font-size:11px;color:var(--muted);background:rgba(0,0,0,0.03);border-radius:6px;padding:8px 10px;margin-bottom:8px;">
+        ${bristolLabel ? `<div style="margin-bottom:3px;">🎯 Bristol: ${bristolLabel}</div>` : ''}
+        <div style="margin-bottom:3px;">💩 ${t('poopAmountLabel')}: ${rec.amount ? poopAmounts[rec.amount - 1] || '' : t('noRemark')}</div>
+        <div>🟤 ${t('poopColorLabel')}: <span class="poop-color-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${rec.color ? POOP_COLOR_MAP[rec.color - 1] || '#eee' : 'rgba(0,0,0,0.08)'};vertical-align:middle;"></span> ${rec.color ? poopColors[rec.color - 1] || '' : t('poopColorNotSelected')}</div>
+      </div>
+      <div class="bristol-selector" data-record-idx="${idx}" style="margin-top:4px;">${bristolBtns}</div>
+      <div class="poop-amount-selector" data-record-idx="${idx}" style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopAmountLabel')}</span>
         ${amountBtns}
       </div>
-      <div class="poop-color-display" data-idx="${idx}" title="${t('poopColorLabel')}" style="margin-top:8px;">
-        <span class="poop-color-dot" style="background:${rec.color ? POOP_COLOR_MAP[rec.color - 1] || '#eee' : 'rgba(0,0,0,0.08)'};"></span>
-        <span class="${rec.color ? 'poop-color-name' : 'poop-color-none'}">${rec.color ? poopColors[rec.color - 1] || '' : t('poopColorNotSelected')}</span>
-      </div>
-      <div class="poop-color-picker" data-idx="${idx}">
+      <div class="poop-color-picker" data-idx="${idx}" style="margin-top:6px;">
         ${poopColors.map((label, i) => `<button class="poop-color-btn-sm ${rec.color === (i+1) ? 'active' : ''}" data-idx="${idx}" data-color="${i+1}" title="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid ${rec.color === (i+1) ? 'var(--poop)' : 'rgba(0,0,0,0.15)'};"></button>`).join("")}
       </div>
-      <div class="edit-input-row" id="poopEditFormTime${idx}" style="display:none;align-items:center;">
+      <div class="edit-input-row" id="poopEditFormTime${idx}" style="display:none;align-items:center;margin-top:8px;">
         <input type="time" class="edit-input" id="poopEditTime${idx}" value="${parsedTime}" placeholder="HH:mm" style="width:auto;flex:none;" />
         <span style="font-size:11px;color:#999;white-space:nowrap;margin-left:12px;">${t('modifyRecordTime')}</span>
       </div>
@@ -2732,7 +2688,7 @@ function showPoopTooltip(e, dateStr) {
           let bristolInfo = "";
           if (rec.bristolType) {
             const bt = bristolTypes[rec.bristolType - 1] || "";
-            bristolInfo = `Bristol ${rec.bristolType}: ${bt}`;
+            bristolInfo = `🎯 Bristol ${rec.bristolType}: ${bt}`;
           }
           const amountHtml = rec.amount ? `💩 ${t('poopAmountLabel')}: ${poopAmounts[rec.amount - 1] || ""}` : "";
           let colorHtml = "";
@@ -2740,17 +2696,17 @@ function showPoopTooltip(e, dateStr) {
             const colorHex = POOP_COLOR_MAP[rec.color - 1] || '#eee';
             const poopColors = t("poopColors") || [];
             const colorLabel = poopColors[rec.color - 1] || "";
-            colorHtml = ` <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorHex};vertical-align:middle;" title="${colorLabel}"></span>`;
+            colorHtml = `🟤 ${t('poopColorLabel')}: <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorHex};vertical-align:middle;" title="${colorLabel}"></span> ${colorLabel}`;
           }
-          const remarkHtml = rec.remark ? `📝 ${rec.remark}` : '';
+          const remarkHtml = rec.remark ? `📝 ${rec.remark}` : `📝 ${t('noRemark')}`;
           return `
             <div class="tooltip-record">
               <div class="tooltip-record-time">${t('poopRecord', { num: i + 1, time: rec.time })}</div>
               <div class="tooltip-record-detail">
-                ${bristolInfo ? `<span style="color:${['#dc2626','#ea580c','#ca8a04','#16a34a','#65a30d','#2563eb','#1d4ed8'][rec.bristolType-1]};font-weight:600;">${bristolInfo}</span>` : ''}
+                ${bristolInfo ? `<span>🎯 ${bristolInfo}</span>` : ''}
                 ${amountHtml ? `<span>${amountHtml}</span>` : ''}
-                ${colorHtml}
-                ${remarkHtml ? `<span>${remarkHtml}</span>` : `<span>📝 ${t('noRemark')}</span>`}
+                ${colorHtml ? `<span>${colorHtml}</span>` : ''}
+                <span>${remarkHtml}</span>
               </div>
             </div>
           `;
@@ -4285,7 +4241,9 @@ document.getElementById("tagModalClose")?.addEventListener("click", closeTagModa
 document.getElementById("tagModalCancel")?.addEventListener("click", closeTagModal);
 document.getElementById("tagModalConfirm")?.addEventListener("click", confirmAddCustomTag);
 document.getElementById("tagModal")?.addEventListener("click", (e) => {
-  if (e.target.id === "tagModal") closeTagModal();
+  if (!e.target.closest('[data-modal-inner="1"]')) {
+    closeTagModal();
+  }
 });
 
 // 饮食默认时间设置弹窗事件
@@ -4293,7 +4251,10 @@ document.getElementById("mealDefaultTimeModalClose")?.addEventListener("click", 
 document.getElementById("mealDefaultTimeModalCancel")?.addEventListener("click", closeMealDefaultSettingsModal);
 document.getElementById("mealDefaultTimeModalConfirm")?.addEventListener("click", saveMealDefaultSettings);
 document.getElementById("mealDefaultTimeModal")?.addEventListener("click", (e) => {
-  if (e.target.id === "mealDefaultTimeModal") closeMealDefaultSettingsModal();
+  // 点击遮罩背景（非内容区）时关闭
+  if (!e.target.closest('[data-modal-inner="1"]')) {
+    closeMealDefaultSettingsModal();
+  }
 });
 
 // 语言切换按钮事件
