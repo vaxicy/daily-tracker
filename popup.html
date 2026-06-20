@@ -144,7 +144,7 @@
       .meal-input::placeholder { color: var(--muted); }
       .btn-eat {
         width: 100%;
-        padding: 10px;
+        padding: 9px 10px;
         border-radius: 10px;
         border: none;
         background: linear-gradient(135deg, var(--eat), var(--eat2));
@@ -153,15 +153,16 @@
         font-size: 13px;
         font-weight: 700;
         cursor: pointer;
-        box-shadow: 0 4px 14px rgba(245,158,11,0.3);
+        box-shadow: 0 3px 10px rgba(245,158,11,0.28);
         transition: all 0.2s;
+        margin-top: 10px;
       }
       .btn-eat:hover { transform: translateY(-1px); }
       
       .meal-records {
         max-height: 180px;
         overflow-y: auto;
-        margin-top: 14px;
+        margin-top: 12px;
       }
       .meal-records-header {
         display: flex;
@@ -286,27 +287,26 @@
       .meal-type-tag.dinner { background: rgba(217,119,6,0.2); color: #92400E; }
       .meal-type-tag.snack { background: rgba(180,83,9,0.15); color: #78350F; }
 
-      /* 评价星级样式 */
+      /* 评价+饱腹感 统一区块 */
       .meal-rating-row {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 6px 10px;
-        margin: 10px 0 14px;
-        padding: 8px 14px;
-        background: rgba(245,158,11,0.05);
+        gap: 4px 12px;
+        margin: 10px 0;
+        padding: 8px 10px;
+        background: rgba(245,158,11,0.04);
         border-radius: 8px;
-        min-height: auto;
       }
       .rating-label {
         font-size: 11px;
         color: var(--muted);
         white-space: nowrap;
-        line-height: 1;
+        line-height: 1.4;
         display: flex;
         align-items: center;
-        height: 18px;
-        width: 100%;
+        min-width: 72px;
+        flex-shrink: 0;
       }
       .rating-stars {
         display: flex;
@@ -341,34 +341,35 @@
         clip-path: inset(0 100% 0 0);
       }
       .rating-text {
-        font-size: 10px;
+        font-size: 11px;
         color: var(--eat);
         font-weight: 600;
-        margin-left: 0;
-        line-height: 1;
+        margin-left: 2px;
+        line-height: 1.4;
         display: inline-flex;
         align-items: center;
-        height: 18px;
         white-space: nowrap;
         flex-shrink: 0;
-        gap: 3px;
       }
 
-      /* 饱腹感选择器 */
+      /* 饱腹感选择器 — 与评分行统一对齐 */
       .fullness-row {
         display: flex;
         align-items: center;
-        gap: 6px;
-        margin: 6px 0 10px;
-        padding: 6px 10px;
-        background: rgba(245,158,11,0.04);
-        border-radius: 8px;
+        gap: 4px;
+        margin: 6px 0 0;
+        padding: 0;
+        background: transparent;
+        border-radius: 0;
         flex-wrap: wrap;
       }
       .fullness-label {
         font-size: 11px;
         color: var(--muted);
         white-space: nowrap;
+        line-height: 1.4;
+        min-width: 72px;
+        flex-shrink: 0;
       }
       .fullness-btns {
         display: flex;
@@ -401,7 +402,7 @@
       /* 饮食快速标签 */
       .meal-tags-wrap {
         margin-top: 10px;
-        margin-bottom: 10px;
+        margin-bottom: 0;
       }
       .meal-tags-header {
         display: flex;
@@ -409,21 +410,26 @@
         justify-content: space-between;
         font-size: 11px;
         color: var(--muted);
-        margin-bottom: 10px;
+        margin-bottom: 6px;
         cursor: pointer;
         user-select: none;
       }
       .meal-tags-toggle {
         background: none;
         border: none;
-        font-size: 10px;
+        font-size: 9px;
         color: var(--muted);
         cursor: pointer;
-        padding: 2px 4px;
+        padding: 2px;
         transition: transform 0.2s ease;
+        flex-shrink: 0;
+        line-height: 1;
+      }
+      .meal-tags-toggle:hover {
+        opacity: 0.6;
       }
       .meal-tags-wrap.collapsed .meal-tags-row {
-        display: none;
+        display: none !important;
       }
       .meal-tags-wrap.collapsed .meal-tags-toggle {
         transform: rotate(-90deg);
@@ -3061,6 +3067,62 @@
         max-height: 400px;
         overflow-y: auto;
       }
+
+      /* 编辑表单分组 */
+      .edit-form-wrap {
+        margin-top: 10px;
+        animation: slideInDown 0.2s ease;
+      }
+      @keyframes slideInDown {
+        from { opacity: 0; transform: translateY(-6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .edit-group {
+        background: rgba(12,42,77,0.03);
+        border-radius: 10px;
+        padding: 10px 10px 4px;
+        margin-bottom: 8px;
+      }
+      .edit-group-label {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--muted);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .edit-group-label::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: rgba(12,42,77,0.08);
+      }
+      .edit-input-sm {
+        font-size: 11px !important;
+        color: var(--muted) !important;
+        background: rgba(12,42,77,0.03) !important;
+        border-color: rgba(12,42,77,0.1) !important;
+      }
+      .edit-input-sm:focus {
+        color: var(--text) !important;
+        border-color: var(--primary) !important;
+      }
+      .edit-save-btn-primary {
+        background: var(--primary) !important;
+        color: #fff !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        padding: 8px 12px !important;
+        border-radius: 10px !important;
+        letter-spacing: 0.5px;
+      }
+      .edit-save-btn-primary:hover {
+        background: #0a5ce6 !important;
+      }
+
       .edit-record-item {
         background: rgba(12,42,77,0.04);
         border-radius: 10px;
@@ -3180,7 +3242,7 @@
         line-height: 1.4;
       }
       .edit-input-row {
-        margin-bottom: 8px;
+        margin-bottom: 4px;
       }
       .edit-input {
         width: 100%;
@@ -4194,7 +4256,7 @@
       }
 
       [data-theme="dark"] .fullness-row {
-        background: rgba(245,158,11,0.08);
+        background: transparent;
       }
       [data-theme="dark"] .fullness-btn {
         background: rgba(15,23,42,0.6);

@@ -324,6 +324,9 @@ function renderMealTags() {
   const emojis = t("mealTagEmojis") || [];
   if (!mealTagsRow) return;
 
+  // 记住折叠状态，渲染后恢复
+  const wasCollapsed = isMealTagsCollapsed;
+
   let html = tags.map((tag, i) =>
     `<button class="meal-tag-btn ${selectedMealTags.includes(tag) ? 'active' : ''}" data-tag="${tag}" data-idx="${i}">${emojis[i] || ''} ${tag}</button>`
   ).join("");
@@ -337,6 +340,9 @@ function renderMealTags() {
   html += `<button class="meal-tag-add-btn" id="addCustomTagBtn">${t('customTag') || '\u81EA\u5B9A\u4E49'}</button>`;
 
   mealTagsRow.innerHTML = html;
+
+  // 恢复折叠状态
+  if (wasCollapsed) mealTagsRow.style.display = "none";
 
   // 预设标签点击
   mealTagsRow.querySelectorAll(".meal-tag-btn:not([data-custom-idx])").forEach(btn => {
@@ -390,19 +396,12 @@ function renderMealTags() {
     addBtn.addEventListener("click", openTagModal);
   }
 
-  // 更新折叠箭头
+  // 同步折叠状态
   if (mealTagsToggle) {
     mealTagsToggle.textContent = isMealTagsCollapsed ? "▶" : "▼";
   }
-}
-
-function toggleMealTagsCollapse() {
-  isMealTagsCollapsed = !isMealTagsCollapsed;
-  if (mealTagsWrap) {
-    mealTagsWrap.classList.toggle("collapsed", isMealTagsCollapsed);
-  }
-  if (mealTagsToggle) {
-    mealTagsToggle.textContent = isMealTagsCollapsed ? "▶" : "▼";
+  if (isMealTagsCollapsed && mealTagsRow) {
+    mealTagsRow.style.display = "none";
   }
 }
 
@@ -472,9 +471,26 @@ async function initEatPage() {
   loadCustomTags(() => {
     renderMealTags();
   });
+  // 快捷标签折叠/展开 — JS 直接控制 display，不依赖 CSS 类
+  function toggleMealTagsCollapse() {
+    isMealTagsCollapsed = !isMealTagsCollapsed;
+    if (mealTagsRow) mealTagsRow.style.display = isMealTagsCollapsed ? "none" : "";
+    if (mealTagsToggle) mealTagsToggle.textContent = isMealTagsCollapsed ? "▶" : "▼";
+  }
+
+  if (mealTagsToggle) {
+    mealTagsToggle.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleMealTagsCollapse();
+    });
+  }
+
+  // 点击标题文字也能折叠
   if (mealTagsHeader) {
     mealTagsHeader.addEventListener("click", (e) => {
-      if (e.target.closest(".meal-tags-toggle") || e.target === mealTagsHeader) {
+      if (e.target === mealTagsHeader || e.target.closest('span[data-i18n="mealTagsLabel"]')) {
+        e.preventDefault();
         toggleMealTagsCollapse();
       }
     });
@@ -989,14 +1005,6 @@ function showEatEditModal(dateStr, dayRecords) {
           <option value="snack">${t('snack')}</option>
         </select>
         <input type="time" class="edit-input" id="eatAddTime" value="${defaultTimeStr}" style="width:110px;font-size:12px;padding:6px 8px;" />
-        <button class="edit-apply-time-btn" id="eatAddOpenSettings" style="font-size:14px;padding:6px 6px;background:rgba(245,158,11,0.08);color:var(--eat);border:1px solid rgba(245,158,11,0.2);border-radius:6px;cursor:pointer;flex-shrink:0;" title="设置默认时间">⚙️</button>
-      </div>
-      <!-- 快捷标签2列网格 -->
-      <div class="edit-input-row" id="eatAddQuickTags" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
-        <button class="edit-quick-tag" data-meal-type="breakfast" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('breakfast')} <span class="tag-time">${mealDefaultTimes['breakfast'] || '07:30'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="lunch" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('lunch')} <span class="tag-time">${mealDefaultTimes['lunch'] || '12:00'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="dinner" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('dinner')} <span class="tag-time">${mealDefaultTimes['dinner'] || '18:30'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="snack" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('snack')} <span class="tag-time">${mealDefaultTimes['snack'] || '15:00'}</span></button>
       </div>
       <!-- 内容+备注 -->
       <div class="edit-input-row">
@@ -1078,36 +1086,10 @@ function showEatEditModal(dateStr, dayRecords) {
     }
   }
     
-    // 添加记录区域：绑定设置按钮和快捷标签
-    const eatAddTypeEl = document.getElementById("eatAddType");
-    const eatAddTimeEl = document.getElementById("eatAddTime");
-    
     // 根据当前时间自动识别餐次
+    const eatAddTypeEl = document.getElementById("eatAddType");
     if (eatAddTypeEl) {
       eatAddTypeEl.value = getCurrentMealTypeByTime();
-      // 触发change事件以更新默认时间
-      eatAddTypeEl.dispatchEvent(new Event('change'));
-    }
-    const eatAddOpenSettingsBtn = document.getElementById("eatAddOpenSettings");
-    
-    // 绑定设置按钮
-    if (eatAddOpenSettingsBtn) {
-      eatAddOpenSettingsBtn.addEventListener("click", openMealDefaultSettingsModal);
-    }
-    
-    // 切换餐次时更新默认时间和高亮
-    if (eatAddTypeEl && eatAddTimeEl) {
-      eatAddTypeEl.addEventListener("change", () => {
-        eatAddTimeEl.value = mealDefaultTimes[eatAddTypeEl.value] || "12:00";
-        updateEditQuickTagHighlight('eatAddQuickTags', eatAddTypeEl.value);
-      });
-    }
-    
-    // 绑定快捷标签
-    bindEditQuickTags('eatAddQuickTags', 'eatAddTime');
-    // 初始高亮
-    if (eatAddTypeEl) {
-      updateEditQuickTagHighlight('eatAddQuickTags', eatAddTypeEl.value);
     }
 
     document.getElementById("eatAddBtn").addEventListener("click", () => {
@@ -1168,83 +1150,76 @@ function showEatEditModal(dateStr, dayRecords) {
     const remarkHtml = rec.remark ? `📝 ${rec.remark}` : t('noRemark');
     return `
     <div class="edit-record-item" data-index="${idx}">
-      <div class="edit-record-header">
-        <span class="edit-record-time">${typeLabel[rec.type] || ""} ${rec.time}</span>
-        <div class="edit-record-actions">
-          <button class="edit-btn-edit" data-action="edit-eat" data-index="${idx}">${t('edit')}</button>
-          <button class="edit-btn-delete" data-action="delete-eat" data-index="${idx}">${t('delete')}</button>
+      <!-- 默认预览（非编辑状态） -->
+      <div id="eatPreview${idx}">
+        <div class="edit-record-header">
+          <span class="edit-record-time">${typeLabel[rec.type] || ""} ${rec.time}</span>
+          <div class="edit-record-actions">
+            <button class="edit-btn-edit" data-action="edit-eat" data-index="${idx}">${t('edit')}</button>
+            <button class="edit-btn-delete" data-action="delete-eat" data-index="${idx}">${t('delete')}</button>
+          </div>
+        </div>
+        <div class="edit-record-content" id="eatContent${idx}" style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px;">
+          ${rec.content}
+        </div>
+        <div style="font-size:11px;color:var(--muted);background:rgba(0,0,0,0.03);border-radius:6px;padding:8px 10px;margin-bottom:0;">
+          <div style="margin-bottom:3px;">📝 ${t('remarkLabel')}: ${remarkHtml}</div>
+          <div style="margin-bottom:3px;">⭐ ${t('rateLabelShort')}: <span style="display:inline-flex;align-items:center;gap:4px;">${ratingStarsHtml}</span></div>
+          ${rec.fullness ? `<div style="margin-bottom:3px;">🍽️ ${t('fullnessLabel')}: ${t('fullnessLevels')[rec.fullness - 1] || ""}</div>` : ''}
+          ${rec.tags && rec.tags.length > 0 ? `<div>🏷 ${t('autoTagHint')}: ${rec.tags.map(tag => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--eat);font-size:10px;margin-right:3px;">${tag}</span>`).join("")}</div>` : ''}
         </div>
       </div>
-      <div class="edit-record-content" id="eatContent${idx}" style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px;">
-        ${rec.content}
-      </div>
-      <div style="font-size:11px;color:var(--muted);background:rgba(0,0,0,0.03);border-radius:6px;padding:8px 10px;margin-bottom:12px;">
-        <div style="margin-bottom:3px;">📝 ${t('remarkLabel')}: ${remarkHtml}</div>
-        <div style="margin-bottom:3px;">⭐ ${t('rateLabelShort')}: <span style="display:inline-flex;align-items:center;gap:4px;">${ratingStarsHtml}</span></div>
-        ${rec.fullness ? `<div style="margin-bottom:3px;">🍽️ ${t('fullnessLabel')}: ${t('fullnessLevels')[rec.fullness - 1] || ""}</div>` : ''}
-        ${rec.tags && rec.tags.length > 0 ? `<div>🏷 ${t('autoTagHint')}: ${rec.tags.map(tag => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--eat);font-size:10px;margin-right:3px;">${tag}</span>`).join("")}</div>` : ''}
-      </div>
-      <div class="edit-input-row" id="eatEditForm${idx}" style="display:none;margin-top:10px;">
-          <select class="edit-type-select" id="eatEditType${idx}" style="flex:1;min-width:0;padding:6px 10px;">
+      <!-- 编辑表单（编辑状态下替换预览） -->
+      <div class="edit-form-wrap" id="eatEditWrap${idx}" style="display:none;">
+        <div class="edit-input-row" style="display:flex;align-items:center;gap:6px;">
+          <select class="edit-type-select" id="eatEditType${idx}" style="flex:1;min-width:0;padding:5px 8px;font-size:12px;">
             <option value="breakfast" ${rec.type === 'breakfast' ? 'selected' : ''}>${t('breakfast')}</option>
             <option value="lunch" ${rec.type === 'lunch' ? 'selected' : ''}>${t('lunch')}</option>
             <option value="dinner" ${rec.type === 'dinner' ? 'selected' : ''}>${t('dinner')}</option>
             <option value="snack" ${rec.type === 'snack' ? 'selected' : ''}>${t('snack')}</option>
           </select>
-          <input type="time" class="edit-input" id="eatEditTime${idx}" value="${parsedTime}" placeholder="HH:mm" style="width:110px;font-size:12px;padding:6px 8px;" />
-          <button class="edit-apply-time-btn" id="eatEditOpenSettings${idx}" style="font-size:14px;padding:6px 6px;background:rgba(245,158,11,0.08);color:var(--eat);border:1px solid rgba(245,158,11,0.2);border-radius:6px;cursor:pointer;flex-shrink:0;" title="设置默认时间">⚙️</button>
-      </div>
-      <div class="edit-input-row" id="eatEditQuickTags${idx}" style="display:none;grid-template-columns:1fr 1fr;gap:4px;">
-        <button class="edit-quick-tag" data-meal-type="breakfast" data-index="${idx}" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('breakfast')} <span class="tag-time">${mealDefaultTimes['breakfast'] || '07:30'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="lunch" data-index="${idx}" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('lunch')} <span class="tag-time">${mealDefaultTimes['lunch'] || '12:00'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="dinner" data-index="${idx}" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('dinner')} <span class="tag-time">${mealDefaultTimes['dinner'] || '18:30'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="snack" data-index="${idx}" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('snack')} <span class="tag-time">${mealDefaultTimes['snack'] || '15:00'}</span></button>
-      </div>
-      <div class="edit-input-row" id="eatEditFormContent${idx}" style="display:none;">
-        <input class="edit-input" type="text" id="eatEditContent${idx}" value="${rec.content}" placeholder="${t('editContentPlaceholder')}" style="font-size:12px;" />
-      </div>
-      <div class="edit-input-row" id="eatEditFormRemark${idx}" style="display:none;">
-        <input class="edit-input" type="text" id="eatEditRemark${idx}" value="${rec.remark || ''}" placeholder="${t('editRemarkPlaceholder')}" maxlength="50" style="font-size:11px;" />
-      </div>
-      <div class="edit-input-row" id="eatEditFormRating${idx}" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
-        <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${t('rateLabelShort')}：</span>
-        <div class="edit-rating-stars" id="eatEditRatingStars${idx}" style="display:flex;gap:2px;">
-          <span class="edit-star" data-value="1" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:20px;width:20px;"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
-          <span class="edit-star" data-value="2" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:20px;width:20px;"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
-          <span class="edit-star" data-value="3" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:20px;width:20px;"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
-          <span class="edit-star" data-value="4" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:20px;width:20px;"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
-          <span class="edit-star" data-value="5" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:20px;width:20px;"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="16" height="16" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <input type="time" class="edit-input" id="eatEditTime${idx}" value="${parsedTime}" style="width:100px;font-size:12px;padding:5px 6px;" />
+          <button class="edit-btn-delete" data-action="delete-eat" data-index="${idx}" style="padding:4px 8px;font-size:11px;flex-shrink:0;">${t('delete')}</button>
         </div>
-        <span class="edit-rating-text" id="eatEditRatingText${idx}" style="font-size:10px;color:var(--eat);font-weight:600;">${getRatingText(rec.rating)}</span>
-        <input type="hidden" id="eatEditRating${idx}" value="${rec.rating || 0}" />
-      </div>
-      <div class="edit-input-row" id="eatEditFormFullness${idx}" style="display:none;align-items:center;gap:8px;">
-        <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${t('fullnessLabel')}：</span>
-        <div class="edit-fullness-btns" id="eatEditFullnessBtns${idx}" style="display:flex;gap:4px;">
-          ${(t('fullnessLevels') || []).map((lvl, i) => `<button class="edit-fullness-btn ${(rec.fullness || 0) === i+1 ? 'active' : ''}" data-level="${i+1}" style="padding:3px 6px;border-radius:12px;border:1px solid rgba(245,158,11,0.2);background:rgba(255,255,255,0.8);color:var(--text);font-size:10px;cursor:pointer;user-select:none;">${lvl}</button>`).join('')}
+        <div class="edit-input-row" style="margin-bottom:4px;">
+          <input class="edit-input" type="text" id="eatEditContent${idx}" value="${rec.content}" placeholder="${t('eatPlaceholder')}" style="font-size:14px;font-weight:600;" />
         </div>
-        <input type="hidden" id="eatEditFullness${idx}" value="${rec.fullness || 0}" />
-      </div>
-      <div class="edit-input-row" id="eatEditFormTags${idx}" style="display:none;">
-        <span style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px;">${t('autoTagHint')}：</span>
-        <div class="edit-tags-grid" id="eatEditTagsGrid${idx}" style="display:flex;flex-wrap:wrap;gap:4px;">
-          ${(() => {
-            const allTags = (t('mealTags') || []);
-            const allEmojis = (t('mealTagEmojis') || []);
-            let tagHtml = allTags.map((tag, i) => {
-              const isActive = rec.tags && rec.tags.includes(tag);
-              return `<button class="edit-tag-btn ${isActive ? 'active' : ''}" data-tag="${tag}" style="display:inline-flex;align-items:center;gap:2px;padding:2px 6px;border-radius:8px;border:1px solid ${isActive ? 'var(--eat)' : 'rgba(245,158,11,0.2)'};background:${isActive ? 'rgba(245,158,11,0.15)' : 'rgba(245,158,11,0.06)'};color:${isActive ? 'var(--eat)' : 'var(--text)'};font-size:10px;cursor:pointer;user-select:none;">${allEmojis[i] || ''} ${tag}</button>`;
-            }).join('');
-            customMealTags.forEach((ct, ci) => {
-              const isActive = rec.tags && rec.tags.includes(ct.name);
-              tagHtml += `<button class="edit-tag-btn ${isActive ? 'active' : ''}" data-tag="${ct.name}" data-custom="1" style="display:inline-flex;align-items:center;gap:2px;padding:2px 6px;border-radius:8px;border:1px solid ${isActive ? 'var(--eat)' : 'rgba(245,158,11,0.2)'};background:${isActive ? 'rgba(245,158,11,0.15)' : 'rgba(245,158,11,0.06)'};color:${isActive ? 'var(--eat)' : 'var(--text)'};font-size:10px;cursor:pointer;user-select:none;">${ct.emoji} ${ct.name}</button>`;
-            });
-            return tagHtml;
-          })()}
+        <div class="edit-input-row" style="margin-bottom:4px;">
+          <input class="edit-input edit-input-sm" type="text" id="eatEditRemark${idx}" value="${rec.remark || ''}" placeholder="${t('remarkPlaceholder')}" maxlength="50" />
         </div>
-      </div>
-      <div class="edit-input-row" id="eatEditFormButtons${idx}" style="display:none;">
-        <button class="edit-save-btn" data-action="save-eat" data-index="${idx}" style="background:var(--eat);font-size:12px;padding:6px 12px;">${t('saveEdit')}</button>
+        <div class="edit-input-row" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
+          <div class="edit-rating-stars" id="eatEditRatingStars${idx}" style="display:flex;gap:0;">
+            <span class="edit-star" data-value="1" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:16px;width:16px;"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+            <span class="edit-star" data-value="2" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:16px;width:16px;"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+            <span class="edit-star" data-value="3" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:16px;width:16px;"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+            <span class="edit-star" data-value="4" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:16px;width:16px;"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+            <span class="edit-star" data-value="5" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:16px;width:16px;"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          </div>
+          <span class="edit-rating-text" id="eatEditRatingText${idx}" style="font-size:9px;color:var(--eat);font-weight:600;min-width:24px;">${getRatingText(rec.rating)}</span>
+          <input type="hidden" id="eatEditRating${idx}" value="${rec.rating || 0}" />
+          <div class="edit-fullness-btns" id="eatEditFullnessBtns${idx}" style="display:flex;gap:2px;">
+            ${(t('fullnessLevels') || []).map((lvl, i) => `<button class="edit-fullness-btn ${(rec.fullness || 0) === i+1 ? 'active' : ''}" data-level="${i+1}" style="padding:2px 5px;border-radius:10px;border:1px solid rgba(245,158,11,0.2);background:rgba(255,255,255,0.8);color:var(--text);font-size:9px;cursor:pointer;user-select:none;">${lvl}</button>`).join('')}
+          </div>
+          <input type="hidden" id="eatEditFullness${idx}" value="${rec.fullness || 0}" />
+        </div>
+        <div class="edit-input-row" style="margin-bottom:6px;">
+          <div class="edit-tags-grid" id="eatEditTagsGrid${idx}" style="display:flex;flex-wrap:wrap;gap:3px;">
+            ${(() => {
+              const allTags = (t('mealTags') || []);
+              const allEmojis = (t('mealTagEmojis') || []);
+              let tagHtml = allTags.map((tag, i) => {
+                const isActive = rec.tags && rec.tags.includes(tag);
+                return `<button class="edit-tag-btn ${isActive ? 'active' : ''}" data-tag="${tag}" style="display:inline-flex;align-items:center;gap:1px;padding:1px 5px;border-radius:6px;border:1px solid ${isActive ? 'var(--eat)' : 'rgba(245,158,11,0.15)'};background:${isActive ? 'rgba(245,158,11,0.12)' : 'transparent'};color:${isActive ? 'var(--eat)' : 'var(--muted)'};font-size:9px;cursor:pointer;user-select:none;">${allEmojis[i] || ''} ${tag}</button>`;
+              }).join('');
+              customMealTags.forEach((ct, ci) => {
+                const isActive = rec.tags && rec.tags.includes(ct.name);
+                tagHtml += `<button class="edit-tag-btn ${isActive ? 'active' : ''}" data-tag="${ct.name}" data-custom="1" style="display:inline-flex;align-items:center;gap:1px;padding:1px 5px;border-radius:6px;border:1px solid ${isActive ? 'var(--eat)' : 'rgba(245,158,11,0.15)'};background:${isActive ? 'rgba(245,158,11,0.12)' : 'transparent'};color:${isActive ? 'var(--eat)' : 'var(--muted)'};font-size:9px;cursor:pointer;user-select:none;">${ct.emoji} ${ct.name}</button>`;
+              });
+              return tagHtml;
+            })()}
+          </div>
+        </div>
+        <button class="edit-save-btn edit-save-btn-primary" data-action="save-eat" data-index="${idx}" style="margin-top:0;">💾 ${t('saveEdit')}</button>
       </div>
     </div>
   `;
@@ -1262,15 +1237,7 @@ function showEatEditModal(dateStr, dayRecords) {
           <option value="dinner">${t('dinner')}</option>
           <option value="snack">${t('snack')}</option>
         </select>
-        <input type="time" class="edit-input" id="eatAppendTime" value="${mealDefaultTimes[document.getElementById('eatAppendType')?.value || 'breakfast'] || '12:00'}" style="width:110px;font-size:12px;padding:6px 8px;" />
-        <button class="edit-apply-time-btn" id="eatAppendOpenSettings" style="font-size:14px;padding:6px 6px;background:rgba(245,158,11,0.08);color:var(--eat);border:1px solid rgba(245,158,11,0.2);border-radius:6px;cursor:pointer;flex-shrink:0;" title="设置默认时间">⚙️</button>
-      </div>
-      <!-- 快捷标签2列网格 -->
-      <div class="edit-input-row" id="eatAppendQuickTags" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
-        <button class="edit-quick-tag" data-meal-type="breakfast" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('breakfast')} <span class="tag-time">${mealDefaultTimes['breakfast'] || '07:30'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="lunch" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('lunch')} <span class="tag-time">${mealDefaultTimes['lunch'] || '12:00'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="dinner" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('dinner')} <span class="tag-time">${mealDefaultTimes['dinner'] || '18:30'}</span></button>
-        <button class="edit-quick-tag" data-meal-type="snack" style="font-size:11px;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t('snack')} <span class="tag-time">${mealDefaultTimes['snack'] || '15:00'}</span></button>
+        <input type="time" class="edit-input" id="eatAppendTime" value="${new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" })}" style="width:110px;font-size:12px;padding:6px 8px;" />
       </div>
       <div class="edit-input-row">
         <input class="edit-input" type="text" id="eatAppendContent" placeholder="${t('eatPlaceholder')}" style="font-size:12px;" />
@@ -1281,27 +1248,6 @@ function showEatEditModal(dateStr, dayRecords) {
       <button class="edit-save-btn" id="eatAppendBtn" style="background:var(--eat);font-size:12px;padding:6px 12px;">${t('appendRecordBtn')}</button>
     </div>
   `;
-
-  // 追加：切换餐次时更新默认时间 + 绑定快捷标签和设置按钮
-  const eatAppendTypeEl = document.getElementById("eatAppendType");
-  const eatAppendTimeEl = document.getElementById("eatAppendTime");
-  const eatAppendOpenSettingsBtn = document.getElementById("eatAppendOpenSettings");
-  
-  // 绑定设置按钮
-  if (eatAppendOpenSettingsBtn) {
-    eatAppendOpenSettingsBtn.addEventListener("click", openMealDefaultSettingsModal);
-  }
-  
-  // 切换餐次时更新默认时间
-  if (eatAppendTypeEl && eatAppendTimeEl) {
-    eatAppendTypeEl.addEventListener("change", () => {
-      eatAppendTimeEl.value = mealDefaultTimes[eatAppendTypeEl.value] || "12:00";
-      updateEditQuickTagHighlight('eatAppendQuickTags', eatAppendTypeEl.value);
-    });
-  }
-  
-  // 绑定追加区域的快捷标签
-  bindEditQuickTags('eatAppendQuickTags', 'eatAppendTime');
 
   // 追加按钮事件
   document.getElementById("eatAppendBtn").addEventListener("click", () => {
@@ -1338,76 +1284,7 @@ function showEatEditModal(dateStr, dayRecords) {
   });
 }
 
-function openEatEditForm(idx) {
-  const formRow = document.getElementById("eatEditForm" + idx);
-  formRow.style.display = "flex";
-  formRow.style.alignItems = "center";
-  formRow.style.gap = "8px";
-  formRow.style.marginBottom = "8px";
-  document.getElementById("eatContent" + idx).style.display = "none";
 
-  // 显示快捷标签并设置grid布局
-  const quickTags = document.getElementById("eatEditQuickTags" + idx);
-  if (quickTags) {
-    quickTags.style.display = "grid";
-    quickTags.style.gridTemplateColumns = "1fr 1fr";
-    quickTags.style.gap = "4px";
-  }
-
-  // 绑定设置按钮事件
-  const settingsBtn = document.getElementById("eatEditOpenSettings" + idx);
-  if (settingsBtn) {
-    settingsBtn.onclick = () => openMealDefaultSettingsModal();
-  }
-  
-  // 绑定快捷标签事件
-  bindEditQuickTags('eatEditQuickTags' + idx, 'eatEditTime' + idx);
-  
-  // 根据当前选中的餐次高亮快捷标签
-  const typeEl = document.getElementById("eatEditType" + idx);
-  if (typeEl) {
-    updateEditQuickTagHighlight('eatEditQuickTags' + idx, typeEl.value);
-    // 餐次切换时更新高亮
-    typeEl.addEventListener("change", () => {
-      updateEditQuickTagHighlight('eatEditQuickTags' + idx, typeEl.value);
-    });
-  }
-}
-
-// 绑定编辑区域快捷标签的点击事件
-function bindEditQuickTags(containerId, timeInputId) {
-  const container = document.getElementById(containerId);
-  const timeInput = document.getElementById(timeInputId);
-  if (!container || !timeInput) return;
-  
-  const quickTags = container.querySelectorAll(".edit-quick-tag");
-  quickTags.forEach(tag => {
-    tag.addEventListener("click", () => {
-      const type = tag.dataset.mealType;
-      timeInput.value = mealDefaultTimes[type] || "12:00";
-      updateEditQuickTagHighlight(containerId, type);
-    });
-  });
-}
-
-// 更新编辑区域快捷标签的高亮状态
-function updateEditQuickTagHighlight(containerId, type) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  
-  const quickTags = container.querySelectorAll(".edit-quick-tag");
-  quickTags.forEach(tag => {
-    if (tag.dataset.mealType === type) {
-      tag.style.background = "rgba(245,158,11,0.2)";
-      tag.style.borderColor = "var(--eat)";
-      tag.style.color = "var(--eat)";
-    } else {
-      tag.style.background = "rgba(245,158,11,0.06)";
-      tag.style.borderColor = "rgba(245,158,11,0.2)";
-      tag.style.color = "var(--text)";
-    }
-  });
-}
 
 function saveEatRecord(idx) {
   const newType = document.getElementById("eatEditType" + idx).value;
@@ -3670,21 +3547,8 @@ editModalBody.addEventListener("click", (e) => {
   
   // 饮食编辑
   if (action === "edit-eat") {
-    document.getElementById("eatEditForm" + idx).style.display = "block";
-    document.getElementById("eatEditFormTime" + idx).style.display = "flex";
-    document.getElementById("eatEditFormContent" + idx).style.display = "block";
-    document.getElementById("eatEditFormRemark" + idx).style.display = "block";
-    document.getElementById("eatEditFormRating" + idx).style.display = "flex";
-    document.getElementById("eatEditFormFullness" + idx).style.display = "flex";
-    document.getElementById("eatEditFormTags" + idx).style.display = "block";
-    document.getElementById("eatEditFormButtons" + idx).style.display = "block";
-    document.getElementById("eatContent" + idx).style.display = "none";
-
-    // 显示快捷标签并设置grid布局
-    const quickTags = document.getElementById("eatEditQuickTags" + idx);
-    if (quickTags) {
-      quickTags.style.display = "grid";
-    }
+    document.getElementById("eatPreview" + idx).style.display = "none";
+    document.getElementById("eatEditWrap" + idx).style.display = "block";
 
     // 绑定星级交互（5颗星，支持半星）
     const starContainer = document.getElementById("eatEditRatingStars" + idx);
