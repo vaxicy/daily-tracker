@@ -11,6 +11,34 @@ function showToast(msg) {
   toastTimer = setTimeout(() => toast.classList.remove("show"), 2000);
 }
 
+// 内联确认弹窗（替代浏览器原生 confirm）
+function showConfirm(message, onOk, onCancel, title) {
+  const overlay = document.getElementById("inlineConfirm");
+  const titleEl = document.getElementById("inlineConfirmTitle");
+  const msgEl = document.getElementById("inlineConfirmMsg");
+  const okBtn = document.getElementById("inlineConfirmOk");
+  const cancelBtn = document.getElementById("inlineConfirmCancel");
+  if (!overlay || !msgEl || !okBtn || !cancelBtn) {
+    if (window.confirm(message)) { if (onOk) onOk(); } else { if (onCancel) onCancel(); }
+    return;
+  }
+  const newOk = okBtn.cloneNode(true);
+  const newCancel = cancelBtn.cloneNode(true);
+  okBtn.parentNode.replaceChild(newOk, okBtn);
+  cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+  titleEl.textContent = title ? title : (t("confirmTitle") || "确认操作");
+  msgEl.textContent = message;
+  overlay.classList.add("show");
+  function close(result) {
+    overlay.classList.remove("show");
+    if (result && onOk) onOk();
+    else if (!result && onCancel) onCancel();
+  }
+  newOk.addEventListener("click", () => close(true));
+  newCancel.addEventListener("click", () => close(false));
+  overlay.onclick = (e) => { if (e.target === overlay) close(false); };
+}
+
 function getToday() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -1332,21 +1360,22 @@ function saveEatRecord(idx) {
 }
 
 function deleteEatRecord(idx, dateStr) {
-  if (!confirm(t("confirmDeleteRecord"))) return;
-  const targetDate = dateStr || currentEditDate;
-  const isModal = !dateStr;
+  showConfirm(t("confirmDeleteRecord"), () => {
+    const targetDate = dateStr || currentEditDate;
+    const isModal = !dateStr;
 
-  _deleteRecordFromStorage("mealRecords", targetDate, idx, (records, targetDate, isEmpty) => {
-    showToast(t("toastDeleteSuccess"));
-    renderEatCalendar();
-    updateMealRecords();
-    if (isModal) {
-      if (isEmpty) {
-        hideEditModal();
-      } else {
-        showEatEditModal(targetDate, records[targetDate]);
+    _deleteRecordFromStorage("mealRecords", targetDate, idx, (records, targetDate, isEmpty) => {
+      showToast(t("toastDeleteSuccess"));
+      renderEatCalendar();
+      updateMealRecords();
+      if (isModal) {
+        if (isEmpty) {
+          hideEditModal();
+        } else {
+          showEatEditModal(targetDate, records[targetDate]);
+        }
       }
-    }
+    });
   });
 }
 
@@ -2528,22 +2557,23 @@ function savePoopRecord(idx) {
 }
 
 function deletePoopRecord(idx, dateStr) {
-  if (!confirm(t("confirmDeleteRecord"))) return;
-  const targetDate = dateStr || currentEditDate;
-  const isModal = !dateStr;
+  showConfirm(t("confirmDeleteRecord"), () => {
+    const targetDate = dateStr || currentEditDate;
+    const isModal = !dateStr;
 
-  _deleteRecordFromStorage("poopRecords", targetDate, idx, (records, targetDate, isEmpty) => {
-    // Toast is already shown by the helper function
-    renderPoopCalendar();
-    updatePoopTodayStatus();
-    updatePoopStats();
-    if (isModal) {
-      if (isEmpty) {
-        hideEditModal();
-      } else {
-        showPoopEditModal(targetDate, records[targetDate]);
+    _deleteRecordFromStorage("poopRecords", targetDate, idx, (records, targetDate, isEmpty) => {
+      // Toast is already shown by the helper function
+      renderPoopCalendar();
+      updatePoopTodayStatus();
+      updatePoopStats();
+      if (isModal) {
+        if (isEmpty) {
+          hideEditModal();
+        } else {
+          showPoopEditModal(targetDate, records[targetDate]);
+        }
       }
-    }
+    });
   });
 }
 
@@ -3186,22 +3216,23 @@ function savePeeRecord(idx) {
 }
 
 function deletePeeRecord(idx, dateStr) {
-  if (!confirm(t("confirmDeleteRecord"))) return;
-  const targetDate = dateStr || currentEditDate;
-  const isModal = !dateStr;
+  showConfirm(t("confirmDeleteRecord"), () => {
+    const targetDate = dateStr || currentEditDate;
+    const isModal = !dateStr;
 
-  _deleteRecordFromStorage("peeRecords", targetDate, idx, (records, targetDate, isEmpty) => {
-    // Toast is already shown by the helper function
-    renderPeeCalendar();
-    updatePeeTodayStatus();
-    updatePeeStats();
-    if (isModal) {
-      if (isEmpty) {
-        hideEditModal();
-      } else {
-        showPeeEditModal(targetDate, records[targetDate]);
+    _deleteRecordFromStorage("peeRecords", targetDate, idx, (records, targetDate, isEmpty) => {
+      // Toast is already shown by the helper function
+      renderPeeCalendar();
+      updatePeeTodayStatus();
+      updatePeeStats();
+      if (isModal) {
+        if (isEmpty) {
+          hideEditModal();
+        } else {
+          showPeeEditModal(targetDate, records[targetDate]);
+        }
       }
-    }
+    });
   });
 }
 
@@ -4360,11 +4391,12 @@ document.getElementById("reminderList")?.addEventListener("click", (e) => {
   }
   const delBtn = e.target.closest(".delete-reminder");
   if (delBtn) {
-    if (!confirm(t("confirmDeleteReminder"))) return;
-    customReminders = customReminders.filter(r => r.id !== delBtn.dataset.id);
-    saveReminders();
-    renderReminderList();
-    showToast(t("reminderDeleted"));
+    showConfirm(t("confirmDeleteReminder"), () => {
+      customReminders = customReminders.filter(r => r.id !== delBtn.dataset.id);
+      saveReminders();
+      renderReminderList();
+      showToast(t("reminderDeleted"));
+    });
   }
 });
 
@@ -4415,9 +4447,9 @@ let periodCalendarYear = new Date().getFullYear();
 let periodCalendarMonth = new Date().getMonth();
 let periodCycles = []; // { startDate, endDate, days }
 let selectedMood = 0;
-let selectedPain = -1;
+let selectedPain = 0;
 let selectedSymptoms = [];
-let selectedFlow = -1;
+let selectedFlow = 0;
 
 // 迁移旧数据（periodRecords → periodCycles）
 function migratePeriodData(records, callback) {
@@ -4609,31 +4641,32 @@ function renderPeriodCalendar() {
       deleteBtn.title = t("periodClearCycle") || "清除本次周期";
       deleteBtn.addEventListener("click", (ev) => {
         ev.stopPropagation(); // 阻止触发日期点击事件
-        if (!confirm(t("periodClearCycleConfirm") || "确定清除本次周期记录吗？")) return;
-        // 找到该日期所属的cycle，删除整个cycle
-        const targetCycle = getCycleByDate(dateStr);
-        if (targetCycle) {
-          const idx = periodCycles.indexOf(targetCycle);
-          if (idx !== -1) {
-            periodCycles.splice(idx, 1);
-            savePeriodCycles();
-            showToast(t("periodCycleCleared") || "该周期记录已清除");
-            // 如果当前选中的日期在被删除的cycle中，清空选中状态
-            if (selectedPeriodDate) {
-              const range = getDatesInRange(targetCycle.startDate, targetCycle.endDate);
-              if (range.includes(selectedPeriodDate)) {
-                selectedPeriodDate = null;
-                selectMood(-1);
-                selectSymptoms([]);
-                selectBloodColor(-1);
-                const remarkInput = document.getElementById("periodRemarkInput");
-                if (remarkInput) remarkInput.value = "";
-                clearPeriodUnsaved();
-                updatePeriodToggleBtn();
+        showConfirm(t("periodClearCycleConfirm") || "确定清除本次周期记录吗？", () => {
+          // 找到该日期所属的cycle，删除整个cycle
+          const targetCycle = getCycleByDate(dateStr);
+          if (targetCycle) {
+            const idx = periodCycles.indexOf(targetCycle);
+            if (idx !== -1) {
+              periodCycles.splice(idx, 1);
+              savePeriodCycles();
+              showToast(t("periodCycleCleared") || "该周期记录已清除");
+              // 如果当前选中的日期在被删除的cycle中，清空选中状态
+              if (selectedPeriodDate) {
+                const range = getDatesInRange(targetCycle.startDate, targetCycle.endDate);
+                if (range.includes(selectedPeriodDate)) {
+                  selectedPeriodDate = null;
+                  selectMood(-1);
+                  selectSymptoms([]);
+                  selectBloodColor(-1);
+                  const remarkInput = document.getElementById("periodRemarkInput");
+                  if (remarkInput) remarkInput.value = "";
+                  clearPeriodUnsaved();
+                  updatePeriodToggleBtn();
+                }
               }
             }
           }
-        }
+        });
       });
       day.appendChild(deleteBtn);
 
@@ -4651,10 +4684,11 @@ function renderPeriodCalendar() {
       // 点击选中日期，进入编辑模式（先检查未保存）
       day.addEventListener("click", () => {
         if (periodUnsaved) {
-          if (!confirm(t("periodUnsavedConfirm") || "当前有未保存的修改，切换将丢失。确定放弃并切换？")) {
-            return;
-          }
-          clearPeriodUnsaved();
+          showConfirm(t("periodUnsavedConfirm"), () => {
+            clearPeriodUnsaved();
+            selectPeriodDate(dateStr);
+          });
+          return;
         }
         selectPeriodDate(dateStr);
       });
@@ -4667,31 +4701,36 @@ function renderPeriodCalendar() {
       day.title = t("periodBackdateHint") || "点击可补签为经期第一天";
       day.addEventListener("click", () => {
         if (periodUnsaved) {
-          if (!confirm(t("periodUnsavedConfirm") || "当前有未保存的修改，切换将丢失。确定放弃并切换？")) {
+          showConfirm(t("periodUnsavedConfirm"), () => {
+            clearPeriodUnsaved();
+            backdateProceed();
+          });
+          return;
+        }
+        backdateProceed();
+        function backdateProceed() {
+          // 检查是否已在某个周期内（防御性检查）
+          if (getCycleByDate(dateStr)) {
+            showToast(t("periodDateInCycle"));
             return;
           }
-          clearPeriodUnsaved();
+          // 检查是否已有进行中的经期（未结束）
+          const active = getActivePeriod();
+          if (active) {
+            showToast(t("periodPleaseSaveFirst"));
+            return;
+          }
+          // 确认补签
+          const dateDisplay = formatDateDisplay(dateStr);
+          showConfirm(t("periodBackdateConfirm", { date: dateDisplay }), () => {
+            // 创建新周期
+            periodCycles.push({ startDate: dateStr, endDate: null, days: {} });
+            savePeriodCycles();
+            selectPeriodDate(dateStr);
+            updatePeriodToggleBtn();
+            showToast(t("toastPeriodRecorded"));
+          });
         }
-        // 检查是否已在某个周期内（防御性检查）
-        if (getCycleByDate(dateStr)) {
-          showToast(t("periodDateInCycle") || "该日期已在某个经期内");
-          return;
-        }
-        // 检查是否已有进行中的经期（未结束）
-        const active = getActivePeriod();
-        if (active) {
-          showToast(t("periodPleaseSaveFirst") || "请先结束当前经期再开始新的");
-          return;
-        }
-        // 确认补签
-        const dateDisplay = formatDateDisplay(dateStr);
-        if (!confirm(t("periodBackdateConfirm", { date: dateDisplay }) || `确定将 ${dateDisplay} 作为经期第一天吗？`)) return;
-        // 创建新周期
-        periodCycles.push({ startDate: dateStr, endDate: null, days: {} });
-        savePeriodCycles();
-        selectPeriodDate(dateStr);
-        updatePeriodToggleBtn();
-        showToast(t("toastPeriodRecorded") || "🩸 经期记录已保存！");
       });
     }
 
@@ -4741,9 +4780,9 @@ function selectPeriodDate(dateStr) {
   // 加载该天数据
   const dayData = (cycle.days || {})[dateStr] || {};
   selectMood(dayData.mood !== undefined ? dayData.mood : -1);
-  setPainSlider(dayData.pain !== undefined ? dayData.pain : -1);
+  setPainSlider(dayData.pain !== undefined && dayData.pain >= 0 ? dayData.pain : 0);
   selectSymptoms(dayData.symptoms || []);
-  setFlowSlider(dayData.flow !== undefined ? dayData.flow : -1);
+  setFlowSlider(dayData.flow !== undefined && dayData.flow >= 0 ? dayData.flow : 0);
   selectBloodColor(dayData.bloodColor !== undefined ? dayData.bloodColor : -1);
 
   const remarkInput = document.getElementById("periodRemarkInput");
@@ -5066,30 +5105,44 @@ function initPeriodPainSlider() {
   const ticksEl = document.getElementById("periodPainTicks");
   if (!slider || !emojiEl || !labelEl) return;
 
-  // 动态生成 emoji ticks
+  // 动态生成 emoji ticks（6 档，按档位精确对齐 thumb 中心）
   if (ticksEl) {
     const emojis = getPainEmojis();
-    ticksEl.innerHTML = emojis.map(e => `<span>${e}</span>`).join("");
+    const max = emojis.length - 1;
+    ticksEl.innerHTML = emojis.map((e, i) =>
+      `<span style="left:calc(8px + (100% - 16px) * ${i / max})" data-val="${i}">${e}</span>`
+    ).join("");
+    ticksEl.querySelectorAll("span").forEach(sp => {
+      sp.addEventListener("click", () => {
+        slider.value = sp.dataset.val;
+        updatePainDisplay(slider.value);
+        highlightPainTick(parseInt(sp.dataset.val));
+        markPeriodUnsaved();
+      });
+    });
+    highlightPainTick(parseInt(slider.value));
   }
 
   function updatePainDisplay(val) {
     const v = parseInt(val);
     const emojis = getPainEmojis();
     const levels = getPainLevels();
-    if (v < 0) {
-      emojiEl.textContent = emojis[0] || "😊";
-      labelEl.textContent = t("periodNotSelected");
-      labelEl.style.color = "var(--muted)";
-    } else {
-      emojiEl.textContent = emojis[v] || "";
-      labelEl.textContent = levels[v] || "";
-      labelEl.style.color = "var(--period)";
-    }
+    emojiEl.textContent = emojis[v] || "";
+    labelEl.textContent = levels[v] || "";
+    labelEl.style.color = "var(--period)";
     selectedPain = v;
+  }
+
+  function highlightPainTick(val) {
+    if (!ticksEl) return;
+    ticksEl.querySelectorAll("span").forEach(s => s.classList.remove("active"));
+    const sp = ticksEl.querySelector(`span[data-val="${val}"]`);
+    if (sp) sp.classList.add("active");
   }
 
   slider.addEventListener("input", (e) => {
     updatePainDisplay(e.target.value);
+    highlightPainTick(parseInt(e.target.value));
     markPeriodUnsaved();
   });
 
@@ -5100,16 +5153,22 @@ function initPeriodPainSlider() {
 function setPainSlider(val) {
   const slider = document.getElementById("periodPainSlider");
   if (!slider) return;
-  slider.value = val;
-  const v = parseInt(val);
+  const v = Math.max(0, parseInt(val));
+  slider.value = v;
   const emojiEl = document.getElementById("periodPainEmoji");
   const labelEl = document.getElementById("periodPainLabel");
   const emojis = getPainEmojis();
   const levels = getPainLevels();
-  if (emojiEl) emojiEl.textContent = v < 0 ? (emojis[0] || "😊") : (emojis[v] || "");
+  if (emojiEl) emojiEl.textContent = emojis[v] || "";
   if (labelEl) {
-    labelEl.textContent = v < 0 ? t("periodNotSelected") : (levels[v] || "");
-    labelEl.style.color = v < 0 ? "var(--muted)" : "var(--period)";
+    labelEl.textContent = levels[v] || "";
+    labelEl.style.color = "var(--period)";
+  }
+  const ticksEl = document.getElementById("periodPainTicks");
+  if (ticksEl) {
+    ticksEl.querySelectorAll("span").forEach(s => s.classList.remove("active"));
+    const sp = ticksEl.querySelector(`span[data-val="${v}"]`);
+    if (sp) sp.classList.add("active");
   }
   selectedPain = v;
 }
@@ -5133,30 +5192,44 @@ function initPeriodFlowSlider() {
   const ticksEl = document.getElementById("periodFlowTicks");
   if (!slider || !emojiEl || !labelEl) return;
 
-  // 动态生成 emoji ticks
+  // 动态生成 emoji ticks（6 档，按档位精确对齐 thumb 中心）
   if (ticksEl) {
     const emojis = getFlowEmojis();
-    ticksEl.innerHTML = emojis.map(e => `<span>${e}</span>`).join("");
+    const max = emojis.length - 1;
+    ticksEl.innerHTML = emojis.map((e, i) =>
+      `<span style="left:calc(8px + (100% - 16px) * ${i / max})" data-val="${i}">${e}</span>`
+    ).join("");
+    ticksEl.querySelectorAll("span").forEach(sp => {
+      sp.addEventListener("click", () => {
+        slider.value = sp.dataset.val;
+        updateFlowDisplay(slider.value);
+        highlightFlowTick(parseInt(sp.dataset.val));
+        markPeriodUnsaved();
+      });
+    });
+    highlightFlowTick(parseInt(slider.value));
   }
 
   function updateFlowDisplay(val) {
     const v = parseInt(val);
     const emojis = getFlowEmojis();
     const levels = getFlowLevels();
-    if (v < 0) {
-      emojiEl.textContent = emojis[0] || "🩲";
-      labelEl.textContent = t("periodNotSelected");
-      labelEl.style.color = "var(--muted)";
-    } else {
-      emojiEl.textContent = emojis[v] || "";
-      labelEl.textContent = levels[v] || "";
-      labelEl.style.color = "var(--period)";
-    }
+    emojiEl.textContent = emojis[v] || "";
+    labelEl.textContent = levels[v] || "";
+    labelEl.style.color = "var(--period)";
     selectedFlow = v;
+  }
+
+  function highlightFlowTick(val) {
+    if (!ticksEl) return;
+    ticksEl.querySelectorAll("span").forEach(s => s.classList.remove("active"));
+    const sp = ticksEl.querySelector(`span[data-val="${val}"]`);
+    if (sp) sp.classList.add("active");
   }
 
   slider.addEventListener("input", (e) => {
     updateFlowDisplay(e.target.value);
+    highlightFlowTick(parseInt(e.target.value));
     markPeriodUnsaved();
   });
 
@@ -5167,16 +5240,22 @@ function initPeriodFlowSlider() {
 function setFlowSlider(val) {
   const slider = document.getElementById("periodFlowSlider");
   if (!slider) return;
-  slider.value = val;
-  const v = parseInt(val);
+  const v = Math.max(0, parseInt(val));
+  slider.value = v;
   const emojiEl = document.getElementById("periodFlowEmoji");
   const labelEl = document.getElementById("periodFlowLabel");
   const emojis = getFlowEmojis();
   const levels = getFlowLevels();
-  if (emojiEl) emojiEl.textContent = v < 0 ? (emojis[0] || "🩲") : (emojis[v] || "");
+  if (emojiEl) emojiEl.textContent = emojis[v] || "";
   if (labelEl) {
-    labelEl.textContent = v < 0 ? t("periodNotSelected") : (levels[v] || "");
-    labelEl.style.color = v < 0 ? "var(--muted)" : "var(--period)";
+    labelEl.textContent = levels[v] || "";
+    labelEl.style.color = "var(--period)";
+  }
+  const ticksEl = document.getElementById("periodFlowTicks");
+  if (ticksEl) {
+    ticksEl.querySelectorAll("span").forEach(s => s.classList.remove("active"));
+    const sp = ticksEl.querySelector(`span[data-val="${v}"]`);
+    if (sp) sp.classList.add("active");
   }
   selectedFlow = v;
 }
@@ -5191,10 +5270,20 @@ document.addEventListener("i18nApplied", () => {
     const labelEl = document.getElementById("periodPainLabel");
     const emojis = getPainEmojis();
     const levels = getPainLevels();
-    if (emojiEl) emojiEl.textContent = v < 0 ? (emojis[0] || "😊") : (emojis[v] || "");
+    if (emojiEl) emojiEl.textContent = emojis[v] || "";
     if (labelEl) {
-      labelEl.textContent = v < 0 ? t("periodNotSelected") : (levels[v] || "");
-      labelEl.style.color = v < 0 ? "var(--muted)" : "var(--period)";
+      labelEl.textContent = levels[v] || "";
+      labelEl.style.color = "var(--period)";
+    }
+    // 重新生成刻度（emoji 随语言变化）
+    const ticksEl = document.getElementById("periodPainTicks");
+    if (ticksEl) {
+      const max = emojis.length - 1;
+      ticksEl.innerHTML = emojis.map((e, i) =>
+        `<span style="left:calc(8px + (100% - 16px) * ${i / max})" data-val="${i}">${e}</span>`
+      ).join("");
+      const sp = ticksEl.querySelector(`span[data-val="${v}"]`);
+      if (sp) sp.classList.add("active");
     }
   }
   if (flowSlider) {
@@ -5203,10 +5292,19 @@ document.addEventListener("i18nApplied", () => {
     const labelEl = document.getElementById("periodFlowLabel");
     const emojis = getFlowEmojis();
     const levels = getFlowLevels();
-    if (emojiEl) emojiEl.textContent = v < 0 ? (emojis[0] || "🩲") : (emojis[v] || "");
+    if (emojiEl) emojiEl.textContent = emojis[v] || "";
     if (labelEl) {
-      labelEl.textContent = v < 0 ? t("periodNotSelected") : (levels[v] || "");
-      labelEl.style.color = v < 0 ? "var(--muted)" : "var(--period)";
+      labelEl.textContent = levels[v] || "";
+      labelEl.style.color = "var(--period)";
+    }
+    const ticksEl = document.getElementById("periodFlowTicks");
+    if (ticksEl) {
+      const max = emojis.length - 1;
+      ticksEl.innerHTML = emojis.map((e, i) =>
+        `<span style="left:calc(8px + (100% - 16px) * ${i / max})" data-val="${i}">${e}</span>`
+      ).join("");
+      const sp = ticksEl.querySelector(`span[data-val="${v}"]`);
+      if (sp) sp.classList.add("active");
     }
   }
 });
@@ -5498,15 +5596,15 @@ function initPeriodTracker() {
       } else {
         // 关闭经期（需要确认）
         if (active) {
-          if (!confirm(t("periodEndConfirm"))) {
+          showConfirm(t("periodEndConfirm"), () => {
+            active.endDate = getToday();
+            savePeriodCycles();
+            updatePeriodToggleBtn();
+            selectedPeriodDate = null;
+            clearPeriodUnsaved();
+          }, () => {
             toggleInput.checked = true;
-            return;
-          }
-          active.endDate = getToday();
-          savePeriodCycles();
-          updatePeriodToggleBtn();
-          selectedPeriodDate = null;
-          clearPeriodUnsaved();
+          });
         }
       }
     });
@@ -5525,9 +5623,9 @@ function initPeriodTracker() {
       if (!cycle.days) cycle.days = {};
       cycle.days[dateToSave] = {
         mood: selectedMood >= 0 ? selectedMood : undefined,
-        pain: selectedPain >= 0 ? selectedPain : undefined,
+        pain: selectedPain,
         symptoms: [...selectedSymptoms],
-        flow: selectedFlow >= 0 ? selectedFlow : undefined,
+        flow: selectedFlow,
         bloodColor: selectedBloodColor >= 0 ? selectedBloodColor : undefined,
         remark: (document.getElementById("periodRemarkInput") || {}).value || ""
       };
@@ -5569,10 +5667,11 @@ function importBackup(file) {
         showToast(t("backupImportInvalid"));
         return;
       }
-      if (!confirm(t("backupImportConfirm"))) return;
-      chrome.storage.local.set(backup.data, () => {
-        showToast(t("backupImportSuccess"));
-        setTimeout(() => location.reload(), 800);
+      showConfirm(t("backupImportConfirm"), () => {
+        chrome.storage.local.set(backup.data, () => {
+          showToast(t("backupImportSuccess"));
+          setTimeout(() => location.reload(), 800);
+        });
       });
     } catch (err) {
       showToast(t("backupImportInvalid"));

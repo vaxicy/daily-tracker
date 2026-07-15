@@ -33,7 +33,7 @@
         color: var(--text);
         background: linear-gradient(150deg, #eaf5ff 0%, #daeaff 100%);
         padding: 16px;
-        padding-bottom: 50px;
+        padding-bottom: 28px;
         border: none;
         box-shadow: none;
         position: relative;
@@ -575,9 +575,9 @@
         flex: 1;
         overflow-y: auto;
         margin-bottom: 8px;
-        scrollbar-width: none;
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-color, #0b6bff) transparent;
       }
-      .tag-modal-body::-webkit-scrollbar { display: none; }
       .tag-modal-body label {
         display: block;
         font-size: 10px;
@@ -2262,18 +2262,25 @@
         border: 2px solid #fff;
       }
       .period-slider-ticks {
-        display: flex;
-        justify-content: space-between;
+        position: relative;
         width: 100%;
-        font-size: 12px;
+        height: 18px;
+        margin-top: 2px;
+        font-size: 14px;
         color: var(--muted);
-        padding: 0 2px;
-        line-height: 1.2;
+        line-height: 18px;
       }
       .period-slider-ticks span {
+        position: absolute;
+        top: 0;
+        transform: translateX(-50%);
         text-align: center;
-        flex: 1;
+        cursor: pointer;
+        transition: transform 0.15s;
+        user-select: none;
       }
+      .period-slider-ticks span:hover { transform: translateX(-50%) scale(1.25); }
+      .period-slider-ticks span.active { transform: translateX(-50%) scale(1.25); color: var(--period); }
 
       .period-remark-input {
         width: 100%;
@@ -4047,26 +4054,50 @@
         background: rgba(51,65,85,0.4);
       }
 
-      /* ===== 全局滚动条基础样式（统一宽度和圆角） ===== */
-      *::-webkit-scrollbar { width: 6px; }
-      *::-webkit-scrollbar-track {
+      /* ===== 全局滚动条基础样式（纤细胶囊形，无箭头，随主题变色） ===== */
+      /* 顶层滚动元素单独声明，避免 Chrome popup 中 * 选择器对 body/html 失效 */
+      html::-webkit-scrollbar,
+      body::-webkit-scrollbar,
+      .sidebar-panel::-webkit-scrollbar,
+      .tag-modal-body::-webkit-scrollbar { width: 6px; }
+
+      /* 隐藏上下/左右箭头按钮（Chrome Windows 需要精确方向选择器） */
+      ::-webkit-scrollbar-button:vertical:start,
+      ::-webkit-scrollbar-button:vertical:end,
+      ::-webkit-scrollbar-button:horizontal:start,
+      ::-webkit-scrollbar-button:horizontal:end,
+      ::-webkit-scrollbar-button {
+        display: none;
+        width: 0;
+        height: 0;
         background: transparent;
-        border-radius: 3px;
-        margin: 2px;
-      }
-      *::-webkit-scrollbar-thumb {
-        background: var(--scrollbar-color, #0b6bff);
-        border-radius: 3px;
-        transition: background 0.2s ease;
         border: none;
       }
-      *::-webkit-scrollbar-thumb:hover {
+
+      /* 轨道完全透明，不显示白色背景 */
+      ::-webkit-scrollbar-track {
+        background: transparent;
+        border: none;
+        margin: 2px 0;
+      }
+
+      /* 胶囊形 thumb：细、圆角、居中、不贴边 */
+      ::-webkit-scrollbar-thumb {
+        width: 6px;
+        background: var(--scrollbar-color, #0b6bff);
+        border-radius: 999px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
+        min-height: 40px;
+        transition: background 0.2s ease;
+      }
+      ::-webkit-scrollbar-thumb:hover {
         background: var(--scrollbar-hover, #20c6ff);
       }
 
-      /* ===== 夜间模式滚动条轨道 ===== */
-      [data-theme="dark"] *::-webkit-scrollbar-track {
-        background: rgba(255,255,255,0.04) !important;
+      /* ===== 夜间模式：保留极淡轨道以便看清 ===== */
+      [data-theme="dark"] ::-webkit-scrollbar-track {
+        background: rgba(255,255,255,0.04);
       }
 
       [data-theme="dark"] .switch-row {
@@ -5163,7 +5194,7 @@
               <div class="period-slider-title" data-i18n="periodPainLabel">痛感</div>
               <div class="period-slider-emoji" id="periodPainEmoji">😊</div>
               <div class="period-slider-label" id="periodPainLabel">无明显痛感</div>
-              <input type="range" class="period-slider" id="periodPainSlider" min="-1" max="4" value="-1" step="1" />
+              <input type="range" class="period-slider" id="periodPainSlider" min="0" max="5" value="0" step="1" />
               <div class="period-slider-ticks" id="periodPainTicks"></div>
             </div>
           </div>
@@ -5183,7 +5214,7 @@
               <div class="period-slider-title" data-i18n="periodFlowLabel">流量</div>
               <div class="period-slider-emoji" id="periodFlowEmoji">🩲</div>
               <div class="period-slider-label" id="periodFlowLabel">很少</div>
-              <input type="range" class="period-slider" id="periodFlowSlider" min="-1" max="4" value="-1" step="1" />
+              <input type="range" class="period-slider" id="periodFlowSlider" min="0" max="5" value="0" step="1" />
               <div class="period-slider-ticks" id="periodFlowTicks"></div>
             </div>
           </div>
@@ -5623,6 +5654,43 @@
     }
     .sidebar-value-btn:hover { border-color: var(--accent, #1a73e8); }
     .sidebar-value-arrow { font-size: 10px; color: var(--muted, #6b7280); }
+
+    /* ===== 内联确认弹窗（替代浏览器 confirm） ===== */
+    .inline-confirm-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(12,42,77,0.35);
+      backdrop-filter: blur(2px);
+      z-index: 8000;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.15s ease;
+    }
+    .inline-confirm-overlay.show { display: flex; }
+    .inline-confirm-box {
+      background: #fff;
+      border-radius: 14px;
+      width: 260px;
+      max-width: 90%;
+      padding: 18px 18px 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      animation: modalScaleIn 0.18s ease;
+    }
+    .inline-confirm-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .inline-confirm-msg { font-size: 12px; line-height: 1.5; color: var(--muted); margin-bottom: 14px; word-break: break-word; }
+    .inline-confirm-btns { display: flex; gap: 8px; justify-content: flex-end; }
+    .inline-confirm-btn {
+      padding: 7px 14px; border-radius: 8px; border: none;
+      font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    }
+    .inline-confirm-btn.cancel { background: rgba(12,42,77,0.08); color: var(--text); }
+    .inline-confirm-btn.cancel:hover { background: rgba(12,42,77,0.14); }
+    .inline-confirm-btn.confirm { background: linear-gradient(135deg, var(--eat), var(--eat2)); color: #fff; box-shadow: 0 2px 8px rgba(245,158,11,0.3); }
+    .inline-confirm-btn.confirm:hover { transform: translateY(-1px); }
+    [data-theme="dark"] .inline-confirm-box { background: #1e293b; }
+    [data-theme="dark"] .inline-confirm-btn.cancel { background: rgba(148,163,184,0.15); color: var(--text, #e2e8f0); }
+    [data-theme="dark"] .inline-confirm-btn.cancel:hover { background: rgba(148,163,184,0.25); }
   </style>
   <div class="badge-modal-overlay hidden" id="badgeModalOverlay">
     <div class="badge-modal">
@@ -5666,5 +5734,16 @@
       </div>
     </div>
   </div>
-  </body>
+    <!-- 内联确认弹窗（替代浏览器 confirm） -->
+  <div class="inline-confirm-overlay" id="inlineConfirm">
+    <div class="inline-confirm-box">
+      <div class="inline-confirm-title" id="inlineConfirmTitle">确认操作</div>
+      <div class="inline-confirm-msg" id="inlineConfirmMsg"></div>
+      <div class="inline-confirm-btns">
+        <button class="inline-confirm-btn cancel" id="inlineConfirmCancel" data-i18n="cancel">取消</button>
+        <button class="inline-confirm-btn confirm" id="inlineConfirmOk" data-i18n="confirm">确定</button>
+      </div>
+    </div>
+  </div>
+</body>
 </html>
