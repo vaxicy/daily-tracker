@@ -3936,6 +3936,189 @@ function loadTheme() {
   });
 }
 
+loadTheme();
+
+// ==================== 自定义滚动条（替代原生，随主题变色） ====================
+function initCustomScrollbar() {
+  const bar = document.getElementById("customScrollbar");
+  const thumb = bar ? bar.querySelector(".custom-scrollbar-thumb") : null;
+  if (!bar || !thumb) return;
+
+  // 调试开关：定位根因后改为 false 删除日志
+  const DEBUG = true;
+  const dlog = (...a) => { if (DEBUG) console.log("[scrollbar]", ...a); };
+
+  let active = null; // { el, type: "viewport" | "bounded" }
+
+  // 判定当前活动滚动容器
+  // 有界容器（sidebar / 弹窗）优先；否则主 popup 视为"视口型"（浏览器 frame 滚动）
+  function getActiveContainer() {
+    const tagModal = document.getElementById("tagModal");
+    if (tagModal && tagModal.classList.contains("active")) {
+      const body = tagModal.querySelector(".tag-modal-body");
+      if (body && body.scrollHeight > body.clientHeight) return { el: body, type: "bounded" };
+    }
+    const badgeModal = document.getElementById("badgeModalOverlay");
+    if (badgeModal && !badgeModal.classList.contains("hidden")) {
+      const body = badgeModal.querySelector(".badge-modal");
+      if (body && body.scrollHeight > body.clientHeight) return { el: body, type: "bounded" };
+    }
+    const sidebar = document.getElementById("sidebarPanel");
+    if (sidebar && sidebar.classList.contains("open")) {
+      if (sidebar.scrollHeight > sidebar.clientHeight) return { el: sidebar, type: "bounded" };
+    }
+    // 主 popup：Chrome 扩展弹窗无 body 固定高度时，实际由浏览器 frame 滚动
+    // 用视口型指标（window.innerHeight / documentElement.scrollHeight / window.scrollY）
+    return { el: document.documentElement, type: "viewport" };
+  }
+
+  // 取不同容器类型的滚动指标
+  function getMetrics(a) {
+    if (a.type === "viewport") {
+      return {
+        scrollHeight: document.documentElement.scrollHeight,
+        clientHeight: window.innerHeight,
+        scrollTop: window.scrollY || window.pageYOffset || 0,
+      };
+    }
+    return {
+      scrollHeight: a.el.scrollHeight,
+      clientHeight: a.el.clientHeight,
+      scrollTop: a.el.scrollTop,
+    };
+  }
+
+  // 滚动到指定位置（区分视口型与有界型）
+  function setScroll(a, y) {
+    if (a.type === "viewport") {
+      window.scrollTo(0, y);
+    } else {
+      a.el.scrollTop = y;
+    }
+  }
+
+  function update() {
+    active = getActiveContainer();
+    const m = getMetrics(active);
+    const maxScroll = m.scrollHeight - m.clientHeight;
+    const scrollable = maxScroll > 1;
+    dlog("update:", active.type, "scrollHeight=", m.scrollHeight, "clientHeight=", m.clientHeight, "scrollTop=", m.scrollTop, "scrollable=", scrollable);
+    if (!scrollable) {
+      bar.classList.remove("visible");
+      thumb.style.height = "0px";
+      return;
+    }
+    bar.classList.add("visible");
+
+    let trackH, rect;
+    if (active.type === "viewport") {
+      // 视口型：轨道固定贴视口右侧
+      trackH = window.innerHeight;
+      bar.style.top = "0px";
+      bar.style.height = trackH + "px";
+      bar.style.right = "0px";
+    } else {
+      // 有界型：轨道跟随元素
+      rect = active.el.getBoundingClientRect();
+      trackH = rect.height;
+      const rightGap = window.innerWidth - rect.right;
+      bar.style.top = rect.top + "px";
+      bar.style.height = trackH + "px";
+      bar.style.right = Math.max(0, rightGap) + "px";
+    }
+
+    const ratio = m.clientHeight / m.scrollHeight;
+    // thumb 高度保持在视口 45%~60% 之间，视觉上约弹窗 1/2，不会太短也不会太长
+    const minThumbH = Math.round(trackH * 0.45);
+    const maxThumbH = Math.round(trackH * 0.6);
+    const thumbH = Math.max(minThumbH, Math.min(maxThumbH, Math.floor(trackH * ratio)));
+    const scrollRatio = maxScroll > 0 ? m.scrollTop / maxScroll : 0;
+    const maxThumbTop = trackH - thumbH;
+    thumb.style.height = thumbH + "px";
+    thumb.style.transform = "translateY(" + (scrollRatio * maxThumbTop) + "px)";
+  }
+
+  // 全局捕获滚动（容器会动态切换；capture 兼容内部容器，window 兼容主 popup frame 滚动）
+  document.addEventListener("scroll", update, true);
+  window.addEventListener("scroll", update);
+  window.addEventListener("resize", update);
+  window.addEventListener("load", update);
+  // 初始渲染可能未完成，延迟刷新几次
+  setTimeout(update, 200);
+  setTimeout(update, 500);
+  setTimeout(update, 1000);
+
+  // 拖拽 thumb 滚动
+  let dragging = false, startY = 0, startScrollTop = 0;
+  thumb.addEventListener("mousedown", (e) => {
+    dragging = true;
+    startY = e.clientY;
+    startScrollTop = getMetrics(active).scrollTop;
+    bar.classList.add("dragging");
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  document.addEventListener("mousemove", (e) => {
+    if (!dragging || !active) return;
+    const trackH = bar.clientHeight;
+    const thumbH = thumb.offsetHeight;
+    const maxThumbTop = trackH - thumbH;
+    const maxScroll = getMetrics(active).scrollHeight - getMetrics(active).clientHeight;
+    if (maxThumbTop <= 0) return;
+    const deltaRatio = (e.clientY - startY) / maxThumbTop;
+    setScroll(active, startScrollTop + deltaRatio * maxScroll);
+  });
+  document.addEventListener("mouseup", () => {
+    dragging = false;
+    bar.classList.remove("dragging");
+  });
+
+  // 点击轨道跳转
+  bar.addEventListener("click", (e) => {
+    if (e.target === thumb || !active) return;
+    const rect = bar.getBoundingClientRect();
+    const clickY = e.clientY - rect.top;
+    const thumbH = thumb.offsetHeight;
+    const maxThumbTop = bar.clientHeight - thumbH;
+    const m = getMetrics(active);
+    const maxScroll = m.scrollHeight - m.clientHeight;
+    if (maxThumbTop <= 0) return;
+    const ratio = (clickY - thumbH / 2) / maxThumbTop;
+    setScroll(active, ratio * maxScroll);
+  });
+
+  // 内容高度变化时刷新（ResizeObserver 比 MutationObserver 更可靠）
+  let debounceTimer = null;
+  const scheduleUpdate = () => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(update, 120);
+  };
+  if (typeof ResizeObserver !== "undefined") {
+    const ro = new ResizeObserver(scheduleUpdate);
+    ro.observe(document.body);
+    const sidebar = document.getElementById("sidebarPanel");
+    const tagModal = document.getElementById("tagModal");
+    if (sidebar) ro.observe(sidebar);
+    if (tagModal) ro.observe(tagModal);
+  } else {
+    const mo = new MutationObserver(scheduleUpdate);
+    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+  }
+
+  // 侧边栏/弹窗打开动画结束后再刷新一次
+  const sidebar = document.getElementById("sidebarPanel");
+  const tagModal = document.getElementById("tagModal");
+  if (sidebar) sidebar.addEventListener("transitionend", update);
+  if (tagModal) tagModal.addEventListener("transitionend", update);
+
+  // 暴露给主题切换等外部调用
+  window.updateCustomScrollbar = update;
+
+  update();
+}
+
+initCustomScrollbar();
+
 // 绑定主题切换事件
 document.querySelectorAll(".theme-opt").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -3947,8 +4130,7 @@ document.querySelectorAll(".theme-opt").forEach(btn => {
   });
 });
 
-// 页面加载时恢复主题
-loadTheme();
+
 
 // ==================== 默认首页设置 ====================
 function applyDefaultTab(tabId) {
@@ -5690,5 +5872,55 @@ if (importFile) importFile.addEventListener("change", (e) => {
   if (file) importBackup(file);
   e.target.value = "";
 });
+
+// ==================== 全局键盘绑定：Enter 快速打卡 ====================
+// 在当前 tab 按 Enter 触发该页主操作按钮，复用现有按钮逻辑。
+// 防护：输入框内不拦截、任何弹窗/浮层打开时不拦截、喝水未运行给提示。
+function isAnyModalOpen() {
+  const tagModal = document.getElementById("tagModal");
+  const badgeModalOverlay = document.getElementById("badgeModalOverlay");
+  const reminderModal = document.getElementById("reminderModal");
+  return (
+    (editModal && editModal.classList.contains("show")) ||
+    (drinkEditOverlay && drinkEditOverlay.classList.contains("show")) ||
+    (tagModal && tagModal.classList.contains("active")) ||
+    (badgeModalOverlay && !badgeModalOverlay.classList.contains("hidden")) ||
+    (sidebarPanel && sidebarPanel.classList.contains("open")) ||
+    (reminderModal && reminderModal.classList.contains("show"))
+  );
+}
+
+function handleGlobalEnter(e) {
+  if (e.key !== "Enter") return;
+  // 输入框 / 文本域 / 可编辑元素内不拦截，交给元素自身处理（如 mealInput 的 Enter 记录饮食、备注框换行）
+  const el = e.target;
+  if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+  // 任何弹窗 / 浮层打开时不拦截，交给弹窗内部处理（如确认按钮）
+  if (isAnyModalOpen()) return;
+  switch (currentTab) {
+    case "drink":
+      if (!drinkBtn.disabled) {
+        drinkBtn.click();
+      } else {
+        showToast(t("toastStartTimerFirst"));
+      }
+      break;
+    case "poop":
+      if (poopCheckinBtn) poopCheckinBtn.click();
+      break;
+    case "pee":
+      if (peeCheckinBtn) peeCheckinBtn.click();
+      break;
+    case "period": {
+      const saveMoodBtn = document.getElementById("periodSaveMoodBtn");
+      if (saveMoodBtn) saveMoodBtn.click();
+      break;
+    }
+    case "eat":
+      if (addMealBtn) addMealBtn.click();
+      break;
+  }
+}
+document.addEventListener("keydown", handleGlobalEnter);
 
 

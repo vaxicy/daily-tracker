@@ -24,9 +24,16 @@
         min-height: 480px;
         overflow-x: hidden;
         overflow-y: auto;
-        scrollbar-width: thin;
-        scrollbar-color: var(--scrollbar-color, #0b6bff) transparent;
+        /* 隐藏原生滚动条，改用 JS 自定义滚动条 */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
       }
+      html::-webkit-scrollbar,
+      body::-webkit-scrollbar,
+      .sidebar-panel::-webkit-scrollbar,
+      .tag-modal-body::-webkit-scrollbar,
+      .badge-modal::-webkit-scrollbar,
+      .custom-scrollable::-webkit-scrollbar { display: none; width: 0; height: 0; }
       body {
         font-family: ui-sans-serif, system-ui, -apple-system,
           "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
@@ -575,8 +582,8 @@
         flex: 1;
         overflow-y: auto;
         margin-bottom: 8px;
-        scrollbar-width: thin;
-        scrollbar-color: var(--scrollbar-color, #0b6bff) transparent;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
       }
       .tag-modal-body label {
         display: block;
@@ -3458,13 +3465,11 @@
         margin: 12px 0 4px;
       }
       .theme-options {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 6px;
       }
       .theme-opt {
-        flex: 1 1 0;
-        min-width: 64px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -4054,50 +4059,38 @@
         background: rgba(51,65,85,0.4);
       }
 
-      /* ===== 全局滚动条基础样式（纤细胶囊形，无箭头，随主题变色） ===== */
-      /* 顶层滚动元素单独声明，避免 Chrome popup 中 * 选择器对 body/html 失效 */
-      html::-webkit-scrollbar,
-      body::-webkit-scrollbar,
-      .sidebar-panel::-webkit-scrollbar,
-      .tag-modal-body::-webkit-scrollbar { width: 6px; }
-
-      /* 隐藏上下/左右箭头按钮（Chrome Windows 需要精确方向选择器） */
-      ::-webkit-scrollbar-button:vertical:start,
-      ::-webkit-scrollbar-button:vertical:end,
-      ::-webkit-scrollbar-button:horizontal:start,
-      ::-webkit-scrollbar-button:horizontal:end,
-      ::-webkit-scrollbar-button {
+      /* ===== JS 自定义滚动条组件（替代原生，随主题变色） ===== */
+      #customScrollbar {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 8px;
+        height: 100%;
+        z-index: 100000;
         display: none;
-        width: 0;
-        height: 0;
+        pointer-events: none;
         background: transparent;
-        border: none;
+        border-radius: 0;
       }
-
-      /* 轨道完全透明，不显示白色背景 */
-      ::-webkit-scrollbar-track {
-        background: transparent;
-        border: none;
-        margin: 2px 0;
-      }
-
-      /* 胶囊形 thumb：细、圆角、居中、不贴边 */
-      ::-webkit-scrollbar-thumb {
+      #customScrollbar.visible { display: block; pointer-events: auto; }
+      .custom-scrollbar-thumb {
+        position: absolute;
+        top: 0;
+        left: 1px;
         width: 6px;
-        background: var(--scrollbar-color, #0b6bff);
         border-radius: 999px;
-        border: 2px solid transparent;
-        background-clip: padding-box;
-        min-height: 40px;
-        transition: background 0.2s ease;
+        background: var(--scrollbar-color, #0b6bff);
+        opacity: 0;
+        transition: opacity 0.2s ease, background 0.2s ease;
+        cursor: pointer;
+        pointer-events: auto;
+        will-change: transform, height;
       }
-      ::-webkit-scrollbar-thumb:hover {
+      #customScrollbar.visible .custom-scrollbar-thumb { opacity: 0.7; }
+      #customScrollbar.visible:hover .custom-scrollbar-thumb,
+      #customScrollbar.dragging .custom-scrollbar-thumb { opacity: 1; }
+      .custom-scrollbar-thumb:hover {
         background: var(--scrollbar-hover, #20c6ff);
-      }
-
-      /* ===== 夜间模式：保留极淡轨道以便看清 ===== */
-      [data-theme="dark"] ::-webkit-scrollbar-track {
-        background: rgba(255,255,255,0.04);
       }
 
       [data-theme="dark"] .switch-row {
@@ -5578,7 +5571,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="popup.js"></script>
   <!-- 角标内容选择弹窗 -->
   <style>
     .badge-modal-overlay {
@@ -5594,6 +5586,8 @@
       width: 300px;
       max-height: 80vh;
       overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
       box-shadow: 0 8px 32px rgba(0,0,0,0.2);
       animation: badgeModalIn 0.2s ease;
     }
@@ -5745,5 +5739,10 @@
       </div>
     </div>
   </div>
+
+  <!-- JS 自定义滚动条（替代原生，随主题变色） -->
+  <div id="customScrollbar"><div class="custom-scrollbar-thumb"></div></div>
+
+  <script src="popup.js"></script>
 </body>
 </html>
