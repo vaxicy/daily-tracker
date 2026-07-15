@@ -1,0 +1,10 @@
+{
+  "name": {
+    "message": "Daily Habit Tracker - Diet, Water, Bowel & Bladder",
+    "description": "Extension name"
+  },
+  "description": {
+    "message": "Track diet, water, bowel, and bladder in one place. A free daily health habit tracker for Chrome with smart reminders and stats.",
+    "description": "Extension description"
+  }
+}

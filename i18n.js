@@ -771,7 +771,16 @@ function setLanguage(lang) {
 
 function loadLanguage(callback) {
   chrome.storage.local.get(["language"], (data) => {
-    currentLang = data.language || "zh";
+    if (data.language) {
+      // 用户曾手动切换过语言，优先使用存储值
+      currentLang = data.language;
+    } else {
+      // 未设置时按浏览器语言自动识别，默认中文
+      const browserLang = navigator.language || (navigator.languages && navigator.languages[0]) || "zh";
+      currentLang = browserLang.toLowerCase().startsWith("en") ? "en" : "zh";
+      // 首次识别后写回存储，保持后续一致
+      chrome.storage.local.set({ language: currentLang });
+    }
     if (callback) callback(currentLang);
   });
 }
