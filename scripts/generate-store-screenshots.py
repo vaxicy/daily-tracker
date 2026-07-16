@@ -280,8 +280,8 @@ def hero_title(draw, title, subtitle, theme="default"):
     text(draw, (90, 136), subtitle, fill="white", f=font(22))
 
 
-def screenshot_1(lang="zh", theme="pink"):
-    """Water reminder - drink page mock."""
+def screenshot_1(lang="zh", theme="default"):
+    """Water reminder - drink page mock (blue theme)."""
     img, draw = base_bg(W, H, theme)
     if lang == "zh":
         hero_title(draw, "喝水提醒", "定时提醒喝水，一键打卡，养成充足饮水习惯", theme=theme)
