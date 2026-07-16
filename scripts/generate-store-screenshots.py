@@ -169,8 +169,49 @@ def text(draw, xy, value, fill="#0c2a4d", f=None, anchor=None):
     draw.text(xy, value, fill=fill, font=f or font(16), anchor=anchor)
 
 
-def text_size(draw, value, f):
-    return draw.textlength(value, font=f)
+def draw_centered_emoji(draw, cx, cy, emoji, size, fill="white", fit_in=None):
+    """Draw an emoji centered by its actual rendered pixel bounds, not font metrics.
+    Pillow's anchor='mm' centers the font's em-square, but colored emoji glyphs
+    (e.g. Segoe UI Emoji) are often placed off-center or render as wide glyphs,
+    causing them to look shifted inside a circular icon. We render the glyph on
+    a temporary canvas (with no anchor, so its pixel bbox starts at the real
+    glyph origin), measure the non-transparent pixel bbox, and offset so the
+    bbox center lands at (cx, cy). If fit_in (diameter) is given, the emoji is
+    downscaled so its pixel bbox fits with comfortable padding."""
+    f = emoji_font(size)
+    pad = max(size * 4, 256)
+    tmp = Image.new("RGBA", (pad, pad), (0, 0, 0, 0))
+    td = ImageDraw.Draw(tmp)
+    td.text((0, 0), emoji, font=f, fill=(255, 255, 255, 255))
+    bbox = tmp.getbbox()
+    if not bbox:
+        draw.text((cx, cy), emoji, font=f, fill=fill, anchor="mm")
+        return
+
+    def center_from_bbox(b):
+        min_x, min_y, max_x, max_y = b
+        mass_x = (min_x + max_x) / 2
+        mass_y = (min_y + max_y) / 2
+        w = max_x - min_x + 1
+        h = max_y - min_y + 1
+        return mass_x, mass_y, w, h
+
+    mass_x, mass_y, gw, gh = center_from_bbox(bbox)
+
+    if fit_in:
+        max_size = fit_in * 0.82  # keep a little padding inside the circle
+        scale = min(max_size / gw, max_size / gh, 1.0)
+        if scale < 1.0:
+            new_size = int(size * scale)
+            f = emoji_font(new_size)
+            tmp = Image.new("RGBA", (pad, pad), (0, 0, 0, 0))
+            td = ImageDraw.Draw(tmp)
+            td.text((0, 0), emoji, font=f, fill=(255, 255, 255, 255))
+            bbox = tmp.getbbox()
+            if bbox:
+                mass_x, mass_y, _, _ = center_from_bbox(bbox)
+
+    draw.text((cx - mass_x, cy - mass_y), emoji, font=f, fill=fill)
 
 
 def wrap(draw, value, max_width, f):
@@ -201,9 +242,9 @@ def card_bg(draw, x, y, w, h, theme, radius=14, border=True, shadow=True):
     """Draw a glassmorphism white card matching the extension UI."""
     t = THEMES[theme]
     if shadow:
-        shadow_color = (210, 215, 225)
+        shadow_color = (225, 228, 236)
         draw.rounded_rectangle(
-            (x + 6, y + 8, x + w + 6, y + h + 8),
+            (x + 3, y + 5, x + w + 3, y + h + 5),
             radius,
             fill=shadow_color,
             outline=None,
@@ -214,7 +255,7 @@ def card_bg(draw, x, y, w, h, theme, radius=14, border=True, shadow=True):
         draw.rounded_rectangle(
             (x, y, x + w, y + h),
             radius,
-            outline="#e0e0e0",
+            outline="#eceef2",
             width=1,
         )
 
@@ -260,22 +301,21 @@ def feature_card(draw, x, y, w, h, emoji, title, desc, theme, lang="zh"):
     """Promotional feature card matching the extension glass card style.
     Icon circle is vertically centered and the emoji is centered inside it."""
     t = THEMES[theme]
-    card_bg(draw, x, y, w, h, theme, radius=16, border=True, shadow=True)
-    ic = 40
-    ix, iy = x + 20, y + (h - ic) // 2
+    card_bg(draw, x, y, w, h, theme, radius=20, border=True, shadow=True)
+    ic = 44
+    ix, iy = x + 22, y + (h - ic) // 2
     draw.ellipse((ix, iy, ix + ic, iy + ic), fill=t["primary"])
-    text(draw, (ix + ic // 2, iy + ic // 2), emoji,
-         f=emoji_font(20), fill="white", anchor="mm")
-    tx = ix + ic + 16
-    avail = w - (tx - x) - 16
-    text(draw, (tx, y + 20), title, f=font(18, bold=True), fill=t["text"])
-    paragraph(draw, (tx, y + 46), desc, avail, f=font(13), fill=t["muted"], leading=5)
+    draw_centered_emoji(draw, ix + ic / 2, iy + ic / 2, emoji, 22, fill="white", fit_in=ic)
+    tx = ix + ic + 18
+    avail = w - (tx - x) - 18
+    text(draw, (tx, y + 22), title, f=font(18, bold=True), fill=t["text"])
+    paragraph(draw, (tx, y + 50), desc, avail, f=font(13), fill=t["muted"], leading=6)
 
 
 def hero_title(draw, title, subtitle, theme="default"):
     """Top banner for store screenshots."""
     t = THEMES[theme]
-    rounded_rect(draw, (56, 48, 1224, 180), t["primary"], radius=24, outline=t["text"], width=5)
+    rounded_rect(draw, (56, 48, 1224, 180), t["primary"], radius=24)
     text(draw, (88, 70), title, fill="white", f=font(54, bold=True))
     text(draw, (90, 136), subtitle, fill="white", f=font(22))
 
@@ -288,7 +328,7 @@ def screenshot_1(lang="zh", theme="default"):
     else:
         hero_title(draw, "Water Reminder", "Timed reminders, one-tap check-in, stay hydrated", theme=theme)
 
-    paste_real_popup(img, 70, 200, "drink", lang, scale=0.8)
+    paste_real_popup(img, 56, 200, "drink", lang, scale=0.8)
 
     if lang == "zh":
         cards = [
@@ -306,9 +346,9 @@ def screenshot_1(lang="zh", theme="default"):
         ]
     for i, (emoji, title, desc) in enumerate(cards):
         row, col = i // 2, i % 2
-        fx = 524 + col * 380
+        fx = 360 + col * 444
         fy = 226 + row * 130
-        feature_card(draw, fx, fy, 350, 110, emoji, title, desc, theme, lang=lang)
+        feature_card(draw, fx, fy, 420, 110, emoji, title, desc, theme, lang=lang)
 
     img.save(OUT / lang / "screenshot-01-water.png")
 
@@ -321,7 +361,7 @@ def screenshot_2(lang="zh", theme="eat"):
     else:
         hero_title(draw, "Diet Tracker", "Log meals, rate food, tag cuisine, track fullness", theme=theme)
 
-    paste_real_popup(img, 70, 200, "eat", lang, scale=0.8)
+    paste_real_popup(img, 56, 200, "eat", lang, scale=0.8)
 
     if lang == "zh":
         cards = [
@@ -339,9 +379,9 @@ def screenshot_2(lang="zh", theme="eat"):
         ]
     for i, (emoji, title, desc) in enumerate(cards):
         row, col = i // 2, i % 2
-        fx = 524 + col * 380
+        fx = 360 + col * 444
         fy = 226 + row * 130
-        feature_card(draw, fx, fy, 350, 110, emoji, title, desc, theme, lang=lang)
+        feature_card(draw, fx, fy, 420, 110, emoji, title, desc, theme, lang=lang)
 
     img.save(OUT / lang / "screenshot-02-diet.png")
 
@@ -354,8 +394,8 @@ def screenshot_3(lang="zh", theme="poop"):
     else:
         hero_title(draw, "Bowel & Bladder", "Bristol scale, urine color, health insights", theme=theme)
 
-    paste_real_popup(img, 50, 200, "poop", lang, scale=0.78)
-    paste_real_popup(img, 320, 200, "pee", lang, scale=0.78)
+    paste_real_popup(img, 56, 200, "poop", lang, scale=0.78)
+    paste_real_popup(img, 326, 200, "pee", lang, scale=0.78)
 
     if lang == "zh":
         cards = [
@@ -372,7 +412,7 @@ def screenshot_3(lang="zh", theme="poop"):
             ("📊", "Health Stats", "Stats and intervals"),
         ]
     for i, (emoji, title, desc) in enumerate(cards):
-        fx = 706 + (i % 2) * 284
+        fx = 670 + (i % 2) * 284
         fy = 220 + (i // 2) * 140
         feature_card(draw, fx, fy, 270, 120, emoji, title, desc, theme, lang=lang)
 
@@ -387,7 +427,7 @@ def screenshot_4(lang="zh", theme="period"):
     else:
         hero_title(draw, "Period Tracker", "Calendar view, mood, symptoms, cycle analysis", theme=theme)
 
-    paste_real_popup(img, 70, 200, "period", lang, scale=0.8)
+    paste_real_popup(img, 56, 200, "period", lang, scale=0.8)
 
     if lang == "zh":
         cards = [
@@ -405,9 +445,9 @@ def screenshot_4(lang="zh", theme="period"):
         ]
     for i, (emoji, title, desc) in enumerate(cards):
         row, col = i // 2, i % 2
-        fx = 524 + col * 380
+        fx = 360 + col * 444
         fy = 226 + row * 130
-        feature_card(draw, fx, fy, 350, 110, emoji, title, desc, theme, lang=lang)
+        feature_card(draw, fx, fy, 420, 110, emoji, title, desc, theme, lang=lang)
 
     img.save(OUT / lang / "screenshot-04-period.png")
 
@@ -420,7 +460,7 @@ def screenshot_5(lang="zh", theme="default"):
     else:
         hero_title(draw, "Personalize & Privacy", "Themes, bilingual, Enter shortcut, local-only data", theme=theme)
 
-    paste_real_popup(img, 70, 200, "settings", lang, scale=0.8)
+    paste_real_popup(img, 56, 200, "settings", lang, scale=0.8)
 
     if lang == "zh":
         cards = [
@@ -438,9 +478,9 @@ def screenshot_5(lang="zh", theme="default"):
         ]
     for i, (emoji, title, desc) in enumerate(cards):
         row, col = i // 2, i % 2
-        fx = 524 + col * 380
+        fx = 360 + col * 444
         fy = 226 + row * 130
-        feature_card(draw, fx, fy, 350, 110, emoji, title, desc, theme, lang=lang)
+        feature_card(draw, fx, fy, 420, 110, emoji, title, desc, theme, lang=lang)
 
     img.save(OUT / lang / "screenshot-05-personalize.png")
 
@@ -481,13 +521,21 @@ def marquee_1400x560():
     paste_real_popup(img, 70, 70, "drink", "zh", scale=0.66)
 
     # bilingual title block on the right
-    text(draw, (520, 90), "Daily Tracker", f=font(54, bold=True), fill=t["text"])
-    text(draw, (520, 152), "每日记录", f=font(28, bold=True), fill=t["muted"])
+    title_y = 80
+    title_size = 54
+    text(draw, (520, title_y), "Daily Tracker", f=font(title_size, bold=True), fill=t["text"])
+
+    sub_y = title_y + title_size + 16
+    sub_size = 28
+    text(draw, (520, sub_y), "每日记录", f=font(sub_size, bold=True), fill=t["muted"])
 
     subtitle_en = "Simple daily health tracking: water, diet, bowel, bladder, period"
     subtitle_zh = "简单记录每日健康：喝水、饮食、排便、排尿、经期"
-    text(draw, (520, 200), subtitle_en, f=font(20), fill=t["muted"])
-    text(draw, (520, 230), subtitle_zh, f=font(18), fill=t["muted"])
+    line1_y = sub_y + sub_size + 28
+    text(draw, (520, line1_y), subtitle_en, f=font(20), fill=t["muted"])
+
+    line2_y = line1_y + 20 + 20
+    text(draw, (520, line2_y), subtitle_zh, f=font(18), fill=t["muted"])
 
     # 2x2 bilingual feature cards
     cards = [
@@ -499,7 +547,7 @@ def marquee_1400x560():
     for i, (emoji, title, desc) in enumerate(cards):
         row, col = i // 2, i % 2
         fx = 520 + col * 430
-        fy = 280 + row * 130
+        fy = 290 + row * 130
         feature_card(draw, fx, fy, 410, 110, emoji, title, desc, theme, lang="zh")
 
     img.save(PROMO_OUT / "marquee-1400x560.png")
