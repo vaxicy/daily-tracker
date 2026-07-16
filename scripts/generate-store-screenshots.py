@@ -219,15 +219,19 @@ def card_bg(draw, x, y, w, h, theme, radius=14, border=True, shadow=True):
         )
 
 
-def paste_real_popup(img, x, y, page, lang, scale=0.8, radius=20):
+def paste_real_popup(img, x, y, page, lang, scale=0.8, radius=20, crop_h=None):
     """Paste a REAL captured popup screenshot (scripts/captured/popup-{page}-{lang}.png)
-    onto the canvas at (x, y), scaled, with a soft shadow and rounded corners."""
+    onto the canvas at (x, y), scaled, with a soft shadow and rounded corners.
+    crop_h: if set, only the top crop_h pixels of the source are used (keeps small
+    promo tiles readable by showing the key header/countdown region at larger scale)."""
     src = CAPTURED / f"popup-{page}-{lang}.png"
     if not src.exists():
         raise FileNotFoundError(f"Missing captured popup: {src}")
     popup = Image.open(src).convert("RGB")
-    w = round(REAL_W * scale)
-    h = round(REAL_H * scale)
+    if crop_h:
+        popup = popup.crop((0, 0, REAL_W, min(crop_h, REAL_H)))
+    w = round(popup.width * scale)
+    h = round(popup.height * scale)
     popup = popup.resize((w, h), Image.LANCZOS)
 
     # soft drop shadow on a transparent overlay, composited onto the RGB canvas
@@ -451,15 +455,17 @@ def promo_tile_440x280():
     cx, cy, cw, ch = 24, 24, 392, 232
     card_bg(draw, cx, cy, cw, ch, theme, radius=20, border=True, shadow=True)
 
-    # real popup (drink / zh) scaled to fit the card height on the left
-    paste_real_popup(img, cx + 18, cy + 18, "drink", "zh", scale=196 / REAL_H, radius=14)
+    # real popup (drink / zh) cropped to its top section and scaled up so the
+    # key header + countdown region stays readable inside this small tile
+    pop_scale = 196 / 420
+    paste_real_popup(img, cx + 16, cy + 18, "drink", "zh", scale=pop_scale, radius=14, crop_h=420)
 
     # bilingual title block on the right
-    tx = cx + 18 + 90 + 18
-    text(draw, (tx, cy + 58), "Daily Tracker", f=font(24, bold=True), fill=t["text"])
-    text(draw, (tx, cy + 90), "每日记录", f=font(16, bold=True), fill=t["muted"])
-    text(draw, (tx, cy + 122), "喝水·饮食·排便·排尿·经期", f=font(12), fill=t["text"])
-    text(draw, (tx, cy + 144), "Water·Diet·Bowel·Bladder·Period", f=font(10), fill=t["muted"])
+    tx = cx + 16 + round(320 * pop_scale) + 16
+    text(draw, (tx, cy + 56), "Daily Tracker", f=font(24, bold=True), fill=t["text"])
+    text(draw, (tx, cy + 88), "每日记录", f=font(16, bold=True), fill=t["muted"])
+    text(draw, (tx, cy + 120), "喝水·饮食·排便·排尿·经期", f=font(12), fill=t["text"])
+    text(draw, (tx, cy + 142), "Water·Diet·Bowel·Bladder·Period", f=font(10), fill=t["muted"])
 
     img.save(PROMO_OUT / "promo-tile-440x280.png")
 
