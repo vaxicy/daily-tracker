@@ -3233,6 +3233,12 @@
         border-color: var(--secondary);
         background: rgba(139,92,246,0.10);
       }
+      .bristol-btn.active {
+        border-color: var(--secondary);
+        background: var(--secondary);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(139,92,246,0.3);
+      }
       /* 编辑弹窗 Bristol 按钮按类型着色 - 与主界面保持一致 */
       .bristol-btn[data-type="1"] { border-color: #fca5a5; background: #fef2f2; color: #dc2626; }
       .bristol-btn[data-type="2"] { border-color: #fdba74; background: #fff7ed; color: #ea580c; }
@@ -3331,18 +3337,22 @@
         border: none;
         background: rgba(255,255,255,0.85);
         color: var(--muted);
-        font-size: 16px;
+        font-size: 15px;
+        line-height: 1;
+        padding: 0;
+        margin: 0;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
+        transform: translateY(1px);
         box-shadow: 0 2px 8px rgba(12,42,77,0.12);
         transition: all 0.25s;
       }
       .sidebar-toggle-btn:hover {
         background: #fff;
         color: var(--text);
-        transform: rotate(30deg);
+        transform: rotate(30deg) translateY(1px);
       }
       .sidebar-overlay {
         display: none;
@@ -4067,12 +4077,12 @@
         width: 8px;
         height: 100%;
         z-index: 100000;
-        display: none;
+        display: none !important;
         pointer-events: none;
         background: transparent;
         border-radius: 0;
       }
-      #customScrollbar.visible { display: block; pointer-events: auto; }
+      #customScrollbar.visible { display: none !important; pointer-events: none; }
       .custom-scrollbar-thumb {
         position: absolute;
         top: 0;

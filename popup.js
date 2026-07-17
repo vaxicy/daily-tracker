@@ -2303,6 +2303,10 @@ function showPoopEditModal(dateStr, dayRecords) {
         <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopColorLabel')}</span>
         ${(t("poopColors") || []).map((label, i) => `<button class="poop-color-btn-sm" data-color="${i+1}" id="poopAddColor${i+1}" title="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid rgba(0,0,0,0.15);"></button>`).join("")}
       </div>
+      <div class="bristol-selector-add" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('bristolTypeLabel')}</span>
+        ${(t("bristolTypes") || []).map((label, i) => `<button class="bristol-btn bristol-btn-add" data-add-type="${i+1}" title="${label}(${(t("bristolDescs") || [])[i] || ''})">${i+1}</button>`).join("")}
+      </div>
       <button class="edit-save-btn" id="poopAddBtn" style="background: var(--secondary);margin-top:10px;">${t('makeUpCheckinBtn')}</button>
     `;
     
@@ -2330,6 +2334,16 @@ function showPoopEditModal(dateStr, dayRecords) {
         const color = parseInt(btn.dataset.color);
         const isActive = btn.classList.contains('active');
         editModalBody.querySelectorAll('.poop-color-selector .poop-color-btn-sm').forEach(b => b.classList.remove('active'));
+        if (!isActive) btn.classList.add('active');
+      });
+    });
+
+    // 补打卡表单 Bristol 按钮事件
+    editModalBody.querySelectorAll('.bristol-selector-add .bristol-btn-add').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = parseInt(btn.dataset.addType);
+        const isActive = btn.classList.contains('active');
+        editModalBody.querySelectorAll('.bristol-selector-add .bristol-btn-add').forEach(b => b.classList.remove('active'));
         if (!isActive) btn.classList.add('active');
       });
     });
@@ -2361,6 +2375,11 @@ function showPoopEditModal(dateStr, dayRecords) {
       document.querySelectorAll('[id^="poopAddColor"]').forEach(btn => {
         if (btn.classList.contains('active')) addColor = parseInt(btn.dataset.color);
       });
+      // 读取补打卡表单中的 Bristol 类型
+      let addBristol = 0;
+      editModalBody.querySelectorAll('.bristol-selector-add .bristol-btn-add').forEach(btn => {
+        if (btn.classList.contains('active')) addBristol = parseInt(btn.dataset.addType);
+      });
 
       chrome.storage.local.get(["poopRecords"], (data) => {
         const records = data.poopRecords || {};
@@ -2368,6 +2387,7 @@ function showPoopEditModal(dateStr, dayRecords) {
         const newRec = { time: recordTime, remark, timestamp: Date.now(), isBackfill: !isToday };
         if (addAmount > 0) newRec.amount = addAmount;
         if (addColor > 0) newRec.color = addColor;
+        if (addBristol > 0) newRec.bristolType = addBristol;
         records[dateStr].push(newRec);
         chrome.storage.local.set({ poopRecords: records }, () => {
           showToast(isToday ? "💩 " + t('checkinSuccess') : "💩 " + t('makeUpCheckinSuccess'));
@@ -2426,6 +2446,7 @@ function showPoopEditModal(dateStr, dayRecords) {
         <div style="margin-bottom:3px;">💩 ${t('poopAmountLabel')}: ${rec.amount ? poopAmounts[rec.amount - 1] || '' : t('noRemark')}</div>
         <div>🟤 ${t('poopColorLabel')}: <span class="poop-color-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${rec.color ? POOP_COLOR_MAP[rec.color - 1] || '#eee' : 'rgba(0,0,0,0.08)'};vertical-align:middle;"></span> ${rec.color ? poopColors[rec.color - 1] || '' : t('poopColorNotSelected')}</div>
       </div>
+      <div style="font-size:10px;color:var(--muted);white-space:nowrap;margin-top:4px;">${t('bristolTypeLabel')}</div>
       <div class="bristol-selector" data-record-idx="${idx}" style="margin-top:4px;">${bristolBtns}</div>
       <div class="poop-amount-selector" data-record-idx="${idx}" style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopAmountLabel')}</span>
