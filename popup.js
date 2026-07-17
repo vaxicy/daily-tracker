@@ -2269,13 +2269,20 @@ function renderPoopCalendar() {
 
 function showPoopEditModal(dateStr, dayRecords) {
   const isToday = dateStr === getToday();
+  const isFuture = dateStr > getToday();
   showEditModal("💩 " + formatDateDisplay(dateStr) + " " + t("poopEditTitleSuffix"), dateStr, "poop");
-  
+
   // 如果没有记录，显示添加表单（补打卡）
   if (!dayRecords || dayRecords.length === 0) {
+    // 未来日期不能补打卡
+    if (isFuture) {
+      editModalBody.innerHTML = `<div class="edit-empty" style="text-align:center;padding:24px 0;">${t('futureDateNotAllowed')}</div>`;
+      return;
+    }
+
     const now = new Date();
     const defaultTimeStr = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
-    
+
     editModalBody.innerHTML = `
       <div class="edit-empty" style="margin-bottom: 12px;">${t('noPoopRecord')}</div>
       <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
@@ -2292,8 +2299,9 @@ function showPoopEditModal(dateStr, dayRecords) {
           <input type="radio" name="poopTimeMode" value="custom" /> ${t('customTime')}
         </label>
       </div>
-      <div class="edit-input-row">
-        <input class="edit-input" type="text" id="poopAddRemark" placeholder="${t('remarkPlaceholder')}" />
+      <div class="bristol-selector-add" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('bristolTypeLabel')}</span>
+        ${(t("bristolTypes") || []).map((label, i) => `<button class="bristol-btn bristol-btn-add" data-add-type="${i+1}" title="${label}(${(t("bristolDescs") || [])[i] || ''})">${i+1}</button>`).join("")}
       </div>
       <div class="poop-amount-selector" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopAmountLabel')}</span>
@@ -2303,9 +2311,8 @@ function showPoopEditModal(dateStr, dayRecords) {
         <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopColorLabel')}</span>
         ${(t("poopColors") || []).map((label, i) => `<button class="poop-color-btn-sm" data-color="${i+1}" id="poopAddColor${i+1}" title="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid rgba(0,0,0,0.15);"></button>`).join("")}
       </div>
-      <div class="bristol-selector-add" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('bristolTypeLabel')}</span>
-        ${(t("bristolTypes") || []).map((label, i) => `<button class="bristol-btn bristol-btn-add" data-add-type="${i+1}" title="${label}(${(t("bristolDescs") || [])[i] || ''})">${i+1}</button>`).join("")}
+      <div class="edit-input-row" style="margin-top:8px;">
+        <input class="edit-input" type="text" id="poopAddRemark" placeholder="${t('remarkPlaceholder')}" />
       </div>
       <button class="edit-save-btn" id="poopAddBtn" style="background: var(--secondary);margin-top:10px;">${t('makeUpCheckinBtn')}</button>
     `;
@@ -2452,7 +2459,8 @@ function showPoopEditModal(dateStr, dayRecords) {
         <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopAmountLabel')}</span>
         ${amountBtns}
       </div>
-      <div class="poop-color-picker" data-idx="${idx}" style="margin-top:6px;">
+      <div class="poop-color-label" style="font-size:10px;color:var(--muted);white-space:nowrap;margin-top:6px;">${t('poopColorLabel')}</div>
+      <div class="poop-color-picker expanded" data-idx="${idx}" style="margin-top:4px;">
         ${poopColors.map((label, i) => `<button class="poop-color-btn-sm ${rec.color === (i+1) ? 'active' : ''}" data-idx="${idx}" data-color="${i+1}" title="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid ${rec.color === (i+1) ? 'var(--poop)' : 'rgba(0,0,0,0.15)'};"></button>`).join("")}
       </div>
       <div class="edit-input-row" id="poopEditFormTime${idx}" style="display:none;align-items:center;margin-top:8px;">
