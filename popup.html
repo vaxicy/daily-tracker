@@ -2626,6 +2626,25 @@
       .day-cell.period-day-3 { background: rgba(236,72,153,0.5); }
       .day-cell.period-day-4 { background: rgba(236,72,153,0.7); color: #fff; }
 
+      /* 预测经期：虚线半透明高亮 */
+      .day-cell.period-predicted {
+        background: repeating-linear-gradient(45deg, rgba(236,72,153,0.10), rgba(236,72,153,0.10) 5px, rgba(236,72,153,0.18) 5px, rgba(236,72,153,0.18) 10px);
+        border: 1px dashed rgba(236,72,153,0.5);
+        border-radius: 8px;
+      }
+      .period-predict-banner {
+        margin: 10px 0 4px;
+        padding: 8px 12px;
+        border-radius: 10px;
+        background: rgba(236,72,153,0.10);
+        border: 1px dashed rgba(236,72,153,0.4);
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 600;
+        text-align: center;
+      }
+
+
       .day-cell {
         position: relative;
         cursor: default;
@@ -3537,6 +3556,53 @@
         border-color: var(--primary);
       }
 
+      /* CSV 模块选择浮层 */
+      .csv-chooser {
+        position: relative;
+        margin-top: 8px;
+        padding: 10px;
+        border-radius: 10px;
+        background: rgba(11,107,255,0.06);
+        border: 1px solid rgba(11,107,255,0.2);
+      }
+      .csv-chooser-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .csv-chooser-btns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .csv-mod-btn {
+        flex: 1 1 calc(33% - 6px);
+        padding: 7px 0;
+        border-radius: 8px;
+        border: 1px solid rgba(11,107,255,0.25);
+        background: #fff;
+        color: var(--primary);
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .csv-mod-btn:hover { background: rgba(11,107,255,0.12); }
+      .csv-chooser-close {
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        font-size: 13px;
+        cursor: pointer;
+      }
+
+
+
+
+
       /* 捐赠卡片 */
       .donate-section {
         margin-top: 8px;
@@ -3906,6 +3972,8 @@
         box-shadow: 0 4px 12px rgba(244,114,182,0.15);
       }
       [data-theme="dark"] .day-cell.period-day-1 { background: rgba(244,114,182,0.15); }
+      [data-theme="dark"] .day-cell.period-predicted { background: repeating-linear-gradient(45deg, rgba(244,114,182,0.12), rgba(244,114,182,0.12) 5px, rgba(244,114,182,0.22) 5px, rgba(244,114,182,0.22) 10px); border-color: rgba(244,114,182,0.6); }
+      [data-theme="dark"] .period-predict-banner { background: rgba(244,114,182,0.14); border-color: rgba(244,114,182,0.5); }
       [data-theme="dark"] .day-cell.period-day-2 { background: rgba(244,114,182,0.3); }
       [data-theme="dark"] .day-cell.period-day-3 { background: rgba(244,114,182,0.55); }
       [data-theme="dark"] .day-cell.period-day-4 { background: rgba(244,114,182,0.8); color: #fff; }
@@ -4512,6 +4580,8 @@
         box-shadow: 0 0 0 2px rgba(5,150,105,0.08);
       }
       [data-theme="forest"] .day-cell.period-day-1 { background: rgba(5,150,105,0.1); }
+      [data-theme="forest"] .day-cell.period-predicted { background: repeating-linear-gradient(45deg, rgba(5,150,105,0.12), rgba(5,150,105,0.12) 5px, rgba(5,150,105,0.22) 5px, rgba(5,150,105,0.22) 10px); border-color: rgba(5,150,105,0.6); }
+      [data-theme="forest"] .period-predict-banner { background: rgba(5,150,105,0.12); border-color: rgba(5,150,105,0.5); }
       [data-theme="forest"] .day-cell.period-day-2 { background: rgba(5,150,105,0.25); }
       [data-theme="forest"] .day-cell.period-day-3 { background: rgba(5,150,105,0.5); }
       [data-theme="forest"] .day-cell.period-day-4 { background: rgba(5,150,105,0.7); color: #fff; }
@@ -5166,6 +5236,9 @@
         </div>
       </div>
 
+      <!-- 预测下次经期横幅 -->
+      <div class="period-predict-banner" id="periodPredictBanner" style="display:none;"></div>
+
       <!-- 经期状态卡片（始终可见，Toggle 融入顶部） -->
       <div class="period-card" id="periodMoodCard">
         <!-- 顶部状态栏：状态文字 + Toggle -->
@@ -5453,6 +5526,21 @@
           <button class="backup-btn" id="exportBtn" data-i18n="backupExport">📤 导出备份</button>
           <button class="backup-btn" id="importBtn" data-i18n="backupImport">📥 导入备份</button>
           <input type="file" id="importFile" accept=".json" style="display:none;" />
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="backup-btn" id="exportCsvBtn" data-i18n="exportCsv">📊 导出 CSV</button>
+        </div>
+        <!-- CSV 模块选择浮层 -->
+        <div class="csv-chooser" id="csvChooser" style="display:none;">
+          <div class="csv-chooser-title" data-i18n="csvTitle">选择导出模块</div>
+          <div class="csv-chooser-btns">
+            <button class="csv-mod-btn" data-mod="eat" data-i18n="csvEat">饮食</button>
+            <button class="csv-mod-btn" data-mod="drink" data-i18n="csvDrink">饮水</button>
+            <button class="csv-mod-btn" data-mod="poop" data-i18n="csvPoop">排便</button>
+            <button class="csv-mod-btn" data-mod="pee" data-i18n="csvPee">排尿</button>
+            <button class="csv-mod-btn" data-mod="period" data-i18n="csvPeriod">经期</button>
+          </div>
+          <button class="csv-chooser-close" id="csvChooserClose">✕</button>
         </div>
       </div>
 

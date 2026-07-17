@@ -67,7 +67,7 @@ function migrateFullnessData() {
       
       // 如果有需要迁移的数据，保存回 storage
       if (needsMigration) {
-        chrome.storage.local.set({ mealRecords: records }, () => {
+        persistRecords('mealRecords', records, () => {
           console.log("Fullness data migrated successfully");
           resolve();
         });
@@ -904,7 +904,7 @@ addMealBtn.addEventListener("click", () => {
       timestamp: Date.now()
     });
 
-    chrome.storage.local.set({ mealRecords: records }, () => {
+    persistRecords('mealRecords', records, () => {
       mealInput.value = "";
       currentMealRating = 0;
       if (mealRating) {
@@ -1151,7 +1151,7 @@ function showEatEditModal(dateStr, dayRecords) {
           timestamp: Date.now(),
           isBackfill: !isToday
         });
-        chrome.storage.local.set({ mealRecords: records }, () => {
+        persistRecords('mealRecords', records, () => {
           showToast(isToday ? t('toastMealAdded') : "🍽️ " + t('makeUpCheckinSuccess'));
           renderEatCalendar();
           updateMealRecords();
@@ -1298,7 +1298,7 @@ function showEatEditModal(dateStr, dayRecords) {
       const records = data.mealRecords || {};
       if (!records[dateStr]) records[dateStr] = [];
       records[dateStr].push({ content, time: recordTime, type, remark, timestamp: Date.now(), isBackfill: !isToday });
-      chrome.storage.local.set({ mealRecords: records }, () => {
+      persistRecords('mealRecords', records, () => {
         showToast(isToday ? t('toastMealAdded') : "🍽️ " + t('makeUpCheckinSuccess'));
         document.getElementById("eatAppendContent").value = "";
         document.getElementById("eatAppendRemark").value = "";
@@ -1345,7 +1345,7 @@ function saveEatRecord(idx) {
       records[currentEditDate][idx].remark = newRemark || undefined;
       records[currentEditDate][idx].rating = newRating || undefined;
       records[currentEditDate][idx].fullness = newFullness || undefined;
-      chrome.storage.local.set({ mealRecords: records }, () => {
+      persistRecords('mealRecords', records, () => {
         showToast(t("toastEditSuccess"));
         renderEatCalendar();
         updateMealRecords();
@@ -2396,7 +2396,7 @@ function showPoopEditModal(dateStr, dayRecords) {
         if (addColor > 0) newRec.color = addColor;
         if (addBristol > 0) newRec.bristolType = addBristol;
         records[dateStr].push(newRec);
-        chrome.storage.local.set({ poopRecords: records }, () => {
+        persistRecords('poopRecords', records, () => {
           showToast(isToday ? "💩 " + t('checkinSuccess') : "💩 " + t('makeUpCheckinSuccess'));
           renderPoopCalendar();
           updatePoopTodayStatus();
@@ -2486,7 +2486,7 @@ function showPoopEditModal(dateStr, dayRecords) {
           // 切换：再次点击同一类型则取消
           const cur = records[currentEditDate][idx].bristolType;
           records[currentEditDate][idx].bristolType = (cur === type) ? null : type;
-          chrome.storage.local.set({ poopRecords: records }, () => {
+          persistRecords('poopRecords', records, () => {
             // 刷新弹窗
             chrome.storage.local.get(["poopRecords"], (d) => {
               if (d.poopRecords && d.poopRecords[currentEditDate]) {
@@ -2509,7 +2509,7 @@ function showPoopEditModal(dateStr, dayRecords) {
         if (records[currentEditDate] && records[currentEditDate][idx]) {
           const cur = records[currentEditDate][idx].amount;
           records[currentEditDate][idx].amount = (cur === amount) ? null : amount;
-          chrome.storage.local.set({ poopRecords: records }, () => {
+          persistRecords('poopRecords', records, () => {
             chrome.storage.local.get(["poopRecords"], (d) => {
               if (d.poopRecords && d.poopRecords[currentEditDate]) {
                 showPoopEditModal(currentEditDate, d.poopRecords[currentEditDate]);
@@ -2545,7 +2545,7 @@ function showPoopEditModal(dateStr, dayRecords) {
         if (records[currentEditDate] && records[currentEditDate][idx]) {
           const cur = records[currentEditDate][idx].color;
           records[currentEditDate][idx].color = (cur === color) ? null : color;
-          chrome.storage.local.set({ poopRecords: records }, () => {
+          persistRecords('poopRecords', records, () => {
             chrome.storage.local.get(["poopRecords"], (d) => {
               if (d.poopRecords && d.poopRecords[currentEditDate]) {
                 showPoopEditModal(currentEditDate, d.poopRecords[currentEditDate]);
@@ -2570,7 +2570,7 @@ function savePoopRecord(idx) {
     const records = data.poopRecords || {};
     if (records[currentEditDate] && records[currentEditDate][idx]) {
       records[currentEditDate][idx].remark = newRemark;
-      chrome.storage.local.set({ poopRecords: records }, () => {
+      persistRecords('poopRecords', records, () => {
         showToast(t("toastEditSuccess"));
         renderPoopCalendar();
         updatePoopTodayStatus();
@@ -2749,7 +2749,7 @@ poopCheckinBtn.addEventListener("click", () => {
       record.color = selectedPoopColor;
     }
     records[today].push(record);
-    chrome.storage.local.set({ poopRecords: records }, () => {
+    persistRecords('poopRecords', records, () => {
       poopRemarkInput.value = "";
       clearBristolSelection();
       clearPoopAmount();
@@ -3099,7 +3099,7 @@ function showPeeEditModal(dateStr, dayRecords) {
         const records = data.peeRecords || {};
         if (!records[dateStr]) records[dateStr] = [];
         records[dateStr].push({ time: recordTime, remark, amount: selectedPeeAmount, color: addFormColor, timestamp: Date.now(), isBackfill: !isToday });
-        chrome.storage.local.set({ peeRecords: records }, () => {
+        persistRecords('peeRecords', records, () => {
           showToast(isToday ? "💧 " + t('checkinSuccess') : "💧 " + t('makeUpCheckinSuccess'));
           renderPeeCalendar();
           updatePeeTodayStatus();
@@ -3182,7 +3182,7 @@ function showPeeEditModal(dateStr, dayRecords) {
         if (records[currentEditDate] && records[currentEditDate][idx]) {
           const cur = records[currentEditDate][idx].amount;
           records[currentEditDate][idx].amount = (cur === amount) ? null : amount;
-          chrome.storage.local.set({ peeRecords: records }, () => {
+          persistRecords('peeRecords', records, () => {
             chrome.storage.local.get(["peeRecords"], (d) => {
               if (d.peeRecords && d.peeRecords[currentEditDate]) {
                 showPeeEditModal(currentEditDate, d.peeRecords[currentEditDate]);
@@ -3204,7 +3204,7 @@ function showPeeEditModal(dateStr, dayRecords) {
         if (records[currentEditDate] && records[currentEditDate][idx]) {
           const cur = records[currentEditDate][idx].color;
           records[currentEditDate][idx].color = (cur === color) ? null : color;
-          chrome.storage.local.set({ peeRecords: records }, () => {
+          persistRecords('peeRecords', records, () => {
             chrome.storage.local.get(["peeRecords"], (d) => {
               if (d.peeRecords && d.peeRecords[currentEditDate]) {
                 showPeeEditModal(currentEditDate, d.peeRecords[currentEditDate]);
@@ -3229,7 +3229,7 @@ function savePeeRecord(idx) {
     const records = data.peeRecords || {};
     if (records[currentEditDate] && records[currentEditDate][idx]) {
       records[currentEditDate][idx].remark = newRemark;
-      chrome.storage.local.set({ peeRecords: records }, () => {
+      persistRecords('peeRecords', records, () => {
         showToast(t("toastEditSuccess"));
         renderPeeCalendar();
         updatePeeTodayStatus();
@@ -3421,7 +3421,7 @@ peeCheckinBtn.addEventListener("click", () => {
     const records = data.peeRecords || {};
     if (!records[today]) records[today] = [];
     records[today].push({ time, remark, amount: selectedPeeAmount, color: selectedPeeColor, timestamp: Date.now() });
-    chrome.storage.local.set({ peeRecords: records }, () => {
+    persistRecords('peeRecords', records, () => {
       peeRemarkInput.value = "";
       renderPeeCalendar();
       updatePeeTodayStatus();
@@ -3740,7 +3740,7 @@ editModalBody.addEventListener("click", (e) => {
         records[currentEditDate][idx].fullness = newFullness;
         records[currentEditDate][idx].tags = newTags && newTags.length > 0 ? newTags : undefined;
         if (newTime) records[currentEditDate][idx].time = newTime;
-        chrome.storage.local.set({ mealRecords: records }, () => {
+        persistRecords('mealRecords', records, () => {
           showToast(t("toastEditSuccess"));
           renderEatCalendar();
           updateMealRecords();
@@ -3775,7 +3775,7 @@ editModalBody.addEventListener("click", (e) => {
       if (records[currentEditDate] && records[currentEditDate][idx]) {
         if (newTime) records[currentEditDate][idx].time = newTime;
         records[currentEditDate][idx].remark = newRemark;
-        chrome.storage.local.set({ poopRecords: records }, () => {
+        persistRecords('poopRecords', records, () => {
           showToast(t("toastEditSuccess"));
           renderPoopCalendar();
           updatePoopTodayStatus();
@@ -3811,7 +3811,7 @@ editModalBody.addEventListener("click", (e) => {
       if (records[currentEditDate] && records[currentEditDate][idx]) {
         if (newTime) records[currentEditDate][idx].time = newTime;
         records[currentEditDate][idx].remark = newRemark;
-        chrome.storage.local.set({ peeRecords: records }, () => {
+        persistRecords('peeRecords', records, () => {
           showToast(t("toastEditSuccess"));
           renderPeeCalendar();
           updatePeeTodayStatus();
@@ -4343,7 +4343,7 @@ document.getElementById("navPeriod").addEventListener("click", () => switchTab("
 // 从存储读取默认首页，若无则默认喝水
 chrome.storage.local.get(["defaultTab"], (data) => {
   const defaultTab = data.defaultTab || "drink";
-  switchTab(defaultTab);
+  restoreAllBackups(() => switchTab(defaultTab));
 });
 
 initDrinkTimer();
@@ -4710,7 +4710,7 @@ function loadPeriodCycles(callback) {
         if (!c.days) c.days = {};
       });
       // 保存迁移后的数据
-      chrome.storage.local.set({ periodCycles });
+      persistRecords('periodCycles', periodCycles);
       if (callback) callback();
     } else if (data.periodRecords) {
       migratePeriodData(data.periodRecords, (cycles) => {
@@ -4719,7 +4719,7 @@ function loadPeriodCycles(callback) {
         periodCycles.forEach(c => {
           if (!c.days) c.days = {};
         });
-        chrome.storage.local.set({ periodCycles }, () => {
+        persistRecords('periodCycles', periodCycles, () => {
           chrome.storage.local.remove(["periodRecords"]);
           if (callback) callback();
         });
@@ -4733,7 +4733,7 @@ function loadPeriodCycles(callback) {
 
 // 保存经期周期数据
 function savePeriodCycles() {
-  chrome.storage.local.set({ periodCycles }, () => {
+  persistRecords('periodCycles', periodCycles, () => {
     renderPeriodCalendar();
     updatePeriodStats();
     renderPeriodBarChart();
@@ -4792,6 +4792,37 @@ function renderPeriodCalendar() {
   const daysInMonth = lastDay.getDate();
   const today = getToday();
 
+  // 预测下次经期：基于历史周期长度均值推算
+  let predictedStart = null, predictedEnd = null;
+  if (periodCycles.length >= 2 && !getActivePeriod()) {
+    const sorted = [...periodCycles].sort((a, b) => a.startDate.localeCompare(b.startDate));
+    const gaps = [];
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = new Date(sorted[i - 1].startDate + "T00:00:00");
+      const curr = new Date(sorted[i].startDate + "T00:00:00");
+      const len = Math.round((curr - prev) / 86400000);
+      if (len > 20 && len < 45) gaps.push(len);
+    }
+    if (gaps.length > 0) {
+      const avgCycle = Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length);
+      const completed = periodCycles.filter(c => c.endDate);
+      let avgDur = 5;
+      if (completed.length) {
+        const durs = completed.map(c =>
+          Math.round((new Date(c.endDate + "T00:00:00") - new Date(c.startDate + "T00:00:00")) / 86400000) + 1
+        );
+        avgDur = Math.round(durs.reduce((a, b) => a + b, 0) / durs.length);
+      }
+      const lastStart = sorted[sorted.length - 1].startDate;
+      const ps = new Date(lastStart + "T00:00:00");
+      ps.setDate(ps.getDate() + avgCycle);
+      const pe = new Date(ps);
+      pe.setDate(pe.getDate() + avgDur - 1);
+      predictedStart = formatDateStr(ps);
+      predictedEnd = formatDateStr(pe);
+    }
+  }
+
   // 前置空白填充
   for (let i = 0; i < startDay; i++) {
     const emptyCell = document.createElement("div");
@@ -4838,6 +4869,11 @@ function renderPeriodCalendar() {
         }
         break;
       }
+    }
+
+    // 预测经期高亮（非实际经期、且在预测区间内）
+    if (!inCycle && predictedStart && predictedEnd && dateStr >= predictedStart && dateStr <= predictedEnd) {
+      day.classList.add("period-predicted");
     }
 
     // 经期日期：悬浮显示 tooltip，点击进入编辑
@@ -4955,6 +4991,20 @@ function renderPeriodCalendar() {
       y: periodCalendarYear,
       m: periodCalendarMonth + 1
     });
+  }
+
+  // 预测经期横幅
+  const banner = document.getElementById("periodPredictBanner");
+  if (banner) {
+    if (predictedStart && predictedEnd) {
+      banner.style.display = "block";
+      banner.textContent = t("periodPredicted") + "：" + t("periodPredictRange", {
+        start: predictedStart.slice(5),
+        end: predictedEnd.slice(5)
+      });
+    } else {
+      banner.style.display = "none";
+    }
   }
 
   // 如果没有选中任何经期日期，默认选中今天或最近经期日期
@@ -5850,6 +5900,39 @@ function initPeriodTracker() {
 
 initPeriodTracker();
 
+// ============ 数据可靠性：主数据 + 备份自愈 ============
+// 写入主数据的同时写一份备份；主数据缺失时从备份恢复。
+function persistRecords(key, data, cb) {
+  chrome.storage.local.set({ [key]: data }, () => {
+    if (chrome.runtime.lastError) {
+      console.error("[persist] 保存失败", key, chrome.runtime.lastError.message);
+    } else {
+      const bk = key + "Backup";
+      chrome.storage.local.set({ [bk]: data });
+    }
+    if (typeof cb === "function") cb();
+  });
+}
+
+// 启动时若主数据完全缺失（键不存在）但有非空备份，则恢复。
+function restoreAllBackups(cb) {
+  const keys = ["mealRecords", "poopRecords", "peeRecords", "periodCycles"];
+  const allKeys = keys.concat(keys.map(k => k + "Backup"));
+  chrome.storage.local.get(allKeys, (data) => {
+    keys.forEach(k => {
+      if (!data.hasOwnProperty(k)) {
+        const bk = data[k + "Backup"];
+        if (bk && (Array.isArray(bk) ? bk.length : Object.keys(bk).length) > 0) {
+          chrome.storage.local.set({ [k]: bk }, () => {
+            console.warn("[backup] 已从备份恢复", k);
+          });
+        }
+      }
+    });
+    if (typeof cb === "function") cb();
+  });
+}
+
 // ============ 数据导出/导入备份 ============
 function exportBackup() {
   chrome.storage.local.get(null, (data) => {
@@ -5900,6 +5983,86 @@ if (importFile) importFile.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (file) importBackup(file);
   e.target.value = "";
+});
+
+// ==================== CSV 按模块导出 ====================
+function exportCsv(module) {
+  const keyMap = { eat: "mealRecords", drink: "drinkRecords", poop: "poopRecords", pee: "peeRecords", period: "periodCycles" };
+  const key = keyMap[module];
+  if (!key) return;
+  chrome.storage.local.get([key], (data) => {
+    const rec = data[key];
+    let headers = [], rows = [];
+    const esc = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+
+    if (module === "eat") {
+      const typeMap = currentLang === "en"
+        ? { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" }
+        : { breakfast: "早餐", lunch: "午餐", dinner: "晚餐", snack: "加餐" };
+      headers = ["日期", "时间", "餐型", "评分", "饱腹度", "标签", "备注"];
+      const records = rec || {};
+      for (const d in records) (records[d] || []).forEach((m) => {
+        rows.push([d, m.time || "", typeMap[m.type] || m.type || "", m.rating || "", m.fullness || "", (m.tags || []).join("/"), m.remark || ""]);
+      });
+    } else if (module === "drink") {
+      headers = ["日期", "时间"];
+      const records = rec || {};
+      for (const d in records) (records[d] || []).forEach((r) => rows.push([d, r.time || ""]));
+    } else if (module === "poop") {
+      const amounts = t("poopAmounts") || [], colors = t("poopColors") || [], bristol = t("bristolTypes") || [];
+      headers = ["日期", "时间", "Bristol类型", "排便量", "颜色", "备注", "是否补打卡"];
+      const records = rec || {};
+      for (const d in records) (records[d] || []).forEach((r) => {
+        rows.push([d, r.time || "", r.bristolType ? (bristol[r.bristolType - 1] || r.bristolType) : "", r.amount ? (amounts[r.amount - 1] || "") : "", r.color ? (colors[r.color - 1] || "") : "", r.remark || "", r.isBackfill ? "是" : ""]);
+      });
+    } else if (module === "pee") {
+      const amounts = t("peeAmounts") || [], colors = t("peeColors") || [];
+      headers = ["日期", "时间", "尿量", "颜色", "备注", "是否补打卡"];
+      const records = rec || {};
+      for (const d in records) (records[d] || []).forEach((r) => {
+        rows.push([d, r.time || "", r.amount ? (amounts[r.amount - 1] || "") : "", r.color ? (colors[r.color - 1] || "") : "", r.remark || "", r.isBackfill ? "是" : ""]);
+      });
+    } else if (module === "period") {
+      headers = ["开始日期", "结束日期", "持续天数", "周期长度"];
+      const cycles = rec || [];
+      cycles.forEach((c, i) => {
+        let dur = "", cyc = "";
+        if (c.endDate) {
+          const s = new Date(c.startDate + "T00:00:00"), e = new Date(c.endDate + "T00:00:00");
+          dur = Math.round((e - s) / 86400000) + 1;
+        }
+        if (i > 0 && cycles[i - 1].endDate) {
+          const len = Math.round((new Date(c.startDate + "T00:00:00") - new Date(cycles[i - 1].startDate + "T00:00:00")) / 86400000);
+          if (len > 20 && len < 45) cyc = len;
+        }
+        rows.push([c.startDate, c.endDate || "", dur, cyc]);
+      });
+    }
+
+    if (rows.length === 0) { showToast(t("csvNoData")); return; }
+    const csv = "﻿" + [headers.map(esc).join(","), ...rows.map((r) => r.map(esc).join(","))].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    const nameMap = { eat: "meal", drink: "drink", poop: "poop", pee: "pee", period: "period" };
+    a.download = `daily-tracker-${nameMap[module]}-${getToday()}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    showToast(t("csvExported"));
+  });
+}
+
+const exportCsvBtn = document.getElementById("exportCsvBtn");
+const csvChooser = document.getElementById("csvChooser");
+const csvChooserClose = document.getElementById("csvChooserClose");
+if (exportCsvBtn) exportCsvBtn.addEventListener("click", () => {
+  if (csvChooser) csvChooser.style.display = csvChooser.style.display === "none" ? "block" : "none";
+});
+if (csvChooserClose) csvChooserClose.addEventListener("click", () => { if (csvChooser) csvChooser.style.display = "none"; });
+if (csvChooser) csvChooser.querySelectorAll(".csv-mod-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    exportCsv(btn.dataset.mod);
+    if (csvChooser) csvChooser.style.display = "none";
+  });
 });
 
 // ==================== 全局键盘绑定：Enter 快速打卡 ====================

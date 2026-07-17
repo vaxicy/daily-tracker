@@ -112,6 +112,16 @@ function bgT(key) {
   return (BG_I18N[lang] && BG_I18N[lang][key]) || key;
 }
 
+function bgTpl(key, vars) {
+  let s = bgT(key);
+  if (vars) {
+    for (const k in vars) {
+      s = s.replace(new RegExp("\\{" + k + "\\}", "g"), vars[k]);
+    }
+  }
+  return s;
+}
+
 let currentBgLang = "zh";
 chrome.storage.local.get(["language"], (data) => {
   currentBgLang = data.language || "zh";
@@ -179,13 +189,6 @@ setInterval(() => {
       const remaining = Math.max(0, (a.scheduledTime - Date.now()) / 1000);
       logInfo("[检查] 闹钟状态", { name: a.name, 剩余秒: remaining.toFixed(1), 周期分钟: a.periodInMinutes });
     });
-
-    // 确保提醒检查闹钟存在
-    const hasReminderCheck = alarms.some(a => a.name === "reminderCheck");
-    if (!hasReminderCheck) {
-      logInfo("[检查] reminderCheck 闹钟缺失，重新创建");
-      chrome.alarms.create("reminderCheck", { periodInMinutes: 1 });
-    }
   });
 }, 30000);
 
@@ -360,7 +363,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sendResponse({ ok: true });
     return false;
   }
-  
+
   return false;
 });
 
