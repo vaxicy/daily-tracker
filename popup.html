@@ -2096,10 +2096,12 @@
         align-self: flex-start;
         margin-bottom: 2px;
       }
+      .period-symptom-btns {
         display: flex;
         gap: 6px;
         flex-wrap: wrap;
       }
+      .period-symptom-btn {
         padding: 4px 10px;
         border-radius: 12px;
         border: 1px solid rgba(236,72,153,0.2);
@@ -2111,9 +2113,11 @@
         user-select: none;
         white-space: nowrap;
       }
+      .period-symptom-btn:hover {
         border-color: var(--period);
         color: var(--period);
       }
+      .period-symptom-btn.active {
         background: var(--period);
         color: #fff;
         border-color: var(--period);
@@ -2123,7 +2127,6 @@
       .period-mood-row {
         display: flex;
         flex-direction: column;
-        gap: 100px;
         margin: 8px 0;
       }
       .period-mood-label {
@@ -2134,6 +2137,7 @@
       .period-mood-btns {
         display: flex;
         gap: 18px;
+        margin-top: 18px;
       }
       .period-mood-btn {
         width: 32px;
