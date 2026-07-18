@@ -11,6 +11,54 @@ function showToast(msg) {
   toastTimer = setTimeout(() => toast.classList.remove("show"), 2000);
 }
 
+// ==================== 通用自定义 tooltip（替代原生 title）====================
+let customTooltipEl = null;
+let customTooltipTimer = null;
+function getCustomTooltip() {
+  if (!customTooltipEl) customTooltipEl = document.getElementById("customTooltip");
+  return customTooltipEl;
+}
+function showCustomTooltip(target, text) {
+  if (!text) return;
+  const tip = getCustomTooltip();
+  if (!tip) return;
+  clearTimeout(customTooltipTimer);
+  tip.textContent = text;
+  tip.classList.add("show");
+  // 临时显示以获取尺寸
+  tip.style.visibility = "hidden";
+  const tipRect = tip.getBoundingClientRect();
+  const rect = target.getBoundingClientRect();
+  let left = rect.left + rect.width / 2 - tipRect.width / 2;
+  let top;
+  // 优先显示在元素下方，空间不足则显示在上方
+  if (rect.bottom + 8 + tipRect.height <= window.innerHeight) {
+    top = rect.bottom + 8;
+  } else {
+    top = rect.top - tipRect.height - 8;
+  }
+  left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
+  if (top < 8) top = 8;
+  tip.style.left = left + "px";
+  tip.style.top = top + "px";
+  tip.style.visibility = "";
+}
+function hideCustomTooltip() {
+  const tip = getCustomTooltip();
+  if (!tip) return;
+  customTooltipTimer = setTimeout(() => tip.classList.remove("show"), 120);
+}
+// 事件委托：悬浮带 data-tooltip 的元素时显示
+document.addEventListener("mouseover", (e) => {
+  const el = e.target.closest("[data-tooltip]");
+  if (el) showCustomTooltip(el, el.getAttribute("data-tooltip"));
+});
+document.addEventListener("mouseout", (e) => {
+  const el = e.target.closest("[data-tooltip]");
+  if (el) hideCustomTooltip();
+});
+
+
 // 内联确认弹窗（替代浏览器原生 confirm）
 function showConfirm(message, onOk, onCancel, title) {
   const overlay = document.getElementById("inlineConfirm");
@@ -754,8 +802,8 @@ function updateMealRecords() {
               <span class="meal-type-tag ${meal.type}">${typeLabel[meal.type]}</span>
               <span class="meal-time">${meal.time}</span>
               <div class="meal-actions">
-                <button class="meal-action-btn edit-meal" data-index="${index}" title="${t('editTitle')}">✏️</button>
-                <button class="meal-action-btn delete-meal" data-index="${index}" title="${t('deleteTitle')}">🗑️</button>
+                <button class="meal-action-btn edit-meal" data-index="${index}" data-tooltip="${t('editTitle')}">✏️</button>
+                <button class="meal-action-btn delete-meal" data-index="${index}" data-tooltip="${t('deleteTitle')}">🗑️</button>
               </div>
             </div>
             <span class="meal-content">${meal.content}</span>
@@ -1647,7 +1695,7 @@ function updateDrinkStats() {
     }
 
     document.getElementById("drinkStatsRow").innerHTML =
-      `<div class="drink-stat-item"><div class="drink-stat-label">${t("today")}</div><div class="drink-stat-val editable" id="drinkTodayCount" title="${t("adjustDrink")}">${todayCount}</div></div>` +
+      `<div class="drink-stat-item"><div class="drink-stat-label">${t("today")}</div><div class="drink-stat-val editable" id="drinkTodayCount" data-tooltip="${t("adjustDrink")}">${todayCount}</div></div>` +
       `<div class="drink-stat-item"><div class="drink-stat-label">${t("week")}</div><div class="drink-stat-val">${weekCount}</div></div>` +
       `<div class="drink-stat-item"><div class="drink-stat-label">${t("month")}</div><div class="drink-stat-val">${monthCount}</div></div>`;
 
@@ -2121,7 +2169,7 @@ function renderBristolMainSelector() {
   bristolMainLabel.textContent = currentLang === "en" ? "Bristol Stool Scale" : "大便类型（可选）";
   bristolMainSelector.innerHTML = types.map((label, i) => {
     const isActive = selectedBristolType === (i + 1);
-    return `<button class="bristol-main-btn ${isActive ? 'active' : ''}" data-type="${i+1}" title="${label} (${descs[i] || ''})">${i+1}</button>`;
+    return `<button class="bristol-main-btn ${isActive ? 'active' : ''}" data-type="${i+1}" data-tooltip="${label} (${descs[i] || ''})">${i+1}</button>`;
   }).join("");
 
   bristolMainSelector.querySelectorAll(".bristol-main-btn").forEach(btn => {
@@ -2192,7 +2240,7 @@ function renderPoopColorSelector() {
   const container = document.getElementById("poopColorBtns");
   if (!container) return;
   container.innerHTML = colors.map((label, i) =>
-    `<button class="poop-color-btn" data-color="${i+1}" title="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};"></button>`
+    `<button class="poop-color-btn" data-color="${i+1}" data-tooltip="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};"></button>`
   ).join("");
 
   container.querySelectorAll(".poop-color-btn").forEach(btn => {
@@ -2301,7 +2349,7 @@ function showPoopEditModal(dateStr, dayRecords) {
       </div>
       <div class="bristol-selector-add" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('bristolTypeLabel')}</span>
-        ${(t("bristolTypes") || []).map((label, i) => `<button class="bristol-btn bristol-btn-add" data-add-type="${i+1}" title="${label}(${(t("bristolDescs") || [])[i] || ''})">${i+1}</button>`).join("")}
+        ${(t("bristolTypes") || []).map((label, i) => `<button class="bristol-btn bristol-btn-add" data-add-type="${i+1}" data-tooltip="${label}(${(t("bristolDescs") || [])[i] || ''})">${i+1}</button>`).join("")}
       </div>
       <div class="poop-amount-selector" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopAmountLabel')}</span>
@@ -2309,7 +2357,7 @@ function showPoopEditModal(dateStr, dayRecords) {
       </div>
       <div class="poop-color-selector" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopColorLabel')}</span>
-        ${(t("poopColors") || []).map((label, i) => `<button class="poop-color-btn-sm" data-color="${i+1}" id="poopAddColor${i+1}" title="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid rgba(0,0,0,0.15);"></button>`).join("")}
+        ${(t("poopColors") || []).map((label, i) => `<button class="poop-color-btn-sm" data-color="${i+1}" id="poopAddColor${i+1}" data-tooltip="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid rgba(0,0,0,0.15);"></button>`).join("")}
       </div>
       <div class="edit-input-row" style="margin-top:8px;">
         <input class="edit-input" type="text" id="poopAddRemark" placeholder="${t('remarkPlaceholder')}" />
@@ -2428,7 +2476,7 @@ function showPoopEditModal(dateStr, dayRecords) {
     const parsedTime = parseRecordTimePoop(rec.time);
     const bristolBtns = bristolTypes.map((label, i) => {
       const isActive = rec.bristolType === (i + 1);
-      return `<button class="bristol-btn ${isActive ? 'active' : ''}" data-idx="${idx}" data-type="${i+1}" title="${label}(${bristolDescs[i] || ''})">${i+1}</button>`;
+      return `<button class="bristol-btn ${isActive ? 'active' : ''}" data-idx="${idx}" data-type="${i+1}" data-tooltip="${label}(${bristolDescs[i] || ''})">${i+1}</button>`;
     }).join("");
     const bristolLabel = rec.bristolType ? `${bristolTypes[rec.bristolType-1] || ''}(${t('bristolPrefix') || 'Bristol '}${rec.bristolType})` : "";
     const amountBtns = poopAmounts.map((label, i) => {
@@ -2461,7 +2509,7 @@ function showPoopEditModal(dateStr, dayRecords) {
       </div>
       <div class="poop-color-label" style="font-size:10px;color:var(--muted);white-space:nowrap;margin-top:6px;">${t('poopColorLabel')}</div>
       <div class="poop-color-picker expanded" data-idx="${idx}" style="margin-top:4px;">
-        ${poopColors.map((label, i) => `<button class="poop-color-btn-sm ${rec.color === (i+1) ? 'active' : ''}" data-idx="${idx}" data-color="${i+1}" title="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid ${rec.color === (i+1) ? 'var(--poop)' : 'rgba(0,0,0,0.15)'};"></button>`).join("")}
+        ${poopColors.map((label, i) => `<button class="poop-color-btn-sm ${rec.color === (i+1) ? 'active' : ''}" data-idx="${idx}" data-color="${i+1}" data-tooltip="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid ${rec.color === (i+1) ? 'var(--poop)' : 'rgba(0,0,0,0.15)'};"></button>`).join("")}
       </div>
       <div class="edit-input-row" id="poopEditFormTime${idx}" style="display:none;align-items:center;margin-top:8px;">
         <input type="time" class="edit-input" id="poopEditTime${idx}" value="${parsedTime}" placeholder="HH:mm" style="width:auto;flex:none;" />
@@ -2632,7 +2680,7 @@ function showPoopTooltip(e, dateStr) {
             const colorHex = POOP_COLOR_MAP[rec.color - 1] || '#eee';
             const poopColors = t("poopColors") || [];
             const colorLabel = poopColors[rec.color - 1] || "";
-            colorHtml = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorHex};vertical-align:middle;margin-right:4px;" title="${colorLabel}"></span>${colorLabel}`;
+            colorHtml = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorHex};vertical-align:middle;margin-right:4px;" data-tooltip="${colorLabel}"></span>${colorLabel}`;
           }
           const remarkHtml = rec.remark ? rec.remark : '';
           const lines = [];
@@ -2810,10 +2858,10 @@ function updatePoopTodayStatus() {
         <div class="record-item" data-index="${idx}">
           <span class="record-time">${rec.time}</span>
           <span class="record-remark">${rec.remark || t('noRemark')}</span>
-          ${rec.color ? `<span class="record-color-dot" style="background:${POOP_COLOR_MAP[rec.color - 1] || '#eee'};" title="${poopColors[rec.color - 1] || ""}"></span>` : ""}
+          ${rec.color ? `<span class="record-color-dot" style="background:${POOP_COLOR_MAP[rec.color - 1] || '#eee'};" data-tooltip="${poopColors[rec.color - 1] || ""}"></span>` : ""}
           <div class="record-actions">
-            <button class="record-action-btn edit-poop-record" data-index="${idx}" title="${t('editTitle')}">✏️</button>
-            <button class="record-action-btn delete-poop-record" data-index="${idx}" title="${t('deleteTitle')}">🗑️</button>
+            <button class="record-action-btn edit-poop-record" data-index="${idx}" data-tooltip="${t('editTitle')}">✏️</button>
+            <button class="record-action-btn delete-poop-record" data-index="${idx}" data-tooltip="${t('deleteTitle')}">🗑️</button>
           </div>
         </div>
       `).join("");
@@ -3017,7 +3065,7 @@ function showPeeEditModal(dateStr, dayRecords) {
     // 渲染颜色选择器（补打卡表单）
     const peeColors = t("peeColors") || [];
     const colorBtns = peeColors.map((label, i) =>
-      `<button class="pee-color-btn-sm" data-color="${i+1}" title="${label}" style="background:${PEE_COLOR_MAP[i] || '#eee'};border:2px solid rgba(0,0,0,0.15);"></button>`
+      `<button class="pee-color-btn-sm" data-color="${i+1}" data-tooltip="${label}" style="background:${PEE_COLOR_MAP[i] || '#eee'};border:2px solid rgba(0,0,0,0.15);"></button>`
     ).join("");
 
     editModalBody.innerHTML = `
@@ -3059,7 +3107,7 @@ function showPeeEditModal(dateStr, dayRecords) {
     editModalBody.querySelectorAll(".pee-color-btn-sm").forEach(btn => {
       btn.addEventListener("click", () => {
         const color = parseInt(btn.dataset.color);
-        const label = btn.title;
+        const label = btn.dataset.tooltip;
         if (addFormColor === color) {
           addFormColor = 0;
           btn.classList.remove("active");
@@ -3138,7 +3186,7 @@ function showPeeEditModal(dateStr, dayRecords) {
       const colorNum = i + 1;
       const isActive = rec.color === colorNum;
       const bgColor = PEE_COLOR_MAP[i] || '#eee';
-      return `<button class="pee-color-btn-sm ${isActive ? 'active' : ''}" data-idx="${idx}" data-color="${colorNum}" title="${label}" style="background:${bgColor};border:2px solid ${isActive ? 'var(--pee)' : 'rgba(0,0,0,0.15)'};"></button>`;
+      return `<button class="pee-color-btn-sm ${isActive ? 'active' : ''}" data-idx="${idx}" data-color="${colorNum}" data-tooltip="${label}" style="background:${bgColor};border:2px solid ${isActive ? 'var(--pee)' : 'rgba(0,0,0,0.15)'};"></button>`;
     }).join("");
     const colorLabel = rec.color ? peeColors[rec.color - 1] || "" : "";
 
@@ -3288,7 +3336,7 @@ function showPeeTooltip(e, dateStr) {
           if (rec.color) {
             const colorHex = PEE_COLOR_MAP[rec.color - 1] || '#eee';
             const colorLabel = peeColors[rec.color - 1] || "";
-            colorInfo = ` <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorHex};vertical-align:middle;margin-left:4px;" title="${colorLabel}"></span>`;
+            colorInfo = ` <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorHex};vertical-align:middle;margin-left:4px;" data-tooltip="${colorLabel}"></span>`;
           }
           return `
           <div class="tooltip-record">
@@ -3375,7 +3423,7 @@ function renderPeeColorSelector() {
   const container = document.getElementById("peeColorBtns");
   if (!container) return;
   container.innerHTML = colors.map((label, i) =>
-    `<button class="pee-color-btn" data-color="${i+1}" title="${label}" style="background:${PEE_COLOR_MAP[i] || '#eee'};"></button>`
+    `<button class="pee-color-btn" data-color="${i+1}" data-tooltip="${label}" style="background:${PEE_COLOR_MAP[i] || '#eee'};"></button>`
   ).join("");
 
   container.querySelectorAll(".pee-color-btn").forEach(btn => {
@@ -3480,15 +3528,15 @@ function updatePeeTodayStatus() {
       const peeColors = t("peeColors") || [];
       peeRecordsList.innerHTML = todayRecord.map((rec, idx) => {
         const amountText = rec.amount ? ` 💧${peeAmounts[rec.amount - 1] || ""}` : "";
-        const colorDot = rec.color ? `<span class="record-color-dot" style="background:${PEE_COLOR_MAP[rec.color - 1] || '#eee'};" title="${peeColors[rec.color - 1] || ""}"></span>` : "";
+        const colorDot = rec.color ? `<span class="record-color-dot" style="background:${PEE_COLOR_MAP[rec.color - 1] || '#eee'};" data-tooltip="${peeColors[rec.color - 1] || ""}"></span>` : "";
         return `
         <div class="record-item" data-index="${idx}">
           <span class="record-time pee-time">${rec.time}</span>
           <span class="record-remark">${rec.remark || t('noRemark')}${amountText}</span>
           ${colorDot}
           <div class="record-actions">
-            <button class="record-action-btn edit-pee-record" data-index="${idx}" title="${t('editTitle')}">✏️</button>
-            <button class="record-action-btn delete-pee-record" data-index="${idx}" title="${t('deleteTitle')}">🗑️</button>
+            <button class="record-action-btn edit-pee-record" data-index="${idx}" data-tooltip="${t('editTitle')}">✏️</button>
+            <button class="record-action-btn delete-pee-record" data-index="${idx}" data-tooltip="${t('deleteTitle')}">🗑️</button>
           </div>
         </div>
       `;
@@ -4491,8 +4539,8 @@ function renderReminderList() {
         </div>
       </div>
       <div class="reminder-item-actions">
-        <button class="reminder-item-btn edit-reminder" data-id="${r.id}" title="${_t("editReminder")}">✏️</button>
-        <button class="reminder-item-btn delete-reminder" data-id="${r.id}" title="${_t("delete")}">🗑️</button>
+        <button class="reminder-item-btn edit-reminder" data-id="${r.id}" data-tooltip="${_t("editReminder")}">✏️</button>
+        <button class="reminder-item-btn delete-reminder" data-id="${r.id}" data-tooltip="${_t("delete")}">🗑️</button>
       </div>
     </div>
   `).join("");
@@ -4885,7 +4933,7 @@ function renderPeriodCalendar() {
       const deleteBtn = document.createElement("button");
       deleteBtn.className = "period-cell-delete-btn";
       deleteBtn.innerHTML = "×";
-      deleteBtn.title = t("periodClearCycle") || "清除本次周期";
+      deleteBtn.setAttribute("data-tooltip", t("periodClearCycle") || "清除本次周期");
       deleteBtn.addEventListener("click", (ev) => {
         ev.stopPropagation(); // 阻止触发日期点击事件
         showConfirm(t("periodClearCycleConfirm") || "确定清除本次周期记录吗？", () => {
@@ -4945,7 +4993,7 @@ function renderPeriodCalendar() {
     } else {
       // 非经期日期：点击可补签（作为经期第一天）
       day.style.cursor = "pointer";
-      day.title = t("periodBackdateHint") || "点击可补签为经期第一天";
+      day.setAttribute("data-tooltip", t("periodBackdateHint") || "点击可补签为经期第一天");
       day.addEventListener("click", () => {
         if (periodUnsaved) {
           showConfirm(t("periodUnsavedConfirm"), () => {
@@ -5282,6 +5330,8 @@ function initPeriodMoodBtns() {
     btn.className = "period-mood-btn";
     btn.textContent = emoji;
     btn.dataset.mood = idx;
+    const moodTexts = t("periodMoods");
+    btn.dataset.tooltip = moodTexts[idx] || "";
     btn.addEventListener("click", () => {
       selectMood(idx);
       markPeriodUnsaved();
@@ -5328,7 +5378,7 @@ function initPeriodBloodColorBtns() {
     btn.className = "period-blood-btn";
     btn.dataset.colorIdx = idx;
     btn.innerHTML = `<span class="period-blood-swatch" style="background:${BLOOD_COLOR_VALUES[idx]}"></span>`;
-    btn.title = name;
+    btn.dataset.tooltip = name;
     btn.addEventListener("click", () => { selectBloodColor(idx); markPeriodUnsaved(); });
     container.appendChild(btn);
   });

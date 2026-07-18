@@ -830,7 +830,7 @@ function applyI18n() {
   });
   document.querySelectorAll("[data-i18n-title]").forEach(el => {
     const key = el.getAttribute("data-i18n-title");
-    el.title = t(key);
+    el.setAttribute("data-tooltip", t(key));
   });
   document.querySelectorAll("[data-i18n-range]").forEach(el => {
     const key = el.getAttribute("data-i18n-range");
