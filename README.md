@@ -4,7 +4,7 @@
 
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![Version](https://img.shields.io/badge/version-3.0-blue)](https://github.com/vaxicy/daily-tracker)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-NonCommercial-blue.svg)](LICENSE)
 
 一个功能丰富的 Chrome 浏览器扩展，帮助你全方位记录和管理日常生活中的饮食、饮水、排便和排尿情况，培养健康的生活习惯。
 
@@ -169,7 +169,9 @@ daily-tracker/
 
 ## 📄 开源协议
 
-本项目基于 [MIT](LICENSE) 协议开源。
+本项目采用 **非商业使用许可协议**（Non-Commercial License）。  
+允许个人非商业用途的自由使用、修改和分发，**禁止任何形式的商业用途**。  
+详见 [LICENSE](LICENSE) 文件。
 
 ---
 
