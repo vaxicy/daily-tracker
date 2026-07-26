@@ -11,7 +11,11 @@ const THEME_BADGE_COLOR = {
   lotus: '#8B6BAA',
   harvest: '#B84F12',
   aurora: '#C76A3F',
-  vermilion: '#C8341A'
+  vermilion: '#C8341A',
+  vine: '#3A267A',
+  misty: '#4A7FB8',
+  evenglow: '#A85858',
+  jadeite: '#3F6B62'
 };
 
 function updateBadge() {
@@ -686,6 +690,10 @@ function scheduleDailyBadgeReset() {
   logInfo("[角标] 每日跨日清零闹钟已创建", { nextFire: tomorrow.toLocaleString() });
 }
 scheduleDailyBadgeReset();
+
+// SW 每次唤醒（首次安装/浏览器启动/alarm 或 storage 唤醒）顶层代码重新执行，
+// 主动重写角标色，修复"过一段时间角标自己变蓝回退默认色"的问题。
+updateBadge();
 
 logInfo("后台脚本初始化完成 ✓");
 
