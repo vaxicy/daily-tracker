@@ -8,7 +8,9 @@ const THEME_BADGE_COLOR = {
   forest: '#059669',
   sage: '#8FA28A',
   oat: '#B0A695',
-  lotus: '#8B6BAA'
+  lotus: '#8B6BAA',
+  harvest: '#B84F12',
+  aurora: '#C76A3F'
 };
 
 function updateBadge() {
