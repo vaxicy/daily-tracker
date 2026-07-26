@@ -7,7 +7,8 @@ const THEME_BADGE_COLOR = {
   dark: '#3b82f6',
   forest: '#059669',
   sage: '#8FA28A',
-  oat: '#B0A695'
+  oat: '#B0A695',
+  lotus: '#8B6BAA'
 };
 
 function updateBadge() {
@@ -27,6 +28,10 @@ function updateBadge() {
       const badgeType = data.badgeContentType || 'drink_today';
       const theme = data.selectedTheme || 'default';
       const themeColor = THEME_BADGE_COLOR[theme] || '#1a73e8';
+      if (!THEME_BADGE_COLOR[theme]) {
+        logError(`主题 "${theme}" 未配置角标色 (THEME_BADGE_COLOR)，回退到默认蓝。请在 background.js 补上对应色值。`);
+      }
+      logInfo('[角标] updateBadge 计算结果', { theme, themeColor, badgeType });
       chrome.action.setIcon({ path: { '16': 'icon16.png', '48': 'icon48.png', '128': 'icon128.png' } });
 
       // 解析 badgeType: "drink_today" -> ["drink", "today"]
@@ -162,6 +167,19 @@ chrome.runtime.onStartup.addListener(() => {
 chrome.runtime.onInstalled.addListener((details) => {
   logInfo(`扩展安装/更新: ${details.reason}`);
   updateBadge();
+});
+
+// 主题/角标配置变化时主动刷新角标色（修复主题与角标色不同步的问题）
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "local") return;
+  if (changes.selectedTheme || changes.badgeEnabled || changes.badgeContentType) {
+    const which = [];
+    if (changes.selectedTheme) which.push(`selectedTheme=${changes.selectedTheme.newValue}`);
+    if (changes.badgeEnabled) which.push(`badgeEnabled=${changes.badgeEnabled.newValue}`);
+    if (changes.badgeContentType) which.push(`badgeContentType=${changes.badgeContentType.newValue}`);
+    logInfo("[角标] 配置变更，刷新角标", { which: which.join(",") });
+    updateBadge();
+  }
 });
 
 // ==================== 核心问题修复：保持 Service Worker 活跃 ====================

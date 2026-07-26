@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -38,7 +38,7 @@
         font-family: ui-sans-serif, system-ui, -apple-system,
           "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
         color: var(--text);
-        background: linear-gradient(150deg, #eaf5ff 0%, #daeaff 100%);
+        background: radial-gradient(120% 70% at 50% -10%, rgba(11,107,255,0.12), transparent 60%), linear-gradient(150deg, #eaf5ff 0%, #daeaff 100%);
         padding: 16px;
         padding-bottom: 28px;
         border: none;
@@ -90,8 +90,8 @@
       .eat-header {
         display: flex;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 16px;
+        gap: 10px;
+        margin-bottom: 14px;
       }
       .eat-icon {
         width: 40px;
@@ -804,6 +804,28 @@
         50% { transform: translateY(-3px); }
       }
       .header-title { font-size: 15px; font-weight: 700; }
+      .page-emoji {
+        font-size: 24px;
+        line-height: 1;
+        animation: bob 2.6s ease-in-out infinite;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .page-emoji { animation: none; }
+      }
+      /* 页面顶部主题色条：每个页面标题下加一条主题主色渐变线 */
+      .header, .eat-header, .period-header { position: relative; }
+      .header::after,
+      .eat-header::after,
+      .period-header::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -6px;
+        height: 3px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, var(--primary), transparent);
+      }
       .header-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
 
       .card.drink-card {
@@ -913,9 +935,22 @@
       .drink-stat-label { font-size: 10px; color: var(--muted); margin-top: 1px; }
       button { font: inherit; border: none; cursor: pointer; border-radius: 11px; padding: 10px 6px; font-weight: 700; font-size: 13px; transition: transform 100ms ease, opacity 100ms ease; }
       .btn-primary {
+        position: relative;
         background: linear-gradient(135deg, var(--primary), var(--primary2));
         color: #fff;
-        box-shadow: 0 5px 16px rgba(11,107,255,0.3);
+        box-shadow: 0 5px 16px var(--primary-glow);
+        overflow: hidden;
+      }
+      .btn-primary::after {
+        content: "";
+        position: absolute;
+        left: 0; right: 0; top: 0;
+        height: 42%;
+        border-radius: inherit;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0));
+        pointer-events: none;
       }
       .btn-primary:hover  { transform: translateY(-1px); }
       .btn-primary:active { transform: translateY(1px); }
@@ -2054,31 +2089,31 @@
       .period-header {
         display: flex;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 16px;
+        gap: 10px;
+        margin-bottom: 14px;
       }
       .period-icon {
         width: 40px;
         height: 40px;
         border-radius: 12px;
-        background: linear-gradient(135deg, #F687B3, #F472B6);
+        background: linear-gradient(135deg, var(--period2), var(--period));
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 20px;
         color: #FFFFFF;
-        box-shadow: 0 4px 12px rgba(236,72,153,0.15);
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--period) 15%, transparent);
       }
       .period-title { font-size: 16px; font-weight: 700; }
       .period-sub { font-size: 11px; color: var(--muted); }
 
       .period-card {
         background: rgba(255,255,255,0.7);
-        border: 1px solid rgba(236,72,153,0.15);
+        border: 1px solid color-mix(in srgb, var(--period) 15%, transparent);
         border-radius: 14px;
         padding: 14px;
         backdrop-filter: blur(12px);
-        box-shadow: 0 4px 16px rgba(236,72,153,0.1);
+        box-shadow: 0 4px 16px color-mix(in srgb, var(--period) 10%, transparent);
         margin-bottom: 12px;
       }
 
@@ -2104,7 +2139,7 @@
       .period-symptom-btn {
         padding: 4px 10px;
         border-radius: 12px;
-        border: 1px solid rgba(236,72,153,0.2);
+        border: 1px solid color-mix(in srgb, var(--period) 20%, transparent);
         background: rgba(255,255,255,0.8);
         color: var(--muted);
         font-size: 11px;
@@ -2143,7 +2178,7 @@
         width: 32px;
         height: 32px;
         border-radius: 50%;
-        border: 1.5px solid rgba(236,72,153,0.18);
+        border: 1.5px solid color-mix(in srgb, var(--period) 18%, transparent);
         background: rgba(255,255,255,0.8);
         cursor: pointer;
         transition: all 0.2s;
@@ -2158,9 +2193,9 @@
       }
       .period-mood-btn.active {
         border-color: var(--period);
-        background: rgba(236,72,153,0.12);
+        background: color-mix(in srgb, var(--period) 12%, transparent);
         transform: scale(1.08);
-        box-shadow: 0 0 0 2px rgba(236,72,153,0.1);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--period) 10%, transparent);
       }
 
       .period-symptom-row {
@@ -2189,8 +2224,8 @@
         height: 32px;
         box-sizing: border-box;
         border-radius: 8px;
-        border: 1.5px solid rgba(236,72,153,0.2);
-        background: rgba(236,72,153,0.04);
+        border: 1.5px solid color-mix(in srgb, var(--period) 20%, transparent);
+        background: color-mix(in srgb, var(--period) 4%, transparent);
         color: var(--text);
         font-size: 11px;
         cursor: pointer;
@@ -2202,15 +2237,15 @@
         min-width: 0;
       }
       .period-symptom-btn:hover {
-        background: rgba(236,72,153,0.12);
-        border-color: rgba(236,72,153,0.4);
+        background: color-mix(in srgb, var(--period) 12%, transparent);
+        border-color: color-mix(in srgb, var(--period) 40%, transparent);
       }
       .period-symptom-btn.active {
-        background: rgba(236,72,153,0.15);
+        background: color-mix(in srgb, var(--period) 15%, transparent);
         border-color: var(--period);
         color: var(--period);
         font-weight: 600;
-        box-shadow: 0 0 0 2px rgba(236,72,153,0.08);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--period) 8%, transparent);
       }
 
       /* 痛感/流量 Slider 样式 */
@@ -2256,7 +2291,7 @@
         border-radius: 50%;
         background: var(--period);
         cursor: pointer;
-        box-shadow: 0 2px 6px rgba(236,72,153,0.4);
+        box-shadow: 0 2px 6px color-mix(in srgb, var(--period) 40%, transparent);
         border: 2px solid #fff;
         transition: transform 0.15s;
       }
@@ -2269,7 +2304,7 @@
         border-radius: 50%;
         background: var(--period);
         cursor: pointer;
-        box-shadow: 0 2px 6px rgba(236,72,153,0.4);
+        box-shadow: 0 2px 6px color-mix(in srgb, var(--period) 40%, transparent);
         border: 2px solid #fff;
       }
       .period-slider-ticks {
@@ -2297,7 +2332,7 @@
         width: 100%;
         padding: 7px 10px;
         border-radius: 8px;
-        border: 1px solid rgba(236,72,153,0.18);
+        border: 1px solid color-mix(in srgb, var(--period) 18%, transparent);
         background: rgba(255,255,255,0.9);
         color: var(--text);
         font: inherit;
@@ -2309,26 +2344,41 @@
       .period-remark-input::placeholder { color: var(--muted); }
 
       .btn-period {
+        position: relative;
         width: 100%;
-        padding: 10px;
-        border-radius: 10px;
+        padding: 11px 10px;
+        border-radius: 12px;
         border: none;
         background: linear-gradient(135deg, var(--period), var(--period2));
         color: #fff;
         font: inherit;
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 700;
         cursor: pointer;
-        box-shadow: 0 4px 14px rgba(236,72,153,0.3);
-        transition: all 0.2s;
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.25) inset, 0 4px 16px var(--period-glow), 0 2px 6px var(--period-glow);
+        transition: box-shadow 0.2s, transform 0.2s;
       }
-      .btn-period:hover { transform: translateY(-1px); }
+      .btn-period::after {
+        content: "";
+        position: absolute;
+        left: 0; right: 0; top: 0;
+        height: 42%;
+        border-radius: inherit;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0));
+        pointer-events: none;
+      }
+      .btn-period:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.35) inset, 0 6px 22px var(--period-glow), 0 3px 10px var(--period-glow);
+      }
       .btn-period.unsaved {
         animation: period-unsaved-pulse 1.2s ease-in-out infinite;
       }
       @keyframes period-unsaved-pulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(236,72,153,0.5); }
-        50% { box-shadow: 0 0 0 6px rgba(236,72,153,0); }
+        0%, 100% { box-shadow: 0 0 0 0 var(--period-glow); }
+        50% { box-shadow: 0 0 0 6px transparent; }
       }
       /* 经期开关 Toggle */
       .period-toggle-wrap {
@@ -2390,7 +2440,7 @@
       }
       .period-status-divider {
         height: 1px;
-        background: rgba(236,72,153,0.1);
+        background: color-mix(in srgb, var(--period) 10%, transparent);
         margin: 8px 0;
         display: none;
       }
@@ -2406,9 +2456,9 @@
 
       .btn-period-sm {
         width: 100%;
-        padding: 8px 16px;
-        font-size: 12px;
-        border-radius: 8px;
+        padding: 9px 16px;
+        font-size: 13px;
+        border-radius: 10px;
         margin-top: 10px;
       }
       .btn-period-clear {
@@ -2417,11 +2467,11 @@
 
       .period-stats-card {
         background: rgba(255,255,255,0.7);
-        border: 1px solid rgba(236,72,153,0.15);
+        border: 1px solid color-mix(in srgb, var(--period) 15%, transparent);
         border-radius: 14px;
         padding: 14px;
         backdrop-filter: blur(12px);
-        box-shadow: 0 4px 16px rgba(236,72,153,0.08);
+        box-shadow: 0 4px 16px color-mix(in srgb, var(--period) 8%, transparent);
       }
       .period-stats-title {
         font-size: 11px;
@@ -2435,7 +2485,7 @@
         gap: 8px;
       }
       .period-stat-item {
-        background: rgba(236,72,153,0.05);
+        background: color-mix(in srgb, var(--period) 5%, transparent);
         border-radius: 8px;
         padding: 8px;
         text-align: center;
@@ -2514,11 +2564,17 @@
       }
       .bar-value {
         flex-shrink: 0;
-        width: 30px;
+        min-width: 32px;
+        padding: 1px 6px;
         font-size: 10px;
         font-weight: 700;
         color: var(--text);
-        text-align: left;
+        text-align: center;
+        background: color-mix(in srgb, var(--period) 12%, transparent);
+        border-radius: 999px;
+        line-height: 14px;
+        height: 14px;
+        box-sizing: border-box;
       }
       .bar-value.bar-estimate {
         color: var(--muted);
@@ -2529,7 +2585,7 @@
       /* 周期记录时间轴 */
       .tl-list {
         position: relative;
-        padding-left: 20px;
+        padding-left: 18px;
       }
       .tl-line {
         position: absolute;
@@ -2539,8 +2595,8 @@
         width: 2px;
         background: repeating-linear-gradient(
           to bottom,
-          rgba(236,72,153,0.3) 0px,
-          rgba(236,72,153,0.3) 4px,
+          var(--period-glow) 0px,
+          var(--period-glow) 4px,
           transparent 4px,
           transparent 8px
         );
@@ -2551,14 +2607,14 @@
       }
       .tl-dot {
         position: absolute;
-        left: -20px;
+        left: -16px;
         top: 8px;
         width: 10px;
         height: 10px;
         border-radius: 50%;
         background: var(--period);
         border: 2px solid #fff;
-        box-shadow: 0 0 0 2px rgba(236,72,153,0.3);
+        box-shadow: 0 0 0 2px var(--period-glow);
         z-index: 1;
       }
       .tl-dot.active {
@@ -2567,22 +2623,22 @@
         animation: tl-pulse 1.8s ease-in-out infinite;
       }
       @keyframes tl-pulse {
-        0%, 100% { box-shadow: 0 0 0 2px rgba(236,72,153,0.3); }
-        50%      { box-shadow: 0 0 0 5px rgba(236,72,153,0.15); }
+        0%, 100% { box-shadow: 0 0 0 2px var(--period-glow); }
+        50%      { box-shadow: 0 0 0 5px transparent; }
       }
       .tl-card {
         background: #fff;
-        border: 1px solid rgba(236,72,153,0.12);
+        border: 1px solid var(--card-border);
         border-radius: 10px;
         padding: 8px 10px;
         font-size: 11px;
         line-height: 1.5;
-        box-shadow: 0 1px 4px rgba(236,72,153,0.06);
+        box-shadow: 0 1px 5px var(--period-glow);
       }
       .tl-card.active {
-        border-color: rgba(236,72,153,0.4);
-        background: rgba(236,72,153,0.03);
-        box-shadow: 0 2px 8px rgba(236,72,153,0.1);
+        border-color: var(--period-glow);
+        background: var(--hover-bg);
+        box-shadow: 0 2px 8px var(--period-glow);
       }
       .tl-card-title {
         font-weight: 700;
@@ -2601,7 +2657,7 @@
       }
       .tl-progress-bar {
         height: 5px;
-        background: rgba(236,72,153,0.1);
+        background: var(--card-border);
         border-radius: 999px;
         margin-top: 6px;
         overflow: hidden;
@@ -2609,7 +2665,7 @@
       .tl-progress-fill {
         height: 100%;
         border-radius: 999px;
-        background: linear-gradient(90deg, rgba(236,72,153,0.35), rgba(236,72,153,0.7));
+        background: linear-gradient(90deg, var(--period-glow), var(--period));
         transition: width 0.6s ease;
         width: 0;
       }
@@ -2623,26 +2679,31 @@
         font-size: 24px;
         margin-bottom: 4px;
       }
+      /* 周期记录内嵌卡片 + 细滚动条 */
+      #periodCycleTable::-webkit-scrollbar { width: 4px; }
+      #periodCycleTable::-webkit-scrollbar-thumb { background: var(--period-glow); border-radius: 4px; }
+      #periodCycleTable::-webkit-scrollbar-track { background: transparent; }
+      #periodCycleTable { scrollbar-width: thin; scrollbar-color: var(--period) transparent; }
 
       /* 日历中经期日期的样式 */
       .day-cell.period-day-0 { background: transparent; }
-      .day-cell.period-day-1 { background: rgba(236,72,153,0.1); }
-      .day-cell.period-day-2 { background: rgba(236,72,153,0.25); }
-      .day-cell.period-day-3 { background: rgba(236,72,153,0.5); }
-      .day-cell.period-day-4 { background: rgba(236,72,153,0.7); color: #fff; }
+      .day-cell.period-day-1 { background: color-mix(in srgb, var(--period) 10%, transparent); }
+      .day-cell.period-day-2 { background: color-mix(in srgb, var(--period) 25%, transparent); }
+      .day-cell.period-day-3 { background: color-mix(in srgb, var(--period) 50%, transparent); }
+      .day-cell.period-day-4 { background: color-mix(in srgb, var(--period) 70%, transparent); color: #fff; }
 
       /* 预测经期：虚线半透明高亮 */
       .day-cell.period-predicted {
-        background: repeating-linear-gradient(45deg, rgba(236,72,153,0.10), rgba(236,72,153,0.10) 5px, rgba(236,72,153,0.18) 5px, rgba(236,72,153,0.18) 10px);
-        border: 1px dashed rgba(236,72,153,0.5);
+        background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--period) 10%, transparent), color-mix(in srgb, var(--period) 10%, transparent) 5px, color-mix(in srgb, var(--period) 18%, transparent) 5px, color-mix(in srgb, var(--period) 18%, transparent) 10px);
+        border: 1px dashed color-mix(in srgb, var(--period) 50%, transparent);
         border-radius: 8px;
       }
       .period-predict-banner {
         margin: 10px 0 4px;
         padding: 8px 12px;
         border-radius: 10px;
-        background: rgba(236,72,153,0.10);
-        border: 1px dashed rgba(236,72,153,0.4);
+        background: color-mix(in srgb, var(--period) 10%, transparent);
+        border: 1px dashed color-mix(in srgb, var(--period) 40%, transparent);
         color: var(--text);
         font-size: 12px;
         font-weight: 600;
@@ -2737,11 +2798,11 @@
         background: none;
       }
       .period-blood-btn:hover {
-        background: rgba(236,72,153,0.08);
+        background: color-mix(in srgb, var(--period) 8%, transparent);
       }
       .period-blood-btn.selected {
         border-color: var(--period);
-        background: rgba(236,72,153,0.1);
+        background: color-mix(in srgb, var(--period) 10%, transparent);
       }
       .period-blood-swatch {
         width: 24px;
@@ -2752,7 +2813,7 @@
       }
       .period-blood-btn.selected .period-blood-swatch {
         border-color: var(--period);
-        box-shadow: 0 0 0 2px rgba(236,72,153,0.3);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--period) 30%, transparent);
       }
       .period-blood-name {
         font-size: 10px;
@@ -2774,7 +2835,7 @@
         padding: 10px 14px;
         min-width: 140px;
         max-width: 220px;
-        box-shadow: 0 8px 32px rgba(236,72,153,0.18);
+        box-shadow: 0 8px 32px color-mix(in srgb, var(--period) 18%, transparent);
         pointer-events: auto;
         transition: opacity 0.15s ease;
         font-size: 12px;
@@ -2789,7 +2850,7 @@
         color: var(--text);
         margin-bottom: 10px;
         padding-bottom: 6px;
-        border-bottom: 1px solid rgba(236,72,153,0.2);
+        border-bottom: 1px solid color-mix(in srgb, var(--period) 20%, transparent);
       }
       #periodTooltip .pt-item {
         display: flex;
@@ -2807,7 +2868,7 @@
       #periodTooltip .pt-remark {
         margin-top: 6px;
         padding-top: 6px;
-        border-top: 1px solid rgba(236,72,153,0.1);
+        border-top: 1px solid color-mix(in srgb, var(--period) 10%, transparent);
         font-size: 11px;
         color: var(--muted);
         font-style: italic;
@@ -2935,8 +2996,8 @@
         opacity: 1;
       }
       [data-theme="pink"] #customTooltip {
-        border-color: rgba(236,72,153,0.25);
-        box-shadow: 0 3px 8px rgba(236,72,153,0.14);
+        border-color: color-mix(in srgb, var(--period) 25%, transparent);
+        box-shadow: 0 3px 8px color-mix(in srgb, var(--period) 14%, transparent);
       }
       [data-theme="dark"] #customTooltip {
         background: #2b2f3a;
@@ -3482,6 +3543,7 @@
         transition: background 0.2s;
       }
       .sidebar-item:hover { background: rgba(12,42,77,0.06); }
+      .sidebar-item:hover .sidebar-item-icon { transform: translateY(-1px); }
       .sidebar-item-left {
         display: flex;
         align-items: center;
@@ -3496,11 +3558,22 @@
         justify-content: center;
         font-size: 15px;
         flex-shrink: 0;
+        transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
       }
-      .sidebar-item-icon.eat-icon { background: linear-gradient(135deg, var(--eat), var(--eat2)); }
+      .sidebar-item-icon.eat-icon   { background: linear-gradient(135deg, var(--eat), var(--eat2)); }
       .sidebar-item-icon.drink-icon { background: linear-gradient(135deg, var(--primary), var(--primary2)); }
-      .sidebar-item-icon.poop-icon { background: linear-gradient(135deg, var(--secondary), var(--secondary2)); }
-      .sidebar-item-icon.pee-icon { background: linear-gradient(135deg, var(--pee), var(--pee2)); }
+      .sidebar-item-icon.poop-icon  { background: linear-gradient(135deg, var(--secondary), var(--secondary2)); }
+      .sidebar-item-icon.pee-icon   { background: linear-gradient(135deg, var(--pee), var(--pee2)); }
+      .sidebar-item-icon.period-icon { background: linear-gradient(135deg, var(--period2), var(--period)); }
+      /* 统一 5 个模块图标的视觉权重：去掉发光、加一致细边框 */
+      .sidebar-item-icon.eat-icon,
+      .sidebar-item-icon.drink-icon,
+      .sidebar-item-icon.poop-icon,
+      .sidebar-item-icon.pee-icon,
+      .sidebar-item-icon.period-icon {
+        box-shadow: none;
+        border: 1px solid color-mix(in srgb, var(--text) 6%, transparent);
+      }
       .sidebar-item-name {
         font-size: 13px;
         font-weight: 600;
@@ -3954,11 +4027,37 @@
                    opacity 0.2s ease, transform 0.2s ease;
       }
 
+      /* ============ 主题背景氛围（每主题一套极淡渐变） ============ */
+      [data-theme="pink"] body {
+        background:
+          radial-gradient(120% 70% at 50% -10%, color-mix(in srgb, var(--period) 14%, transparent), transparent 60%),
+          linear-gradient(150deg, #ffe9f3 0%, #ffd9ea 100%);
+      }
+      [data-theme="forest"] body {
+        background:
+          radial-gradient(120% 70% at 50% -10%, rgba(5,150,105,0.12), transparent 60%),
+          linear-gradient(150deg, #e6f7ef 0%, #d3f0e2 100%);
+      }
+      [data-theme="sage"] body {
+        background:
+          radial-gradient(120% 70% at 50% -10%, rgba(143,162,138,0.14), transparent 60%),
+          linear-gradient(150deg, #eef1ec 0%, #e3e9df 100%);
+      }
+      [data-theme="oat"] body {
+        background:
+          radial-gradient(120% 70% at 50% -10%, rgba(200,169,107,0.14), transparent 60%),
+          linear-gradient(150deg, #f5efe6 0%, #ece2d2 100%);
+      }
+
       /* ============ 暗色主题覆盖 ============ */
       [data-theme="dark"] html,
       [data-theme="dark"] body,
       [data-theme="dark"] .sidebar-panel {
-        background: linear-gradient(150deg, #0f172a 0%, #1e293b 100%) !important;
+        background:
+          radial-gradient(120% 70% at 50% -10%, rgba(59,130,246,0.18), transparent 60%),
+          radial-gradient(2px 2px at 20% 30%, rgba(255,255,255,0.25), transparent),
+          radial-gradient(2px 2px at 82% 18%, rgba(255,255,255,0.2), transparent),
+          linear-gradient(150deg, #0f172a 0%, #1e293b 100%) !important;
         scrollbar-color: var(--scrollbar-color, #94A3B8) rgba(255,255,255,0.04);
       }
 
@@ -4003,7 +4102,7 @@
         color: var(--text, #e2e8f0);
       }
       [data-theme="dark"] #periodTooltip .pt-date {
-        border-bottom-color: rgba(236,72,153,0.3);
+        border-bottom-color: color-mix(in srgb, var(--period) 30%, transparent);
       }
       [data-theme="dark"] .period-blood-label {
         color: var(--text, #e2e8f0);
@@ -4012,32 +4111,32 @@
         color: #94a3b8;
       }
       [data-theme="dark"] .period-blood-btn:hover {
-        background: rgba(236,72,153,0.15);
+        background: color-mix(in srgb, var(--period) 15%, transparent);
       }
       [data-theme="dark"] .period-blood-btn.selected .period-blood-name {
         color: #f472b6;
       }
       /* 暗色主题 - 痛感按钮 */
-        background: rgba(236,72,153,0.08);
-        border-color: rgba(236,72,153,0.25);
+        background: color-mix(in srgb, var(--period) 8%, transparent);
+        border-color: color-mix(in srgb, var(--period) 25%, transparent);
         color: #e2e8f0;
       }
-        background: rgba(236,72,153,0.18);
-        border-color: rgba(236,72,153,0.4);
+        background: color-mix(in srgb, var(--period) 18%, transparent);
+        border-color: color-mix(in srgb, var(--period) 40%, transparent);
       }
-        background: rgba(236,72,153,0.25);
+        background: color-mix(in srgb, var(--period) 25%, transparent);
         border-color: #f472b6;
         color: #f472b6;
       }
       /* 暗色主题 - 流量按钮 */
-        background: rgba(236,72,153,0.08);
-        border-color: rgba(236,72,153,0.25);
+        background: color-mix(in srgb, var(--period) 8%, transparent);
+        border-color: color-mix(in srgb, var(--period) 25%, transparent);
         color: #e2e8f0;
       }
-        background: rgba(236,72,153,0.18);
-        border-color: rgba(236,72,153,0.4);
+        background: color-mix(in srgb, var(--period) 18%, transparent);
+        border-color: color-mix(in srgb, var(--period) 40%, transparent);
       }
-        background: rgba(236,72,153,0.25);
+        background: color-mix(in srgb, var(--period) 25%, transparent);
         border-color: #f472b6;
         color: #f472b6;
       }
@@ -4080,7 +4179,7 @@
         border-color: rgba(148,163,184,0.15);
       }
       [data-theme="dark"] .period-icon {
-        background: linear-gradient(135deg, #4a1a3a, #6b2d52);
+        background: linear-gradient(135deg, var(--period2), var(--period));
         color: #FFFFFF;
         box-shadow: 0 4px 12px rgba(244,114,182,0.15);
       }
@@ -4671,9 +4770,9 @@
         box-shadow: 0 4px 16px rgba(5,150,105,0.1);
       }
       [data-theme="forest"] .period-icon {
-        background: linear-gradient(135deg, #F687B3, #F472B6);
+        background: linear-gradient(135deg, var(--period2), var(--period));
         color: #FFFFFF;
-        box-shadow: 0 4px 12px rgba(236,72,153,0.15);
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--period) 15%, transparent);
       }
         border-color: rgba(5,150,105,0.2);
       }
@@ -4715,14 +4814,14 @@
         border-bottom-color: rgba(5,150,105,0.25);
       }
       [data-theme="forest"] .btn-period {
-        box-shadow: 0 4px 14px rgba(5,150,105,0.35);
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.25) inset, 0 4px 16px var(--period-glow), 0 2px 6px var(--period-glow);
       }
       [data-theme="forest"] .btn-period.unsaved {
         animation: period-unsaved-pulse-forest 1.2s ease-in-out infinite;
       }
       @keyframes period-unsaved-pulse-forest {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(5,150,105,0.5); }
-        50% { box-shadow: 0 0 0 6px rgba(5,150,105,0); }
+        0%, 100% { box-shadow: 0 0 0 0 var(--period-glow); }
+        50% { box-shadow: 0 0 0 6px transparent; }
       }
       [data-theme="forest"] .period-blood-btn:hover {
         background: rgba(5,150,105,0.1);
@@ -4890,7 +4989,7 @@
     <!-- ============ 吃 - 饮食记录页面 ============ -->
     <div class="page" id="pageEat">
       <div class="eat-header">
-        <div class="eat-icon">🍽️</div>
+        <div class="page-emoji">🍽️</div>
         <div>
           <div class="eat-title" data-i18n="eatTitle">饮食记录</div>
           <div class="eat-sub" data-i18n="eatSub">记录每日饮食，健康生活</div>
@@ -5046,7 +5145,7 @@
     <!-- ============ 喝 - 喝水提醒页面 ============ -->
     <div class="page" id="pageDrink">
       <div class="header">
-        <div class="cup-icon">🥤</div>
+        <div class="page-emoji">🥤</div>
         <div>
           <div class="header-title" data-i18n="drinkTitle">喝水提醒</div>
           <div class="header-sub" data-i18n="drinkSub">保持水分，状态更好。</div>
@@ -5158,7 +5257,7 @@
     <!-- ============ 拉 - 排便打卡页面 ============ -->
     <div class="page" id="pagePoop">
       <div class="eat-header">
-        <div class="eat-icon" style="background: linear-gradient(135deg, var(--secondary), var(--secondary2)); box-shadow: 0 4px 12px rgba(139,92,246,0.3);">💩</div>
+        <div class="page-emoji">💩</div>
         <div>
           <div class="eat-title" data-i18n="poopTitle">排便打卡</div>
           <div class="eat-sub" data-i18n="poopSub">记录每日排便，肠道健康</div>
@@ -5244,7 +5343,7 @@
     <!-- ============ 撒 - 排尿打卡页面 ============ -->
     <div class="page" id="pagePee">
       <div class="eat-header">
-        <div class="eat-icon" style="background: linear-gradient(135deg, var(--pee), var(--pee2)); box-shadow: 0 4px 12px rgba(16,185,129,0.3);">💧</div>
+        <div class="page-emoji">💧</div>
         <div>
           <div class="eat-title" data-i18n="peeTitle">排尿打卡</div>
           <div class="eat-sub" data-i18n="peeSub">记录每日排尿，泌尿健康</div>
@@ -5322,7 +5421,7 @@
     <!-- ============ 经期记录页面 ============ -->
     <div class="page" id="pagePeriod">
       <div class="period-header">
-        <div class="period-icon">🩸</div>
+        <div class="page-emoji">🩸</div>
         <div>
           <div class="period-title" data-i18n="periodTitle">经期记录</div>
           <div class="period-sub" data-i18n="periodSub">追踪生理周期，关爱身体健康</div>
@@ -5378,7 +5477,7 @@
             <div class="period-mood-btns" id="periodMoodBtns"></div>
           </div>
 
-          <div style="height:1px;background:rgba(236,72,153,0.1);margin:8px 0;"></div>
+          <div style="height:1px;background:color-mix(in srgb, var(--period) 10%, transparent);margin:8px 0;"></div>
 
           <!-- 痛感行 -->
           <div class="period-pain-row">
@@ -5391,14 +5490,14 @@
             </div>
           </div>
 
-          <div style="height:1px;background:rgba(236,72,153,0.1);margin:8px 0;"></div>
+          <div style="height:1px;background:color-mix(in srgb, var(--period) 10%, transparent);margin:8px 0;"></div>
 
           <div class="period-symptom-row">
             <div class="period-symptom-label" data-i18n="periodSymptomsLabel">症状</div>
             <div class="period-symptom-btns" id="periodSymptomBtns"></div>
           </div>
 
-          <div style="height:1px;background:rgba(236,72,153,0.1);margin:8px 0;"></div>
+          <div style="height:1px;background:color-mix(in srgb, var(--period) 10%, transparent);margin:8px 0;"></div>
 
           <!-- 流量行 -->
           <div class="period-flow-row">
@@ -5411,7 +5510,7 @@
             </div>
           </div>
 
-          <div style="height:1px;background:rgba(236,72,153,0.1);margin:8px 0;"></div>
+          <div style="height:1px;background:color-mix(in srgb, var(--period) 10%, transparent);margin:8px 0;"></div>
 
           <div class="period-blood-row">
             <div class="period-blood-label" data-i18n="periodBloodColorLabel">血的颜色</div>
@@ -5469,7 +5568,7 @@
         <!-- 周期记录（时间轴） -->
         <div style="margin-top:14px;">
           <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;" data-i18n="periodCycleTableTitle">周期记录</div>
-          <div id="periodCycleTable" style="max-height:220px;overflow-y:auto;padding-right:4px;"></div>
+          <div id="periodCycleTable" style="max-height:240px;overflow-y:auto;padding:10px 8px 10px 12px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;"></div>
         </div>
       </div>
     </div>

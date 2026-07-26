@@ -1980,15 +1980,8 @@ notifToggle.addEventListener("change", async () => {
 });
 
 
-var THEME_BADGE_COLOR = {
-  default: '#0b6bff',
-  pink: '#EC4899',
-  dark: '#3b82f6',
-  forest: '#059669',
-  sage: '#8FA28A',
-  oat: '#B0A695'
-};
 
+// 角标色由下方 THEME_PRESETS 自动派生（see THEME_BADGE_COLOR after THEME_PRESETS definition）
 
 function updateBadge() {
   chrome.storage.local.get(
@@ -2010,6 +2003,10 @@ function updateBadge() {
       var timeRange = parts[1];
       var theme = data.selectedTheme || "default";
       var themeColor = (THEME_BADGE_COLOR[theme] || "#0b6bff");
+      if (!THEME_BADGE_COLOR[theme]) {
+        console.warn("[popup] 主题", theme, "无角标色（THEME_BADGE_COLOR 缺失），回退 #0b6bff。当前可用主题:", Object.keys(THEME_BADGE_COLOR));
+      }
+      console.log("[popup] updateBadge →", { theme, themeColor, badgeType, count });
       chrome.action.setIcon({ path: { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" } });
 
       var records = {};
@@ -3914,6 +3911,8 @@ const THEME_PRESETS = {
       "--poop2": "#a78bfa",
       "--period": "#EC4899",
       "--period2": "#F472B6",
+      "--period-glow": "rgba(236,72,153,0.4)",
+      "--primary-glow": "rgba(11,107,255,0.4)",
       "--card-bg": "#ffffff",
       "--card-border": "rgba(12,42,77,0.08)",
       "--input-bg": "rgba(255,255,255,0.8)",
@@ -3946,6 +3945,8 @@ const THEME_PRESETS = {
       "--poop2": "#F9A8D4",
       "--period": "#BE185D",
       "--period2": "#EC4899",
+      "--period-glow": "rgba(190,24,93,0.45)",
+      "--primary-glow": "rgba(236,72,153,0.4)",
       "--card-bg": "#fff5fb",
       "--card-border": "rgba(236,72,153,0.12)",
       "--input-bg": "rgba(255,255,255,0.7)",
@@ -3978,6 +3979,8 @@ const THEME_PRESETS = {
       "--poop2": "#fca5a5",
       "--period": "#f472b6",
       "--period2": "#ec4899",
+      "--period-glow": "rgba(244,114,182,0.5)",
+      "--primary-glow": "rgba(59,130,246,0.5)",
       "--card-bg": "rgba(30,41,59,0.85)",
       "--card-border": "rgba(148,163,184,0.15)",
       "--input-bg": "rgba(15,23,42,0.7)",
@@ -4012,6 +4015,8 @@ const THEME_PRESETS = {
       "--poop2": "#34d399",
       "--period": "#059669",
       "--period2": "#34d399",
+      "--period-glow": "rgba(5,150,105,0.4)",
+      "--primary-glow": "rgba(5,150,105,0.4)",
       "--card-bg": "#ffffff",
       "--card-border": "rgba(5,150,105,0.12)",
       "--input-bg": "rgba(255,255,255,0.8)",
@@ -4044,6 +4049,8 @@ const THEME_PRESETS = {
       "--poop2": "#8a9f85",
       "--period": "#a67c52",
       "--period2": "#c8a96b",
+      "--period-glow": "rgba(166,124,82,0.4)",
+      "--primary-glow": "rgba(143,162,138,0.4)",
       "--card-bg": "#F7F4ED",
       "--card-border": "rgba(143,162,138,0.18)",
       "--input-bg": "rgba(255,255,255,0.6)",
@@ -4076,6 +4083,8 @@ const THEME_PRESETS = {
       "--poop2": "#8F8070",
       "--period": "#B0A695",
       "--period2": "#D8CFC0",
+      "--period-glow": "rgba(176,166,149,0.4)",
+      "--primary-glow": "rgba(176,166,149,0.4)",
       "--card-bg": "#F3EEEA",
       "--card-border": "rgba(176,166,149,0.18)",
       "--input-bg": "rgba(255,255,255,0.6)",
@@ -4089,8 +4098,47 @@ const THEME_PRESETS = {
       "--scrollbar-hover": "#D8CFC0"
     },
     bgGradient: "linear-gradient(150deg, #F3EEEA 0%, #EBE3D5 100%)"
+  },
+  lotus: {
+    name: t("themeLotusName"),
+    dot: "linear-gradient(135deg,#C5B3D3,#FBEFEF)",
+    vars: {
+      "--text": "#3D2E4F",
+      "--muted": "rgba(106,75,140,0.6)",
+      "--primary": "#8B6BAA",
+      "--primary2": "#C5B3D3",
+      "--secondary": "#6B4D8A",
+      "--secondary2": "#A088C0",
+      "--eat": "#D88AA0",
+      "--eat2": "#F5CBCB",
+      "--pee": "#A088C0",
+      "--pee2": "#C5B3D3",
+      "--poop": "#7C5DA0",
+      "--poop2": "#A088C0",
+      "--period": "#D88AA0",
+      "--period2": "#B45D7A",
+      "--period-glow": "rgba(216,138,160,0.45)",
+      "--primary-glow": "rgba(139,107,170,0.45)",
+      "--card-bg": "#FFFFFF",
+      "--card-border": "rgba(139,107,170,0.14)",
+      "--input-bg": "rgba(255,255,255,0.85)",
+      "--modal-bg": "#FFFFFF",
+      "--tooltip-bg": "#FFFFFF",
+      "--sidebar-bg": "rgba(255,255,255,0.97)",
+      "--hover-bg": "rgba(139,107,170,0.07)",
+      "--day-hover": "rgba(139,107,170,0.1)",
+      "--day-today": "rgba(139,107,170,0.15)",
+      "--scrollbar-color": "#A088C0",
+      "--scrollbar-hover": "#8B6BAA"
+    },
+    bgGradient: "linear-gradient(150deg, #FBEFEF 0%, #FBE1EC 100%)"
   }
 };
+
+// 角标色从 THEME_PRESETS 自动派生（消除双表维护，新增主题自动同步）
+const THEME_BADGE_COLOR = Object.fromEntries(
+  Object.entries(THEME_PRESETS).map(([k, p]) => [k, p.vars && p.vars["--primary"] || '#0b6bff'])
+);
 
 const root = document.documentElement;
 const bodyEl = document.body;
