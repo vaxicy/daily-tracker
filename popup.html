@@ -2455,75 +2455,76 @@
       #periodBarChart {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
       }
       .bar-row {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
       }
       .bar-label {
         flex-shrink: 0;
-        width: 22px;
+        width: 24px;
         font-size: 10px;
         color: var(--muted);
         text-align: right;
-        font-weight: 600;
+        font-weight: 700;
       }
-      .bar-track {
+      .bar-bars {
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: 3px;
-        position: relative;
+        gap: 5px;
       }
-      .bar-fill {
-        height: 14px;
-        border-radius: 999px;
-        min-width: 8px;
-        max-width: 100%;
+      .bar-line {
         display: flex;
         align-items: center;
-        justify-content: flex-end;
-        padding-right: 6px;
-        font-size: 9px;
-        font-weight: 700;
-        color: #fff;
-        transition: width 0.4s ease;
+        gap: 6px;
+      }
+      .bar-track {
+        flex: 1;
         position: relative;
+        height: 14px;
+        background: color-mix(in srgb, var(--period) 8%, transparent);
+        border-radius: 999px;
       }
-      .bar-fill-cycle {
-        background: rgba(236,72,153,0.25);
-        color: var(--period);
+      .bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        min-width: 6px;
+        transition: width 0.4s ease;
       }
-      .bar-fill-duration {
-        background: rgba(236,72,153,0.7);
-        color: #fff;
+      .bar-fill-cycle { background: var(--period2); }
+      .bar-fill-duration { background: var(--period); }
+      .bar-fill.bar-estimate {
+        background: repeating-linear-gradient(45deg,
+          color-mix(in srgb, var(--period2) 60%, transparent) 0 4px,
+          transparent 4px 8px);
       }
-      .bar-fill-cycle.bar-abnormal {
-        background: rgba(251,146,60,0.35);
-      }
-      .bar-fill-duration.bar-abnormal {
-        background: rgba(251,146,60,0.85);
-      }
-      .bar-abnormal-dot {
+      .bar-fill.bar-abnormal { background: var(--secondary, #fb923c); }
+      .bar-avg-line {
         position: absolute;
-        right: -6px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: #fb923c;
+        top: 0;
+        bottom: 0;
+        width: 0;
+        border-left: 1.5px dashed var(--muted);
+        opacity: 0.55;
+        z-index: 2;
+        pointer-events: none;
       }
-      .bar-value-outside {
+      .bar-value {
         flex-shrink: 0;
-        font-size: 9px;
-        color: var(--muted);
-        width: 32px;
+        width: 30px;
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--text);
         text-align: left;
-        padding-left: 4px;
       }
+      .bar-value.bar-estimate {
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .bar-value.bar-abnormal { color: var(--secondary, #fb923c); }
 
       /* 周期记录时间轴 */
       .tl-list {
@@ -5451,12 +5452,16 @@
           <div id="periodBarChart" style="font-size:11px;"></div>
           <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--muted);">
             <span style="display:flex;align-items:center;gap:3px;">
-              <span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:rgba(236,72,153,0.25);"></span>
+              <span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:var(--period2);"></span>
               <span data-i18n="periodBarChartLegendCycle">周期长度</span>
             </span>
             <span style="display:flex;align-items:center;gap:3px;">
-              <span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:rgba(236,72,153,0.7);"></span>
+              <span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:var(--period);"></span>
               <span data-i18n="periodBarChartLegendDuration">持续天数</span>
+            </span>
+            <span style="display:flex;align-items:center;gap:3px;">
+              <span style="display:inline-block;width:10px;height:10px;border-left:1.5px dashed var(--muted);"></span>
+              <span data-i18n="periodBarChartLegendAvg">平均</span>
             </span>
           </div>
         </div>

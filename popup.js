@@ -5791,7 +5791,7 @@ function updatePeriodStats() {
   document.getElementById("periodAbnormalCount").textContent = totalAbnormal + " " + t("periodBarChartDay");
 }
 
-// 渲染周期趋势条形图（圆角胶囊形）
+// 渲染周期趋势条形图（圆角胶囊形，左右双条 + 均值参考线）
 function renderPeriodBarChart() {
   const container = document.getElementById("periodBarChart");
   if (!container) return;
@@ -5807,7 +5807,7 @@ function renderPeriodBarChart() {
   const sorted = [...recent].reverse(); // 倒序显示（最新的在上方）
 
   // 计算每条周期的周期长度和持续天数（统一用本地时间，避免UTC偏差）
-  const chartData = sorted.map((cycle, idx) => {
+  const chartData = sorted.map((cycle) => {
     const start = new Date(cycle.startDate + "T00:00:00");
     const end = new Date(cycle.endDate + "T00:00:00");
     const duration = Math.round((end - start) / 86400000) + 1;
@@ -5832,28 +5832,45 @@ function renderPeriodBarChart() {
     ? Math.round(allDurations.reduce((a, b) => a + b, 0) / allDurations.length)
     : 5;
 
-  // 最大周期长度（用于宽度百分比计算）
-  const maxCycleLen = Math.max(...allCycleLens, 35); // 最小参考35天
-  const maxDuration = Math.max(...allDurations, 8); // 最小参考8天
+  // 最大基准（含均值，确保均值线不溢出）
+  const maxCycleLen = Math.max(...allCycleLens, 35, avgCycle);
+  const maxDuration = Math.max(...allDurations, 8, avgDuration);
+  const avgCyclePct = (avgCycle / maxCycleLen) * 100;
+  const avgDurationPct = (avgDuration / maxDuration) * 100;
 
   let html = "";
-  chartData.forEach((d, idx) => {
+  chartData.forEach((d) => {
     const seq = completed.length - periodCycles.indexOf(d.cycle);
-    const cycleWidth = d.cycleLen ? Math.max(8, (d.cycleLen / maxCycleLen) * 100) : 0;
+
+    // 周期长度：缺失时以 28 天估算（虚线占位），确保两条数据同时出现
+    const cycleVal = d.cycleLen !== null ? d.cycleLen : 28;
+    const cycleWidth = Math.max(6, (cycleVal / maxCycleLen) * 100);
     const durationWidth = (d.duration / maxDuration) * 100;
+
     const cycleAbnormal = d.cycleLen ? Math.abs(d.cycleLen - avgCycle) > 3 : false;
     const durationAbnormal = Math.abs(d.duration - avgDuration) > 1;
 
+    const cycleValueText = d.cycleLen !== null ? d.cycleLen : "≈" + 28;
+    const cycleEstimateCls = d.cycleLen === null ? " bar-estimate" : "";
+    const cycleAbnormalCls = cycleAbnormal ? " bar-abnormal" : "";
+    const durAbnormalCls = durationAbnormal ? " bar-abnormal" : "";
+
     html += `<div class="bar-row">
       <div class="bar-label">#${seq}</div>
-      <div class="bar-track">
-        <div class="bar-fill bar-fill-cycle${cycleAbnormal ? ' bar-abnormal' : ''}" style="width:${cycleWidth}%;">
-          ${d.cycleLen !== null ? d.cycleLen : '--'}
-          ${cycleAbnormal ? '<span class="bar-abnormal-dot"></span>' : ''}
+      <div class="bar-bars">
+        <div class="bar-line">
+          <div class="bar-track">
+            <div class="bar-fill bar-fill-cycle${cycleEstimateCls}${cycleAbnormalCls}" style="width:${cycleWidth}%;"></div>
+            <span class="bar-avg-line" style="left:${avgCyclePct}%;"></span>
+          </div>
+          <div class="bar-value${cycleEstimateCls}${cycleAbnormalCls}">${cycleValueText}</div>
         </div>
-        <div class="bar-fill bar-fill-duration${durationAbnormal ? ' bar-abnormal' : ''}" style="width:${durationWidth}%;">
-          ${d.duration}
-          ${durationAbnormal ? '<span class="bar-abnormal-dot"></span>' : ''}
+        <div class="bar-line">
+          <div class="bar-track">
+            <div class="bar-fill bar-fill-duration${durAbnormalCls}" style="width:${durationWidth}%;"></div>
+            <span class="bar-avg-line" style="left:${avgDurationPct}%;"></span>
+          </div>
+          <div class="bar-value${durAbnormalCls}">${d.duration}</div>
         </div>
       </div>
     </div>`;
