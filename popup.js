@@ -3892,9 +3892,11 @@ chrome.storage.onChanged.addListener((changes) => {
 });
 
 // ==================== 主题系统 ====================
+// 新增主题只需在此追加一项 + 在 i18n.js 补翻译，下拉框会自动渲染。
 const THEME_PRESETS = {
   default: {
     name: t("themeDefaultName"),
+    dot: "linear-gradient(135deg,#0b6bff,#20c6ff)",
     vars: {
       "--text": "#0c2a4d",
       "--muted": "rgba(12,42,77,0.6)",
@@ -3904,8 +3906,21 @@ const THEME_PRESETS = {
       "--secondary2": "#A78BFA",
       "--eat": "#F59E0B",
       "--eat2": "#FBBF24",
-      "--pee": "#10B981",
-      "--pee2": "#34D399",
+      "--pee": "#06b6d4",
+      "--pee2": "#22d3ee",
+      "--poop": "#7c3aed",
+      "--poop2": "#a78bfa",
+      "--period": "#EC4899",
+      "--period2": "#F472B6",
+      "--card-bg": "#ffffff",
+      "--card-border": "rgba(12,42,77,0.08)",
+      "--input-bg": "rgba(255,255,255,0.8)",
+      "--modal-bg": "#ffffff",
+      "--tooltip-bg": "#ffffff",
+      "--sidebar-bg": "rgba(255,255,255,0.97)",
+      "--hover-bg": "rgba(12,42,77,0.06)",
+      "--day-hover": "rgba(12,42,77,0.08)",
+      "--day-today": "rgba(11,107,255,0.12)",
       "--scrollbar-color": "#0b6bff",
       "--scrollbar-hover": "#20c6ff"
     },
@@ -3913,6 +3928,7 @@ const THEME_PRESETS = {
   },
   pink: {
     name: t("themePinkName"),
+    dot: "linear-gradient(135deg,#EC4899,#F472B6)",
     vars: {
       "--text": "#4a1a3d",
       "--muted": "rgba(74,26,61,0.6)",
@@ -3922,10 +3938,21 @@ const THEME_PRESETS = {
       "--secondary2": "#F9A8D4",
       "--eat": "#F472B6",
       "--eat2": "#FBCFE8",
-      "--pee": "#C084FC",
-      "--pee2": "#E9D5FF",
+      "--pee": "#FB7185",
+      "--pee2": "#FDA4AF",
       "--poop": "#DB2777",
       "--poop2": "#F9A8D4",
+      "--period": "#BE185D",
+      "--period2": "#EC4899",
+      "--card-bg": "#fff5fb",
+      "--card-border": "rgba(236,72,153,0.12)",
+      "--input-bg": "rgba(255,255,255,0.7)",
+      "--modal-bg": "#fff0f7",
+      "--tooltip-bg": "#fff0f7",
+      "--sidebar-bg": "rgba(255,240,247,0.97)",
+      "--hover-bg": "rgba(236,72,153,0.06)",
+      "--day-hover": "rgba(236,72,153,0.1)",
+      "--day-today": "rgba(236,72,153,0.15)",
       "--scrollbar-color": "#EC4899",
       "--scrollbar-hover": "#F472B6"
     },
@@ -3933,6 +3960,7 @@ const THEME_PRESETS = {
   },
   dark: {
     name: t("themeDarkName"),
+    dot: "linear-gradient(135deg,#1e293b,#0f172a)",
     vars: {
       "--text": "#e2e8f0",
       "--muted": "rgba(226,232,240,0.55)",
@@ -3942,8 +3970,12 @@ const THEME_PRESETS = {
       "--secondary2": "#c4b5fd",
       "--eat": "#fbbf24",
       "--eat2": "#f59e0b",
-      "--pee": "#34d399",
-      "--pee2": "#10b981",
+      "--pee": "#22d3ee",
+      "--pee2": "#06b6d4",
+      "--poop": "#f87171",
+      "--poop2": "#fca5a5",
+      "--period": "#f472b6",
+      "--period2": "#ec4899",
       "--card-bg": "rgba(30,41,59,0.85)",
       "--card-border": "rgba(148,163,184,0.15)",
       "--input-bg": "rgba(15,23,42,0.7)",
@@ -3962,6 +3994,7 @@ const THEME_PRESETS = {
   },
   forest: {
     name: t("themeForestName"),
+    dot: "linear-gradient(135deg,#059669,#34d399)",
     vars: {
       "--text": "#0a2923",
       "--muted": "rgba(10,41,35,0.6)",
@@ -3969,12 +4002,23 @@ const THEME_PRESETS = {
       "--primary2": "#34d399",
       "--secondary": "#065f46",
       "--secondary2": "#6ee7b7",
-      "--period": "#059669",
-      "--period2": "#34d399",
       "--eat": "#F59E0B",
       "--eat2": "#FBBF24",
-      "--pee": "#10B981",
-      "--pee2": "#34D399",
+      "--pee": "#14b8a6",
+      "--pee2": "#2dd4bf",
+      "--poop": "#047857",
+      "--poop2": "#34d399",
+      "--period": "#059669",
+      "--period2": "#34d399",
+      "--card-bg": "#ffffff",
+      "--card-border": "rgba(5,150,105,0.12)",
+      "--input-bg": "rgba(255,255,255,0.8)",
+      "--modal-bg": "#ffffff",
+      "--tooltip-bg": "#ffffff",
+      "--sidebar-bg": "rgba(255,255,255,0.97)",
+      "--hover-bg": "rgba(5,150,105,0.06)",
+      "--day-hover": "rgba(5,150,105,0.1)",
+      "--day-today": "rgba(5,150,105,0.15)",
       "--scrollbar-color": "#10B981",
       "--scrollbar-hover": "#34D399"
     },
@@ -3984,10 +4028,27 @@ const THEME_PRESETS = {
 
 const root = document.documentElement;
 const bodyEl = document.body;
+let currentThemeId = "default";
+
+// 动态渲染主题下拉选项（新增主题无需改 HTML）
+function renderThemeOptions() {
+  const sel = document.getElementById("themeSelect");
+  if (!sel) return;
+  const cur = sel.value || currentThemeId;
+  sel.innerHTML = "";
+  Object.entries(THEME_PRESETS).forEach(([id, p]) => {
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = p.name;
+    sel.appendChild(opt);
+  });
+  sel.value = cur;
+}
 
 function applyTheme(themeId) {
   const preset = THEME_PRESETS[themeId];
   if (!preset) return;
+  currentThemeId = themeId;
 
   // 设置 data-theme 属性（用于 CSS 选择器）
   document.body.setAttribute("data-theme", themeId);
@@ -4000,15 +4061,17 @@ function applyTheme(themeId) {
   // 背景渐变
   bodyEl.style.background = preset.bgGradient;
 
-  // 更新按钮选中态
-  document.querySelectorAll(".theme-opt").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.theme === themeId);
-  });
+  // 更新下拉选中项 + 左侧色块
+  const sel = document.getElementById("themeSelect");
+  if (sel) sel.value = themeId;
+  const sw = document.getElementById("themeSwatch");
+  if (sw) sw.style.background = preset.dot;
 }
 
 function loadTheme() {
   chrome.storage.local.get(["selectedTheme"], (data) => {
     const themeId = data.selectedTheme || "default";
+    renderThemeOptions();
     applyTheme(themeId);
   });
 }
@@ -4196,16 +4259,17 @@ function initCustomScrollbar() {
 
 initCustomScrollbar();
 
-// 绑定主题切换事件
-document.querySelectorAll(".theme-opt").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const themeId = btn.dataset.theme;
+// 绑定主题切换事件（下拉框）
+const themeSelectEl = document.getElementById("themeSelect");
+if (themeSelectEl) {
+  themeSelectEl.addEventListener("change", () => {
+    const themeId = themeSelectEl.value;
     applyTheme(themeId);
     chrome.storage.local.set({ selectedTheme: themeId }, () => {
       showToast(t("toastThemeSwitched", { theme: THEME_PRESETS[themeId].name }));
     });
   });
-});
+}
 
 
 
@@ -4427,6 +4491,10 @@ document.querySelectorAll(".lang-opt").forEach(btn => {
     setLanguage(lang);
     document.querySelectorAll(".lang-opt").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
+    // 刷新主题下拉选项文案（随语言切换）
+    renderThemeOptions();
+    const ts = document.getElementById("themeSelect");
+    if (ts) ts.value = currentThemeId;
     showToast(t("toastDefaultLang", { lang: lang === "zh" ? t("langZh") : t("langEn") }));
     // 强制刷新当前 tab 的动态内容
     switchTab(currentTab, true);
