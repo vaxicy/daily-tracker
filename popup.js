@@ -4032,17 +4032,33 @@ let currentThemeId = "default";
 
 // 动态渲染主题下拉选项（新增主题无需改 HTML）
 function renderThemeOptions() {
-  const sel = document.getElementById("themeSelect");
-  if (!sel) return;
-  const cur = sel.value || currentThemeId;
-  sel.innerHTML = "";
+  const menu = document.getElementById("themeMenu");
+  if (!menu) return;
+  menu.innerHTML = "";
   Object.entries(THEME_PRESETS).forEach(([id, p]) => {
-    const opt = document.createElement("option");
-    opt.value = id;
-    opt.textContent = p.name;
-    sel.appendChild(opt);
+    const item = document.createElement("div");
+    item.className = "theme-item" + (id === currentThemeId ? " active" : "");
+    item.dataset.theme = id;
+    item.innerHTML = `<span class="theme-dot" style="background:${p.dot}"></span><span class="theme-label"></span>`;
+    item.querySelector(".theme-label").textContent = p.name;
+    item.addEventListener("click", () => selectTheme(id));
+    menu.appendChild(item);
   });
-  sel.value = cur;
+}
+
+// 选择并应用主题
+function selectTheme(themeId) {
+  applyTheme(themeId);
+  closeThemeDropdown();
+  chrome.storage.local.set({ selectedTheme: themeId }, () => {
+    showToast(t("toastThemeSwitched", { theme: THEME_PRESETS[themeId].name }));
+  });
+}
+
+// 关闭下拉菜单
+function closeThemeDropdown() {
+  const el = document.getElementById("themeDropdown");
+  if (el) el.classList.remove("open");
 }
 
 function applyTheme(themeId) {
@@ -4061,11 +4077,14 @@ function applyTheme(themeId) {
   // 背景渐变
   bodyEl.style.background = preset.bgGradient;
 
-  // 更新下拉选中项 + 左侧色块
-  const sel = document.getElementById("themeSelect");
-  if (sel) sel.value = themeId;
+  // 更新触发按钮色块 + 当前主题名 + 下拉项选中态
   const sw = document.getElementById("themeSwatch");
   if (sw) sw.style.background = preset.dot;
+  const cur = document.getElementById("themeCurrent");
+  if (cur) cur.textContent = preset.name;
+  document.querySelectorAll(".theme-item").forEach(it => {
+    it.classList.toggle("active", it.dataset.theme === themeId);
+  });
 }
 
 function loadTheme() {
@@ -4259,15 +4278,18 @@ function initCustomScrollbar() {
 
 initCustomScrollbar();
 
-// 绑定主题切换事件（下拉框）
-const themeSelectEl = document.getElementById("themeSelect");
-if (themeSelectEl) {
-  themeSelectEl.addEventListener("change", () => {
-    const themeId = themeSelectEl.value;
-    applyTheme(themeId);
-    chrome.storage.local.set({ selectedTheme: themeId }, () => {
-      showToast(t("toastThemeSwitched", { theme: THEME_PRESETS[themeId].name }));
-    });
+// 绑定主题切换事件（自定义下拉框）
+const themeDropdownEl = document.getElementById("themeDropdown");
+const themeTriggerEl = document.getElementById("themeTrigger");
+if (themeTriggerEl && themeDropdownEl) {
+  themeTriggerEl.addEventListener("click", (e) => {
+    e.stopPropagation();
+    themeDropdownEl.classList.toggle("open");
+  });
+  document.addEventListener("click", (e) => {
+    if (!themeDropdownEl.contains(e.target)) {
+      themeDropdownEl.classList.remove("open");
+    }
   });
 }
 
@@ -4493,8 +4515,7 @@ document.querySelectorAll(".lang-opt").forEach(btn => {
     btn.classList.add("active");
     // 刷新主题下拉选项文案（随语言切换）
     renderThemeOptions();
-    const ts = document.getElementById("themeSelect");
-    if (ts) ts.value = currentThemeId;
+    applyTheme(currentThemeId);
     showToast(t("toastDefaultLang", { lang: lang === "zh" ? t("langZh") : t("langEn") }));
     // 强制刷新当前 tab 的动态内容
     switchTab(currentTab, true);

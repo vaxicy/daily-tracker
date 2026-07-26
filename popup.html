@@ -3540,44 +3540,104 @@
         background: rgba(12,42,77,0.08);
         margin: 12px 0 4px;
       }
-      .theme-select-wrap {
+      /* 主题下拉（自定义 HTML + CSS） */
+      .theme-dropdown {
         position: relative;
+      }
+      .theme-trigger {
+        width: 100%;
         display: flex;
         align-items: center;
-      }
-      .theme-swatch {
-        position: absolute;
-        left: 12px;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        pointer-events: none;
-        box-shadow: 0 0 0 2px rgba(255,255,255,0.7);
-        background: linear-gradient(135deg,#0b6bff,#20c6ff);
-        transition: background 0.3s ease;
-        z-index: 1;
-      }
-      .theme-select {
-        width: 100%;
-        padding: 8px 12px 8px 34px;
+        gap: 8px;
+        padding: 8px 12px;
         border-radius: 10px;
         border: 2px solid var(--card-border, rgba(12,42,77,0.1));
-        background-color: var(--card-bg, #fff);
+        background: var(--card-bg, #fff);
         color: var(--text);
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
-        appearance: none;
-        -webkit-appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        background-size: 12px;
-        transition: border-color 0.2s ease;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
       }
-      .theme-select:hover { border-color: var(--primary); }
-      .theme-select:focus { outline: none; border-color: var(--primary); }
-      .theme-select option { color: #0c2a4d; }
+      .theme-trigger:hover,
+      .theme-dropdown.open .theme-trigger {
+        border-color: var(--primary);
+        box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 15%, transparent);
+      }
+      .theme-trigger:focus { outline: none; border-color: var(--primary); }
+      .theme-swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        box-shadow: 0 0 0 2px rgba(255,255,255,0.7);
+        background: linear-gradient(135deg,#0b6bff,#20c6ff);
+        transition: background 0.3s ease;
+      }
+      .theme-current {
+        flex: 1;
+        text-align: left;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .theme-chevron {
+        flex-shrink: 0;
+        color: var(--muted);
+        transition: transform 0.18s ease, color 0.2s ease;
+      }
+      .theme-dropdown.open .theme-chevron {
+        transform: rotate(180deg);
+        color: var(--primary);
+      }
+      .theme-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        z-index: 50;
+        background: var(--card-bg, #fff);
+        border: 2px solid var(--card-border, rgba(12,42,77,0.1));
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(12,42,77,0.18);
+        padding: 4px;
+        display: none;
+        max-height: 220px;
+        overflow-y: auto;
+      }
+      .theme-dropdown.open .theme-menu {
+        display: block;
+        animation: themeMenuIn 0.18s ease;
+      }
+      @keyframes themeMenuIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .theme-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text);
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .theme-item:hover {
+        background: var(--hover-bg, rgba(12,42,77,0.06));
+      }
+      .theme-item.active {
+        background: color-mix(in srgb, var(--primary) 12%, transparent);
+        color: var(--primary);
+      }
+      .theme-item .theme-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
 
       /* 数据备份按钮 */
       .backup-row {
@@ -4143,12 +4203,11 @@
         color: #e2e8f0;
       }
 
-      [data-theme="dark"] .theme-select {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        background-size: 12px;
+      [data-theme="dark"] .theme-menu {
+        background: var(--modal-bg, #1e293b);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.5);
       }
+      [data-theme="dark"] .theme-chevron { color: var(--muted, rgba(226,232,240,0.55)); }
 
       [data-theme="dark"] .sb-track,
       [data-theme="dark"] .toggle-track {
@@ -5527,9 +5586,13 @@
       <div class="sidebar-header" style="margin-top:4px;margin-bottom:12px;padding-bottom:10px;">
         <span class="sidebar-title" data-i18n="themeStyle">🎨 主题风格</span>
       </div>
-      <div class="theme-select-wrap">
-        <span class="theme-swatch" id="themeSwatch"></span>
-        <select id="themeSelect" class="theme-select" data-i18n-title="themeStyle"></select>
+      <div class="theme-dropdown" id="themeDropdown">
+        <button type="button" class="theme-trigger" id="themeTrigger" data-i18n-title="themeStyle">
+          <span class="theme-swatch" id="themeSwatch"></span>
+          <span class="theme-current" id="themeCurrent"></span>
+          <svg class="theme-chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="theme-menu" id="themeMenu"></div>
       </div>
 
       <!-- 分隔线 -->
