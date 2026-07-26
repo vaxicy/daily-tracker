@@ -10,7 +10,8 @@ const THEME_BADGE_COLOR = {
   oat: '#B0A695',
   lotus: '#8B6BAA',
   harvest: '#B84F12',
-  aurora: '#C76A3F'
+  aurora: '#C76A3F',
+  vermilion: '#C8341A'
 };
 
 function updateBadge() {
