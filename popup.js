@@ -4023,6 +4023,38 @@ const THEME_PRESETS = {
       "--scrollbar-hover": "#34D399"
     },
     bgGradient: "linear-gradient(150deg, #ecfdf5 0%, #d1fae5 100%)"
+  },
+  sage: {
+    name: t("themeSageName"),
+    dot: "linear-gradient(135deg,#8FA28A,#C8A96B)",
+    vars: {
+      "--text": "#3d4a3f",
+      "--muted": "rgba(61,74,63,0.6)",
+      "--primary": "#8FA28A",
+      "--primary2": "#C7D3C0",
+      "--secondary": "#a67c52",
+      "--secondary2": "#c8a96b",
+      "--eat": "#C8A96B",
+      "--eat2": "#d4b87e",
+      "--pee": "#8FA28A",
+      "--pee2": "#C7D3C0",
+      "--poop": "#6b8069",
+      "--poop2": "#8a9f85",
+      "--period": "#a67c52",
+      "--period2": "#c8a96b",
+      "--card-bg": "#F7F4ED",
+      "--card-border": "rgba(143,162,138,0.18)",
+      "--input-bg": "rgba(255,255,255,0.6)",
+      "--modal-bg": "#F7F4ED",
+      "--tooltip-bg": "#F7F4ED",
+      "--sidebar-bg": "rgba(247,244,237,0.97)",
+      "--hover-bg": "rgba(143,162,138,0.1)",
+      "--day-hover": "rgba(143,162,138,0.14)",
+      "--day-today": "rgba(143,162,138,0.22)",
+      "--scrollbar-color": "#8FA28A",
+      "--scrollbar-hover": "#C7D3C0"
+    },
+    bgGradient: "linear-gradient(150deg, #F7F4ED 0%, #C7D3C0 100%)"
   }
 };
 
