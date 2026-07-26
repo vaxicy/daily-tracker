@@ -97,12 +97,10 @@
         width: 32px;
         height: 32px;
         border-radius: 9px;
-        background: linear-gradient(135deg, var(--eat), var(--eat2));
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 16px;
-        box-shadow: 0 2px 6px rgba(245,158,11,0.25);
       }
       .eat-title { font-size: 16px; font-weight: 700; }
       .eat-sub { font-size: 11px; color: color-mix(in srgb, var(--text) 50%, transparent); line-height: 1.45; }
@@ -2082,13 +2080,10 @@
         width: 32px;
         height: 32px;
         border-radius: 9px;
-        background: linear-gradient(135deg, var(--period2), var(--period));
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 16px;
-        color: #FFFFFF;
-        box-shadow: 0 2px 6px color-mix(in srgb, var(--period) 20%, transparent);
       }
       .period-title { font-size: 16px; font-weight: 700; }
       .period-sub { font-size: 11px; color: color-mix(in srgb, var(--text) 50%, transparent); line-height: 1.45; }
@@ -3553,20 +3548,6 @@
         flex-shrink: 0;
         transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
       }
-      .sidebar-item-icon.eat-icon   { background: linear-gradient(135deg, var(--eat), var(--eat2)); }
-      .sidebar-item-icon.drink-icon { background: linear-gradient(135deg, var(--primary), var(--primary2)); }
-      .sidebar-item-icon.poop-icon  { background: linear-gradient(135deg, var(--secondary), var(--secondary2)); }
-      .sidebar-item-icon.pee-icon   { background: linear-gradient(135deg, var(--pee), var(--pee2)); }
-      .sidebar-item-icon.period-icon { background: linear-gradient(135deg, var(--period2), var(--period)); }
-      /* 统一 5 个模块图标的视觉权重：去掉发光、加一致细边框 */
-      .sidebar-item-icon.eat-icon,
-      .sidebar-item-icon.drink-icon,
-      .sidebar-item-icon.poop-icon,
-      .sidebar-item-icon.pee-icon,
-      .sidebar-item-icon.period-icon {
-        box-shadow: none;
-        border: 1px solid color-mix(in srgb, var(--text) 6%, transparent);
-      }
       .sidebar-item-name {
         font-size: 13px;
         font-weight: 600;
@@ -4153,11 +4134,6 @@
         background: rgba(30,41,59,0.85);
         border-color: rgba(148,163,184,0.15);
       }
-      [data-theme="dark"] .period-icon {
-        background: linear-gradient(135deg, var(--period2), var(--period));
-        color: #FFFFFF;
-        box-shadow: 0 4px 12px rgba(244,114,182,0.15);
-      }
       [data-theme="dark"] .day-cell.period-day-1 { background: rgba(244,114,182,0.15); }
       [data-theme="dark"] .day-cell.period-predicted { background: repeating-linear-gradient(45deg, rgba(244,114,182,0.12), rgba(244,114,182,0.12) 5px, rgba(244,114,182,0.22) 5px, rgba(244,114,182,0.22) 10px); border-color: rgba(244,114,182,0.6); }
       [data-theme="dark"] .period-predict-banner { background: rgba(244,114,182,0.14); border-color: rgba(244,114,182,0.5); }
@@ -4743,11 +4719,6 @@
       [data-theme="forest"] .period-card {
         border-color: rgba(5,150,105,0.2);
         box-shadow: 0 4px 16px rgba(5,150,105,0.1);
-      }
-      [data-theme="forest"] .period-icon {
-        background: linear-gradient(135deg, var(--period2), var(--period));
-        color: #FFFFFF;
-        box-shadow: 0 4px 12px color-mix(in srgb, var(--period) 15%, transparent);
       }
         border-color: rgba(5,150,105,0.2);
       }
