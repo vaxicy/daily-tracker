@@ -1985,7 +1985,8 @@ var THEME_BADGE_COLOR = {
   pink: '#EC4899',
   dark: '#3b82f6',
   forest: '#059669',
-  sage: '#8FA28A'
+  sage: '#8FA28A',
+  oat: '#B0A695'
 };
 
 
@@ -4056,6 +4057,38 @@ const THEME_PRESETS = {
       "--scrollbar-hover": "#C7D3C0"
     },
     bgGradient: "linear-gradient(150deg, #F7F4ED 0%, #C7D3C0 100%)"
+  },
+  oat: {
+    name: t("themeOatName"),
+    dot: "linear-gradient(135deg,#B0A695,#776B5D)",
+    vars: {
+      "--text": "#4a4239",
+      "--muted": "rgba(74,66,57,0.6)",
+      "--primary": "#B0A695",
+      "--primary2": "#D8CFC0",
+      "--secondary": "#776B5D",
+      "--secondary2": "#8F8070",
+      "--eat": "#C8A96B",
+      "--eat2": "#d4b87e",
+      "--pee": "#B0A695",
+      "--pee2": "#C9BDB0",
+      "--poop": "#776B5D",
+      "--poop2": "#8F8070",
+      "--period": "#B0A695",
+      "--period2": "#D8CFC0",
+      "--card-bg": "#F3EEEA",
+      "--card-border": "rgba(176,166,149,0.18)",
+      "--input-bg": "rgba(255,255,255,0.6)",
+      "--modal-bg": "#F3EEEA",
+      "--tooltip-bg": "#F3EEEA",
+      "--sidebar-bg": "rgba(243,238,234,0.97)",
+      "--hover-bg": "rgba(176,166,149,0.1)",
+      "--day-hover": "rgba(176,166,149,0.14)",
+      "--day-today": "rgba(176,166,149,0.22)",
+      "--scrollbar-color": "#B0A695",
+      "--scrollbar-hover": "#D8CFC0"
+    },
+    bgGradient: "linear-gradient(150deg, #F3EEEA 0%, #EBE3D5 100%)"
   }
 };
 

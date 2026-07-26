@@ -6,7 +6,8 @@ const THEME_BADGE_COLOR = {
   pink: '#EC4899',
   dark: '#3b82f6',
   forest: '#059669',
-  sage: '#8FA28A'
+  sage: '#8FA28A',
+  oat: '#B0A695'
 };
 
 function updateBadge() {
