@@ -1,22 +1,11 @@
 const DEFAULT_MINUTES = 30;
 
 // ==================== 角标：显示今日喝水次数（后台原生角标）====================
-const THEME_BADGE_COLOR = {
-  default: '#1a73e8',
-  pink: '#EC4899',
-  dark: '#3b82f6',
-  forest: '#059669',
-  sage: '#8FA28A',
-  oat: '#B0A695',
-  lotus: '#8B6BAA',
-  harvest: '#B84F12',
-  aurora: '#C76A3F',
-  vermilion: '#C8341A',
-  vine: '#3A267A',
-  misty: '#4A7FB8',
-  evenglow: '#A85858',
-  jadeite: '#3F6B62'
-};
+// 角标色直接从共享的 THEME_PRESETS 自动派生（消除手动双表，新增主题自动同步）
+import { THEME_PRESETS } from './themes.js';
+const THEME_BADGE_COLOR = Object.fromEntries(
+  Object.entries(THEME_PRESETS).map(([k, p]) => [k, (p.vars && p.vars["--primary"]) || '#0b6bff'])
+);
 
 function updateBadge() {
   chrome.storage.local.get(
@@ -34,10 +23,8 @@ function updateBadge() {
       }
       const badgeType = data.badgeContentType || 'drink_today';
       const theme = data.selectedTheme || 'default';
-      const themeColor = THEME_BADGE_COLOR[theme] || '#1a73e8';
-      if (!THEME_BADGE_COLOR[theme]) {
-        logError(`主题 "${theme}" 未配置角标色 (THEME_BADGE_COLOR)，回退到默认蓝。请在 background.js 补上对应色值。`);
-      }
+      // 派生表已覆盖 themes.js 所有主题；themeColor 永不 undefined
+      const themeColor = THEME_BADGE_COLOR[theme] || '#0b6bff';
       logInfo('[角标] updateBadge 计算结果', { theme, themeColor, badgeType });
       chrome.action.setIcon({ path: { '16': 'icon16.png', '48': 'icon48.png', '128': 'icon128.png' } });
 
