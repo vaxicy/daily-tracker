@@ -30,12 +30,10 @@ function showCustomTooltip(target, text) {
   const tipRect = tip.getBoundingClientRect();
   const rect = target.getBoundingClientRect();
   let left = rect.left + rect.width / 2 - tipRect.width / 2;
-  let top;
-  // 优先显示在元素下方，空间不足则显示在上方
-  if (rect.bottom + 8 + tipRect.height <= window.innerHeight) {
+  let top = rect.top - tipRect.height - 8;
+  // 顶部空间不足时才翻到下方，避免 tooltip 被窗口裁切
+  if (top < 8 && rect.bottom + 8 + tipRect.height <= window.innerHeight) {
     top = rect.bottom + 8;
-  } else {
-    top = rect.top - tipRect.height - 8;
   }
   left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
   if (top < 8) top = 8;
@@ -50,11 +48,15 @@ function hideCustomTooltip() {
 }
 // 事件委托：悬浮带 data-tooltip 的元素时显示
 document.addEventListener("mouseover", (e) => {
-  const el = e.target.closest("[data-tooltip]");
-  if (el) showCustomTooltip(el, el.getAttribute("data-tooltip"));
+  const el = e.target.closest("[data-tooltip], [data-i18n-range]");
+  if (el) {
+    const raw = el.getAttribute("data-tooltip") || el.getAttribute("data-i18n-range");
+    const text = (typeof t === "function") ? t(raw) : raw;
+    showCustomTooltip(el, text);
+  }
 });
 document.addEventListener("mouseout", (e) => {
-  const el = e.target.closest("[data-tooltip]");
+  const el = e.target.closest("[data-tooltip], [data-i18n-range]");
   if (el) hideCustomTooltip();
 });
 
@@ -4218,7 +4220,7 @@ function initCustomScrollbar() {
   if (!bar || !thumb) return;
 
   // 调试开关：定位根因后改为 false 删除日志
-  const DEBUG = true;
+  const DEBUG = false;
   const dlog = (...a) => { if (DEBUG) console.log("[scrollbar]", ...a); };
 
   let active = null; // { el, type: "viewport" | "bounded" }
@@ -6384,5 +6386,7 @@ function handleGlobalEnter(e) {
   }
 }
 document.addEventListener("keydown", handleGlobalEnter);
+
+
 
 
