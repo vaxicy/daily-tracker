@@ -3898,7 +3898,7 @@ chrome.storage.onChanged.addListener((changes) => {
 
 // 角标色从 THEME_PRESETS 自动派生（消除双表维护，新增主题自动同步）
 const THEME_BADGE_COLOR = Object.fromEntries(
-  Object.entries(THEME_PRESETS).map(([k, p]) => [k, p.vars && p.vars["--primary"] || '#0b6bff'])
+  Object.entries(THEME_PRESETS).map(([k, p]) => [k, p.vars && (p.vars["--badge"] || p.vars["--primary"]) || '#0b6bff'])
 );
 
 const root = document.documentElement;
@@ -3964,7 +3964,12 @@ function applyTheme(themeId) {
 
 function loadTheme() {
   chrome.storage.local.get(["selectedTheme"], (data) => {
-    const themeId = data.selectedTheme || "default";
+    let themeId = data.selectedTheme || "default";
+    // 已删除的主题（如旧的暗色主题）自动回退到默认，并写回存储
+    if (!THEME_PRESETS[themeId]) {
+      themeId = "default";
+      chrome.storage.local.set({ selectedTheme: "default" });
+    }
     renderThemeOptions();
     applyTheme(themeId);
   });

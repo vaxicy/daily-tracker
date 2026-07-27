@@ -4,7 +4,7 @@ const DEFAULT_MINUTES = 30;
 // 角标色直接从共享的 THEME_PRESETS 自动派生（消除手动双表，新增主题自动同步）
 import { THEME_PRESETS } from './themes.js';
 const THEME_BADGE_COLOR = Object.fromEntries(
-  Object.entries(THEME_PRESETS).map(([k, p]) => [k, (p.vars && p.vars["--primary"]) || '#0b6bff'])
+  Object.entries(THEME_PRESETS).map(([k, p]) => [k, (p.vars && (p.vars["--badge"] || p.vars["--primary"])) || '#0b6bff'])
 );
 
 function updateBadge() {
