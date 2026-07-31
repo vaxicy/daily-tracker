@@ -751,4 +751,38 @@ export const THEME_PRESETS = {
     },
     bgGradient: "linear-gradient(150deg, #8494FF 0%, #C9BEFF 60%, #FFDBFD 100%)"
   },
+  applemint: {
+    name: "themeApplemintName",
+    dot: "linear-gradient(135deg,#B0DB9C,#CAE8BD,#82C272)",
+    vars: {
+      "--text": "#16361A",
+      "--muted": "rgba(22,54,26,0.6)",
+      "--primary": "#82C272",
+      "--primary2": "#9BD089",
+      "--primary-glow": "rgba(130,194,114,0.5)",
+      "--secondary": "#CAE8BD",
+      "--secondary2": "#ECFAE5",
+      "--eat": "#82C272",
+      "--eat2": "#CAE8BD",
+      "--pee": "#9BB871",
+      "--pee2": "#DCE8C2",
+      "--poop": "#B8A35A",
+      "--poop2": "#E8DFA8",
+      "--period": "#D478A8",
+      "--period2": "#F5BCC8",
+      "--period-glow": "rgba(212,120,168,0.4)",
+      "--card-bg": "#FFFFFF",
+      "--card-border": "rgba(130,194,114,0.18)",
+      "--input-bg": "rgba(255,255,255,0.75)",
+      "--modal-bg": "#FFFFFF",
+      "--tooltip-bg": "#FFFFFF",
+      "--sidebar-bg": "rgba(255,255,255,0.97)",
+      "--hover-bg": "rgba(130,194,114,0.08)",
+      "--day-hover": "rgba(130,194,114,0.12)",
+      "--day-today": "rgba(130,194,114,0.18)",
+      "--scrollbar-color": "#82C272",
+      "--scrollbar-hover": "#9BD089"
+    },
+    bgGradient: "linear-gradient(150deg, #ECFAE5 0%, #DDF6D2 55%, #F0F8E8 100%)"
+  },
 };
