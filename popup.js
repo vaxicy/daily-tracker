@@ -1039,27 +1039,34 @@ function renderEatCalendar() {
   const startWeekday = safeGetDay(eatYear, eatMonth, 1);
   // [DT-DIAG 2026-08-01 一次性诊断] 排查完即删
   eatCalendarTitle.textContent = t("yearMonth", { y: eatYear, m: eatMonth + 1 }) + ` [wd=${startWeekday}/n0=${eatCalendarDays.querySelectorAll('.empty').length}]`;
+  // 同步清空 + 渲染空格子 + 日期 cell（不依赖 storage，立刻生效）
   eatCalendarDays.innerHTML = "";
-  
+  for (let i = 0; i < startWeekday; i++) {
+    const emptyCell = document.createElement("div");
+    emptyCell.className = "day-cell empty";
+    emptyCell.style.width = "36px";
+    emptyCell.style.height = "36px";
+    eatCalendarDays.appendChild(emptyCell);
+  }
+  const today = getToday();
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    const cell = document.createElement("div");
+    const dateStr = `${eatYear}-${String(eatMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    cell.textContent = day;
+    cell.className = "day-cell";
+    cell.dataset.date = dateStr;
+    if (dateStr === today) cell.classList.add("today");
+    eatCalendarDays.appendChild(cell);
+  }
+
+  // 异步补 records 样式 + tooltip/click 事件
   chrome.storage.local.get(["mealRecords"], (data) => {
     const records = data.mealRecords || {};
-    const today = getToday();
-    
-    for (let i = 0; i < startWeekday; i++) {
-      const emptyCell = document.createElement("div");
-      emptyCell.className = "day-cell empty";
-      emptyCell.style.width = "36px";
-      emptyCell.style.height = "36px";
-      eatCalendarDays.appendChild(emptyCell);
-    }
-    
+
     for (let day = 1; day <= lastDay.getDate(); day++) {
-      const cell = document.createElement("div");
       const dateStr = `${eatYear}-${String(eatMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      cell.textContent = day;
-      cell.className = "day-cell";
-      cell.dataset.date = dateStr;
-      if (dateStr === today) cell.classList.add("today");
+      const cell = eatCalendarDays.querySelector(`.day-cell[data-date="${dateStr}"]`);
+      if (!cell) continue;
       if (records[dateStr] && records[dateStr].length > 0) {
         cell.classList.add("has-eat");
         // 按餐次添加着色类
@@ -1076,7 +1083,6 @@ function renderEatCalendar() {
         hideEatTooltip();
         showEatEditModal(dateStr, records[dateStr] || []);
       });
-      eatCalendarDays.appendChild(cell);
     }
   });
 }
@@ -1873,41 +1879,36 @@ function renderDrinkCalendar() {
   const daysInMonth = lastDay.getDate();
   // [DT-DIAG 2026-08-01 一次性诊断] 排查完即删
   drinkCalendarTitle.textContent = t("yearMonth", { y: drinkCalYear, m: drinkCalMonth + 1 }) + ` [wd=${startWeekday}/n0=${drinkCalendarDays.querySelectorAll('.empty').length}]`;
-  
+  // 同步清空 + 渲染空格子 + 日期 cell（不依赖 storage）
+  drinkCalendarDays.innerHTML = "";
+  for (let i = 0; i < startWeekday; i++) {
+    const emptyCell = document.createElement("div");
+    emptyCell.className = "day-cell empty";
+    emptyCell.style.width = "36px";
+    emptyCell.style.height = "36px";
+    drinkCalendarDays.appendChild(emptyCell);
+  }
+  const today = getToday();
+  for (let day = 1; day <= daysInMonth; day++) {
+    const cell = document.createElement("div");
+    const dateStr = `${drinkCalYear}-${String(drinkCalMonth + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    cell.textContent = day;
+    cell.className = "day-cell";
+    cell.dataset.date = dateStr;
+    if (dateStr === today) cell.classList.add("today");
+    drinkCalendarDays.appendChild(cell);
+  }
+
+  // 异步补 background + tooltip
   chrome.storage.local.get(["drinkRecords"], (data) => {
     const records = data.drinkRecords || {};
-    const today = getToday();
-    
-    // 清空后重新渲染
-    drinkCalendarDays.innerHTML = "";
-    
-    // 统计最大值用于颜色映射
-    let maxCount = 1;
-    Object.keys(records).forEach(k => { 
-      const d = records[k];
-      if (Array.isArray(d) && d.length > maxCount) maxCount = d.length; 
-    });
-    
-    for (let i = 0; i < startWeekday; i++) {
-      const emptyCell = document.createElement("div");
-      emptyCell.className = "day-cell empty";
-      emptyCell.style.width = "36px";
-      emptyCell.style.height = "36px";
-      drinkCalendarDays.appendChild(emptyCell);
-    }
-    
-    for (let day = 1; day <= lastDay.getDate(); day++) {
-      const cell = document.createElement("div");
+    for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${drinkCalYear}-${String(drinkCalMonth + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-      cell.textContent = day;
-      cell.className = "day-cell";
-      cell.dataset.date = dateStr;
-      
+      const cell = drinkCalendarDays.querySelector(`.day-cell[data-date="${dateStr}"]`);
+      if (!cell) continue;
       const dayRecords = records[dateStr] || [];
       const count = dayRecords.length;
-      
-      if (dateStr === today) cell.classList.add("today");
-      
+
       // 颜色深浅反映饮水量
       const bg = getDrinkColor(count);
       cell.style.background = bg;
@@ -1915,10 +1916,9 @@ function renderDrinkCalendar() {
         cell.style.fontWeight = "600";
         cell.style.color = count >= 6 ? "#fff" : "var(--text)";
       }
-      
+
       cell.addEventListener("mouseenter", (e) => showDrinkTooltip(e, dateStr, dayRecords));
       cell.addEventListener("mouseleave", hideDrinkTooltip);
-      drinkCalendarDays.appendChild(cell);
     }
   });
 }
