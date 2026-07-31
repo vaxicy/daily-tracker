@@ -1091,7 +1091,9 @@ function renderEatCalendar() {
   const firstDay = new Date(eatYear, eatMonth, 1);
   const lastDay = new Date(eatYear, eatMonth + 1, 0);
   const startWeekday = safeGetDay(eatYear, eatMonth, 1);
-  eatCalendarTitle.textContent = t("yearMonth", { y: eatYear, m: eatMonth + 1 });
+  // [DEBUG-CAL] 把 startWeekday 显式显示在标题里，方便用户截图反馈
+  // 期望: 8月=6(六列), 11月=0(日列), 6月=1(一列)
+  eatCalendarTitle.textContent = t("yearMonth", { y: eatYear, m: eatMonth + 1 }) + ` [wd=${startWeekday}/tzOff=${new Date().getTimezoneOffset()}]`;
   eatCalendarDays.innerHTML = "";
   
   chrome.storage.local.get(["mealRecords"], (data) => {
