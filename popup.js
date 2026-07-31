@@ -931,7 +931,7 @@ addMealBtn.addEventListener("click", () => {
 
   const today = getToday();
   // 时间自动取当前时间，不再需要手动选择
-  const time = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
+  const time = new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
   const type = mealTypeSelect.value;
   const remark = "";  // 备注功能移至编辑弹窗
   const rating = currentMealRating;
@@ -1183,7 +1183,7 @@ function showEatEditModal(dateStr, dayRecords) {
         const [h, m] = timeVal.split(":");
         recordTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
       } else {
-        recordTime = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
+        recordTime = new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
       }
 
       // 获取备注和评价
@@ -1316,7 +1316,7 @@ function showEatEditModal(dateStr, dayRecords) {
           <option value="dinner">${t('dinner')}</option>
           <option value="snack">${t('snack')}</option>
         </select>
-        <input type="time" class="edit-input" id="eatAppendTime" value="${new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" })}" style="width:110px;font-size:12px;padding:6px 8px;" />
+        <input type="time" class="edit-input" id="eatAppendTime" value="${new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" })}" style="width:110px;font-size:12px;padding:6px 8px;" />
       </div>
       <div class="edit-input-row">
         <input class="edit-input" type="text" id="eatAppendContent" placeholder="${t('eatPlaceholder')}" style="font-size:12px;" />
@@ -1342,7 +1342,7 @@ function showEatEditModal(dateStr, dayRecords) {
       const [h, m] = timeVal.split(":");
       recordTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
     } else {
-      recordTime = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
+      recordTime = new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
     }
 
     chrome.storage.local.get(["mealRecords"], (data) => {
@@ -1384,7 +1384,7 @@ function saveEatRecord(idx) {
     const [h, m] = recordTime.split(":");
     recordTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
   } else {
-    recordTime = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
+    recordTime = new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
   }
 
   chrome.storage.local.get(["mealRecords"], (data) => {
@@ -1768,7 +1768,7 @@ drinkEditConfirm.addEventListener("click", () => {
 
     if (diff > 0) {
       // 增加：追加 diff 条记录（时间为当前时间）
-      const time = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
+      const time = new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
       for (let i = 0; i < diff; i++) {
         records[today].push({ time, timestamp: Date.now() + i }); // +i 避免时间戳完全相同
       }
@@ -2061,7 +2061,7 @@ function updateBadge() {
 drinkBtn.addEventListener("click", () => {
   const startTime = Date.now();
   const today = getToday();
-  const time = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
+  const time = new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
   
   chrome.storage.local.get(["drinkRecords"], (data) => {
     const records = data.drinkRecords || {};
@@ -2176,7 +2176,7 @@ function renderBristolMainSelector() {
   const descs = t("bristolDescs") || [];
   if (!bristolMainSelector) return;
 
-  bristolMainLabel.textContent = currentLang === "en" ? "Bristol Stool Scale" : "大便类型（可选）";
+  bristolMainLabel.textContent = t("bristolMainLabel");
   bristolMainSelector.innerHTML = types.map((label, i) => {
     const isActive = selectedBristolType === (i + 1);
     return `<button class="bristol-main-btn ${isActive ? 'active' : ''}" data-type="${i+1}" data-tooltip="${label} (${descs[i] || ''})">${i+1}</button>`;
@@ -2203,7 +2203,7 @@ function renderBristolMainSelector() {
 function updateBristolMainDesc() {
   if (!bristolMainDesc) return;
   if (selectedBristolType === 0) {
-    bristolMainDesc.textContent = currentLang === "en" ? "optional" : "未选择";
+    bristolMainDesc.textContent = t("bristolMainDesc");
     return;
   }
   const types = t("bristolTypes") || [];
@@ -2424,10 +2424,10 @@ function showPoopEditModal(dateStr, dayRecords) {
           const [h, m] = customVal.split(":");
           recordTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
         } else {
-          recordTime = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
+          recordTime = new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
         }
       } else {
-        recordTime = isToday ? new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" }) : t("makeUpCheckin");
+        recordTime = isToday ? new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" }) : t("makeUpCheckin");
       }
       
       // 读取补打卡表单中的排便量
@@ -2790,7 +2790,7 @@ poopRecordsHeader.addEventListener("click", (e) => {
 
 poopCheckinBtn.addEventListener("click", () => {
   const today = getToday();
-  const time = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
+  const time = new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
   const remark = poopRemarkInput.value.trim();
 
   chrome.storage.local.get(["poopRecords"], (data) => {
@@ -3147,10 +3147,10 @@ function showPeeEditModal(dateStr, dayRecords) {
           const [h, m] = customVal.split(":");
           recordTime = `${h.padStart(2,"0")}:${m.padStart(2,"0")}`;
         } else {
-          recordTime = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
+          recordTime = new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
         }
       } else {
-        recordTime = isToday ? new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" }) : t("makeUpCheckin");
+        recordTime = isToday ? new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" }) : t("makeUpCheckin");
       }
       
       chrome.storage.local.get(["peeRecords"], (data) => {
@@ -3472,7 +3472,7 @@ peeRecordsHeader.addEventListener("click", (e) => {
 
 peeCheckinBtn.addEventListener("click", () => {
   const today = getToday();
-  const time = new Date().toLocaleTimeString(currentLang === "en" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
+  const time = new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
   const remark = peeRemarkInput.value.trim();
 
   chrome.storage.local.get(["peeRecords"], (data) => {
@@ -4183,33 +4183,93 @@ if (themeTriggerEl && themeDropdownEl) {
 
 
 
-// ==================== 默认首页设置 ====================
-function applyDefaultTab(tabId) {
-  // 更新按钮选中态
-  document.querySelectorAll(".default-tab-opt").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.tab === tabId);
+// ==================== 默认首页设置（下拉选择器） ====================
+const DEFAULT_HOME_ITEMS = [
+  { tab: "eat", icon: "🍽️", nameKey: "tabNameEat", moduleKey: "eatModule" },
+  { tab: "drink", icon: "💧", nameKey: "tabNameDrink", moduleKey: "drinkModule" },
+  { tab: "poop", icon: "💩", nameKey: "tabNamePoop", moduleKey: "poopModule" },
+  { tab: "pee", icon: "🚽", nameKey: "tabNamePee", moduleKey: "peeModule" },
+  { tab: "period", icon: "🩸", nameKey: "tabNamePeriod", moduleKey: "periodModule" }
+];
+
+function renderDefaultHomeOptions() {
+  const menu = document.getElementById("defaultHomeMenu");
+  if (!menu) return;
+  menu.innerHTML = "";
+  chrome.storage.local.get(["defaultTab"], (data) => {
+    const def = data.defaultTab || "drink";
+    DEFAULT_HOME_ITEMS.forEach((item) => {
+      const el = document.createElement("div");
+      el.className = "theme-item" + (item.tab === def ? " active" : "");
+      el.dataset.tab = item.tab;
+      el.title = t(item.moduleKey);
+      el.innerHTML =
+        '<span class="theme-dot">' + item.icon + "</span>" +
+        '<span class="theme-label">' + t(item.nameKey) + "</span>";
+      el.onclick = () => selectDefaultHome(item.tab);
+      menu.appendChild(el);
+    });
+  });
+}
+
+function updateDefaultHomeTrigger() {
+  const swatch = document.getElementById("defaultHomeSwatch");
+  const current = document.getElementById("defaultHomeCurrent");
+  if (!swatch || !current) return;
+  chrome.storage.local.get(["defaultTab"], (data) => {
+    const def = data.defaultTab || "drink";
+    const item = DEFAULT_HOME_ITEMS.find((x) => x.tab === def) || DEFAULT_HOME_ITEMS[0];
+    swatch.textContent = item.icon;
+    current.textContent = t(item.nameKey);
+  });
+}
+
+function openDefaultHomeDropdown() {
+  const dd = document.getElementById("defaultHomeDropdown");
+  if (!dd) return;
+  renderDefaultHomeOptions();
+  dd.classList.add("open");
+  setTimeout(() => document.addEventListener("click", closeDefaultHomeOutside), 0);
+}
+
+function closeDefaultHomeDropdown() {
+  const dd = document.getElementById("defaultHomeDropdown");
+  if (dd) dd.classList.remove("open");
+  document.removeEventListener("click", closeDefaultHomeOutside);
+}
+
+function closeDefaultHomeOutside(e) {
+  const dd = document.getElementById("defaultHomeDropdown");
+  if (dd && !dd.contains(e.target)) closeDefaultHomeDropdown();
+}
+
+function selectDefaultHome(tab) {
+  chrome.storage.local.set({ defaultTab: tab }, () => {
+    renderDefaultHomeOptions();
+    updateDefaultHomeTrigger();
+    closeDefaultHomeDropdown();
+    const tabNames = { eat: t("tabNameEat"), drink: t("tabNameDrink"), poop: t("tabNamePoop"), pee: t("tabNamePee"), period: t("tabNamePeriod") };
+    showToast(t("toastDefaultPage", { page: tabNames[tab] }));
+    if (typeof switchTab === "function") switchTab(tab, true);
   });
 }
 
 function loadDefaultTab(callback) {
+  updateDefaultHomeTrigger();
+  renderDefaultHomeOptions();
+  const trigger = document.getElementById("defaultHomeTrigger");
+  if (trigger) {
+    trigger.onclick = (e) => {
+      e.stopPropagation();
+      const dd = document.getElementById("defaultHomeDropdown");
+      if (dd && dd.classList.contains("open")) closeDefaultHomeDropdown();
+      else openDefaultHomeDropdown();
+    };
+  }
   chrome.storage.local.get(["defaultTab"], (data) => {
-    const tabId = data.defaultTab || "drink";
-    applyDefaultTab(tabId);
-    if (callback) callback(tabId);
+    if (callback) callback(data.defaultTab || "drink");
   });
 }
-
-// 绑定默认首页切换事件
-document.querySelectorAll(".default-tab-opt").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const tabId = btn.dataset.tab;
-    applyDefaultTab(tabId);
-    chrome.storage.local.set({ defaultTab: tabId }, () => {
-      const tabNames = { eat: t("tabNameEat"), drink: t("tabNameDrink"), poop: t("tabNamePoop"), pee: t("tabNamePee"), period: t("tabNamePeriod") };
-      showToast(t("toastDefaultPage", { page: tabNames[tabId] }));
-    });
-  });
-});
 
 // 页面加载时恢复默认首页选中态
 loadDefaultTab();
@@ -4394,28 +4454,99 @@ document.getElementById("mealDefaultTimeModal")?.addEventListener("click", (e) =
   }
 });
 
-// 语言切换按钮事件
-document.querySelectorAll(".lang-opt").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const lang = btn.dataset.lang;
-    setLanguage(lang);
-    document.querySelectorAll(".lang-opt").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    // 刷新主题下拉选项文案（随语言切换）
-    renderThemeOptions();
-    applyTheme(currentThemeId);
-    showToast(t("toastDefaultLang", { lang: lang === "zh" ? t("langZh") : t("langEn") }));
-    // 强制刷新当前 tab 的动态内容
-    switchTab(currentTab, true);
+// 语言下拉菜单渲染
+function renderLangOptions() {
+  const menu = document.getElementById("langMenu");
+  if (!menu) return;
+  menu.innerHTML = "";
+  const LANGS = [
+    { id: "zh", label: t("langZh") },
+    { id: "en", label: t("langEn") },
+    { id: "es", label: t("langEs") },
+  ];
+  LANGS.forEach(l => {
+    const item = document.createElement("div");
+    item.className = "theme-item" + (l.id === currentLang ? " active" : "");
+    item.dataset.lang = l.id;
+    item.innerHTML = `<span class="theme-label"></span>`;
+    item.querySelector(".theme-label").textContent = l.label;
+    item.addEventListener("click", () => selectLang(l.id));
+    menu.appendChild(item);
   });
+}
+
+// 选择并应用语言
+function selectLang(lang) {
+  setLanguage(lang);
+  closeLangDropdown();
+  // 刷新主题下拉选项文案（随语言切换）
+  renderThemeOptions();
+  applyTheme(currentThemeId);
+  const langName = lang === "zh" ? t("langZh") : lang === "es" ? t("langEs") : t("langEn");
+  showToast(t("toastDefaultLang", { lang: langName }));
+  // 同步刷新语言下拉、角标内容标签、喝水动态状态、bristol 选择器
+  renderLangOptions();
+  const lt = document.getElementById("langTriggerLabel");
+  if (lt) lt.textContent = t("lang" + (lang === "zh" ? "Zh" : lang === "es" ? "Es" : "En"));
+  updateBadgeContentLabel();
+  applyRunningUI(isRunning);
+  applyNotifUI(notifToggle?.checked);
+  renderBristolMainSelector();
+  // 强制刷新当前 tab 的动态内容
+  switchTab(currentTab, true);
+  // 语言切换后即时同步刷新所有动态渲染区域（避免依赖 async init 延迟生效）
+  refreshDynamicI18n();
+}
+
+// 语言切换后同步刷新所有动态渲染区域
+function refreshDynamicI18n() {
+  if (typeof renderMealTags === "function") renderMealTags();
+  if (typeof renderFullnessSelector === "function") renderFullnessSelector();
+  if (typeof renderBristolMainSelector === "function") renderBristolMainSelector();
+  if (typeof renderDefaultHomeOptions === "function") renderDefaultHomeOptions();
+  if (typeof updateDefaultHomeTrigger === "function") updateDefaultHomeTrigger();
+  if (typeof renderPeriodBarChart === "function") renderPeriodBarChart();
+  if (typeof renderPeriodCycleTable === "function") renderPeriodCycleTable();
+  if (typeof renderPeeAmountSelector === "function") renderPeeAmountSelector();
+  if (typeof renderPoopAmountSelector === "function") renderPoopAmountSelector();
+  if (typeof renderPeeColorSelector === "function") renderPeeColorSelector();
+  if (typeof renderPoopColorSelector === "function") renderPoopColorSelector();
+  if (typeof updatePeriodToggleBtn === "function") updatePeriodToggleBtn();
+  if (typeof updatePoopTodayStatus === "function") updatePoopTodayStatus();
+  if (typeof updatePeeTodayStatus === "function") updatePeeTodayStatus();
+  if (typeof updateDrinkCounterDisplay === "function") updateDrinkCounterDisplay();
+  if (typeof updateDrinkUI === "function") updateDrinkUI();
+  // 喝水页 timer/notif 状态文本（由 applyRunningUI/applyNotifUI 动态设置，不随 data-i18n 刷新）
+  if (typeof isRunning !== "undefined" && typeof applyRunningUI === "function") applyRunningUI(isRunning);
+  if (typeof notifToggle !== "undefined" && typeof applyNotifUI === "function") applyNotifUI(notifToggle.checked);
+}
+
+// 关闭语言下拉菜单
+function closeLangDropdown() {
+  const el = document.getElementById("langDropdown");
+  if (el) el.classList.remove("open");
+}
+
+// 语言下拉触发
+const langTrigger = document.getElementById("langTrigger");
+if (langTrigger) {
+  langTrigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const dd = document.getElementById("langDropdown");
+    if (dd) dd.classList.toggle("open");
+  });
+}
+// 点击外部关闭语言下拉
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#langDropdown")) closeLangDropdown();
 });
 
 // 页面加载时恢复语言
 loadLanguage(() => {
-  // 设置语言按钮选中状态
-  document.querySelectorAll(".lang-opt").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.lang === currentLang);
-  });
+  // 渲染语言下拉并同步触发按钮文案
+  renderLangOptions();
+  const lt = document.getElementById("langTriggerLabel");
+  if (lt) lt.textContent = t("lang" + (currentLang === "zh" ? "Zh" : currentLang === "es" ? "Es" : "En"));
   applyI18n();
   // 重新应用动态状态文本，避免被 applyI18n 覆盖
   applyRunningUI(isRunning);
@@ -5266,7 +5397,7 @@ function updatePeriodToggleBtn() {
   if (isPeriod && cycle) {
     const range = getDatesInRange(cycle.startDate, cycle.endDate);
     const dayIndex = range.indexOf(targetDate) + 1;
-    statusText.textContent = t("periodStatusOn") + (dayIndex > 0 ? ` · 第${dayIndex}天` : "");
+    statusText.textContent = t("periodStatusOn") + (dayIndex > 0 ? " · " + t("periodDay", { n: dayIndex }) : "");
     statusText.classList.add("active");
     if (divider) divider.classList.add("show");
     if (detailContent) detailContent.classList.add("show");

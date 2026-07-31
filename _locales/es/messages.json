@@ -1,0 +1,10 @@
+{
+  "name": {
+    "message": "Daily Habit Tracker - Registro de hábitos saludables",
+    "description": "Extension name"
+  },
+  "description": {
+    "message": "Registra dieta, hidratación, deposiciones y micciones: un rastreador de hábitos saludables integral. Free daily health habit tracker for Chrome - track diet, water, bowel, bladder.",
+    "description": "Extension description"
+  }
+}

@@ -3831,73 +3831,38 @@
         border-color: rgba(11,107,255,0.2);
       }
 
-      /* 语言选择器 */
-      .lang-options {
-        display: flex;
-        gap: 8px;
+      /* 语言选择器：复用 .theme-dropdown / .theme-trigger / .theme-menu / .theme-item 样式 */
+
+      /* 默认首页选择器（复用 .theme-dropdown 体系） */
+      #defaultHomeDropdown .theme-menu {
+        max-height: 260px;
       }
-      .lang-opt {
-        flex: 1;
-        display: flex;
+      #defaultHomeDropdown .theme-item .theme-dot {
+        background: transparent !important;
+        color: inherit;
+        font-size: 15px;
+        line-height: 1;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 4px;
-        padding: 8px 4px;
-        border-radius: 10px;
-        border: 2px solid transparent;
-        background: rgba(12,42,77,0.04);
-        color: var(--muted);
-        font-size: 11px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-      .lang-opt:hover {
-        background: rgba(12,42,77,0.08);
-      }
-      .lang-opt.active {
-        border-color: var(--primary);
-        background: color-mix(in srgb, var(--primary) 8%, white);
-        color: var(--text);
-        box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 15%, transparent);
+        width: 20px;
+        height: 20px;
+        flex: 0 0 20px;
       }
 
-      /* 默认首页选择器 */
-      .default-tab-options {
-        display: flex;
-        gap: 6px;
-      }
-      .default-tab-opt {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
+      /* emoji 类型的 swatch：透明底 + 无 box-shadow + 显示 emoji（主题色块 #themeSwatch 保留原蓝渐变） */
+      #defaultHomeSwatch,
+      #langSwatch {
+        background: transparent !important;
+        box-shadow: none !important;
+        width: 18px;
+        height: 18px;
+        font-size: 15px;
+        line-height: 1;
+        display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 8px 2px;
-        border-radius: 10px;
-        border: 2px solid transparent;
-        background: rgba(12,42,77,0.04);
-        color: var(--muted);
-        font-size: 10.5px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-      .default-tab-opt:hover {
-        background: rgba(12,42,77,0.08);
-      }
-      .default-tab-opt span:last-child {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        width: 100%;
-        text-align: center;
-      }
-      .default-tab-opt.active {
-        border-color: var(--primary);
-        background: color-mix(in srgb, var(--primary) 8%, white);
-        color: var(--text);
-        box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 15%, transparent);
+        justify-content: center;
+        flex: 0 0 18px;
       }
 
       /* 隐藏的模块样式 */
@@ -4447,19 +4412,16 @@
         border-color: rgba(148,163,184,0.1);
       }
 
-      body[data-theme="dark"] .lang-opt,
-      body[data-theme="dark"] .default-tab-opt {
+      body[data-theme="dark"] .theme-item {
         background: rgba(51,65,85,0.3);
         color: var(--muted, rgba(226,232,240,0.55));
       }
 
-      body[data-theme="dark"] .lang-opt:hover,
-      body[data-theme="dark"] .default-tab-opt:hover {
+      body[data-theme="dark"] .theme-item:hover {
         background: rgba(51,65,85,0.5);
       }
 
-      body[data-theme="dark"] .lang-opt.active,
-      body[data-theme="dark"] .default-tab-opt.active {
+      body[data-theme="dark"] .theme-item.active {
         border-color: var(--primary, #3b82f6);
         background: color-mix(in srgb, var(--primary, #3b82f6) 12%, #0f172a);
         color: var(--text, #e2e8f0);
@@ -5030,8 +4992,30 @@
         margin-top: 4px !important;
       }
 
-    </style>
-  </head>
+  /* 朝霞蓝 aurora 主题：日历/按钮统一 pastel 蓝家族（仅作用于 aurora，不影响其他主题） */
+  body[data-theme="aurora"] .day-cell.today {
+    background: rgba(127,184,232,0.25);
+    color: var(--text);
+    font-weight: 700;
+  }
+  body[data-theme="aurora"] .day-cell.has-eat {
+    background: rgba(127,184,232,0.12);
+  }
+  body[data-theme="aurora"] .day-cell:not(.empty):hover {
+    background: rgba(127,184,232,0.2);
+  }
+  body[data-theme="aurora"] #drinkBtn {
+    background: linear-gradient(135deg, var(--secondary), var(--secondary2));
+    box-shadow: 0 5px 16px rgba(127,184,232,0.45);
+  }
+  body[data-theme="aurora"] #resetBtn {
+    background: rgba(127,184,232,0.15);
+    color: #4A7099;
+    border: 1px solid rgba(127,184,232,0.45);
+  }
+
+  </style>
+</head>
   <body>
 
     <!-- ============ 吃 - 饮食记录页面 ============ -->
@@ -5696,27 +5680,13 @@
       <div class="sidebar-header" style="margin-top:4px;margin-bottom:12px;padding-bottom:10px;">
         <span class="sidebar-title" data-i18n="defaultPage">🏠 默认首页</span>
       </div>
-      <div class="default-tab-options" id="defaultTabOptions">
-        <button class="default-tab-opt" data-tab="eat" data-i18n-title="eatModule">
-          <span style="font-size:16px;">🍽️</span>
-          <span data-i18n="tabNameEat">饮食</span>
+      <div class="theme-dropdown" id="defaultHomeDropdown">
+        <button type="button" class="theme-trigger" id="defaultHomeTrigger" data-i18n-title="defaultPage">
+          <span class="theme-swatch" id="defaultHomeSwatch">🏠</span>
+          <span class="theme-current" id="defaultHomeCurrent"></span>
+          <svg class="theme-chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
         </button>
-        <button class="default-tab-opt" data-tab="drink" data-i18n-title="drinkModule">
-          <span style="font-size:16px;">💧</span>
-          <span data-i18n="tabNameDrink">喝水</span>
-        </button>
-        <button class="default-tab-opt" data-tab="poop" data-i18n-title="poopModule">
-          <span style="font-size:16px;">💩</span>
-          <span data-i18n="tabNamePoop">拉屎</span>
-        </button>
-        <button class="default-tab-opt" data-tab="pee" data-i18n-title="peeModule">
-          <span style="font-size:16px;">🚽</span>
-          <span data-i18n="tabNamePee">撒尿</span>
-        </button>
-        <button class="default-tab-opt" data-tab="period" data-i18n-title="periodModule">
-          <span style="font-size:16px;">🩸</span>
-          <span data-i18n="tabNamePeriod">经期</span>
-        </button>
+        <div class="theme-menu" id="defaultHomeMenu"></div>
       </div>
 
       <!-- 分隔线 -->
@@ -5726,9 +5696,13 @@
       <div class="sidebar-header" style="margin-top:4px;margin-bottom:12px;padding-bottom:10px;">
         <span class="sidebar-title" data-i18n="language">🌐 语言设置</span>
       </div>
-      <div class="lang-options" id="langOptions">
-<button class="lang-opt active" data-lang="zh" data-tooltip="中文">🇨🇳 中文 Chinese</button>
-<button class="lang-opt" data-lang="en" data-tooltip="English">🇺🇸 English 英语</button>
+      <div class="theme-dropdown" id="langDropdown">
+        <button type="button" class="theme-trigger" id="langTrigger" data-i18n-title="language">
+          <span class="theme-swatch" id="langSwatch">🌐</span>
+          <span class="theme-current" id="langTriggerLabel"></span>
+          <span class="theme-caret">▾</span>
+        </button>
+        <div class="theme-menu" id="langMenu"></div>
       </div>
 
       <!-- 分隔线 -->
