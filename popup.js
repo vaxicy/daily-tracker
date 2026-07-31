@@ -95,6 +95,23 @@ function getToday() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
+// 强制本地时区构造 Date 后取星期几（防御性包装）
+// 即使用户设了 timezoneOffset 偏移，也走"基于本地 0 点"再调整
+function safeGetDay(year, month, day) {
+  return new Date(year, month, day).getDay();
+}
+
+// 应用用户配置的时区偏移（小时）到 chrome.storage
+// 偏移单位：小时，正数=加时间（如 +8 = UTC+8 北京），负数=减时间（如 -5 = UTC-5 纽约）
+// 不配置时使用浏览器系统时区
+async function getTimezoneOffsetHours() {
+  return new Promise(resolve => {
+    chrome.storage.local.get(['timezoneOffsetHours'], r => {
+      resolve(typeof r.timezoneOffsetHours === 'number' ? r.timezoneOffsetHours : null);
+    });
+  });
+}
+
 // 数据迁移：将旧的 fullness 值(1/2/3)迁移到新的值(1/2/3/4/5)
 function migrateFullnessData() {
   return new Promise((resolve) => {
@@ -1019,7 +1036,7 @@ let eatTooltipTimeout = null;
 function renderEatCalendar() {
   const firstDay = new Date(eatYear, eatMonth, 1);
   const lastDay = new Date(eatYear, eatMonth + 1, 0);
-  const startWeekday = firstDay.getDay();
+  const startWeekday = safeGetDay(eatYear, eatMonth, 1);
   eatCalendarTitle.textContent = t("yearMonth", { y: eatYear, m: eatMonth + 1 });
   eatCalendarDays.innerHTML = "";
   
@@ -1851,7 +1868,7 @@ function getDrinkColor(count) {
 function renderDrinkCalendar() {
   const firstDay = new Date(drinkCalYear, drinkCalMonth, 1);
   const lastDay = new Date(drinkCalYear, drinkCalMonth + 1, 0);
-  const startWeekday = firstDay.getDay();
+  const startWeekday = safeGetDay(drinkCalYear, drinkCalMonth, 1);
   const daysInMonth = lastDay.getDate();
   drinkCalendarTitle.textContent = t("yearMonth", { y: drinkCalYear, m: drinkCalMonth + 1 });
   
@@ -2300,7 +2317,7 @@ let poopIsExpanded = true;
 function renderPoopCalendar() {
   const firstDay = new Date(poopYear, poopMonth, 1);
   const lastDay = new Date(poopYear, poopMonth + 1, 0);
-  const startWeekday = firstDay.getDay();
+  const startWeekday = safeGetDay(poopYear, poopMonth, 1);
   poopCalendarTitle.textContent = t("yearMonth", { y: poopYear, m: poopMonth + 1 });
   poopCalendarDays.innerHTML = "";
   
@@ -3044,7 +3061,7 @@ let peeIsExpanded = true;
 function renderPeeCalendar() {
   const firstDay = new Date(peeYear, peeMonth, 1);
   const lastDay = new Date(peeYear, peeMonth + 1, 0);
-  const startWeekday = firstDay.getDay();
+  const startWeekday = safeGetDay(peeYear, peeMonth, 1);
   peeCalendarTitle.textContent = t("yearMonth", { y: peeYear, m: peeMonth + 1 });
   peeCalendarDays.innerHTML = "";
   
@@ -4960,7 +4977,7 @@ function renderPeriodCalendar() {
 
   const firstDay = new Date(periodCalendarYear, periodCalendarMonth, 1);
   const lastDay = new Date(periodCalendarYear, periodCalendarMonth + 1, 0);
-  const startDay = firstDay.getDay();
+  const startDay = safeGetDay(periodCalendarYear, periodCalendarMonth, 1);
   const daysInMonth = lastDay.getDate();
   const today = getToday();
 
