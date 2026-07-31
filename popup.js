@@ -1037,8 +1037,6 @@ function renderEatCalendar() {
   const firstDay = new Date(eatYear, eatMonth, 1);
   const lastDay = new Date(eatYear, eatMonth + 1, 0);
   const startWeekday = safeGetDay(eatYear, eatMonth, 1);
-  // [DT-DIAG 2026-08-01 一次性诊断] 排查完即删
-  eatCalendarTitle.textContent = t("yearMonth", { y: eatYear, m: eatMonth + 1 }) + ` [wd=${startWeekday}/n0=${eatCalendarDays.querySelectorAll('.empty').length}]`;
   // 同步清空 + 渲染空格子 + 日期 cell（不依赖 storage，立刻生效）
   eatCalendarDays.innerHTML = "";
   for (let i = 0; i < startWeekday; i++) {
@@ -1058,6 +1056,8 @@ function renderEatCalendar() {
     if (dateStr === today) cell.classList.add("today");
     eatCalendarDays.appendChild(cell);
   }
+  // [DT-DIAG 2026-08-01 一次性诊断] 排查完即删（已挪到渲染后，n0 才是当前月真实空格数）
+  eatCalendarTitle.textContent = t("yearMonth", { y: eatYear, m: eatMonth + 1 }) + ` [wd=${startWeekday}/n0=${eatCalendarDays.querySelectorAll('.empty').length}]`;
 
   // 异步补 records 样式 + tooltip/click 事件
   chrome.storage.local.get(["mealRecords"], (data) => {
@@ -1877,8 +1877,6 @@ function renderDrinkCalendar() {
   const lastDay = new Date(drinkCalYear, drinkCalMonth + 1, 0);
   const startWeekday = safeGetDay(drinkCalYear, drinkCalMonth, 1);
   const daysInMonth = lastDay.getDate();
-  // [DT-DIAG 2026-08-01 一次性诊断] 排查完即删
-  drinkCalendarTitle.textContent = t("yearMonth", { y: drinkCalYear, m: drinkCalMonth + 1 }) + ` [wd=${startWeekday}/n0=${drinkCalendarDays.querySelectorAll('.empty').length}]`;
   // 同步清空 + 渲染空格子 + 日期 cell（不依赖 storage）
   drinkCalendarDays.innerHTML = "";
   for (let i = 0; i < startWeekday; i++) {
@@ -1898,6 +1896,8 @@ function renderDrinkCalendar() {
     if (dateStr === today) cell.classList.add("today");
     drinkCalendarDays.appendChild(cell);
   }
+  // [DT-DIAG 2026-08-01 一次性诊断] 排查完即删（已挪到渲染后，n0 才是当前月真实空格数）
+  drinkCalendarTitle.textContent = t("yearMonth", { y: drinkCalYear, m: drinkCalMonth + 1 }) + ` [wd=${startWeekday}/n0=${drinkCalendarDays.querySelectorAll('.empty').length}]`;
 
   // 异步补 background + tooltip
   chrome.storage.local.get(["drinkRecords"], (data) => {
@@ -2320,28 +2320,35 @@ function renderPoopCalendar() {
   const firstDay = new Date(poopYear, poopMonth, 1);
   const lastDay = new Date(poopYear, poopMonth + 1, 0);
   const startWeekday = safeGetDay(poopYear, poopMonth, 1);
-  poopCalendarTitle.textContent = t("yearMonth", { y: poopYear, m: poopMonth + 1 });
+  // 同步清空 + 渲染空格子 + 日期 cell（不依赖 storage）
   poopCalendarDays.innerHTML = "";
-  
+  for (let i = 0; i < startWeekday; i++) {
+    const emptyCell = document.createElement("div");
+    emptyCell.className = "day-cell empty";
+    emptyCell.style.width = "36px";
+    emptyCell.style.height = "36px";
+    poopCalendarDays.appendChild(emptyCell);
+  }
+  const today = getToday();
+  const daysInMonth = lastDay.getDate();
+  for (let day = 1; day <= daysInMonth; day++) {
+    const cell = document.createElement("div");
+    const dateStr = `${poopYear}-${String(poopMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    cell.textContent = day;
+    cell.className = "day-cell";
+    cell.dataset.date = dateStr;
+    if (dateStr === today) cell.classList.add("today");
+    poopCalendarDays.appendChild(cell);
+  }
+  poopCalendarTitle.textContent = t("yearMonth", { y: poopYear, m: poopMonth + 1 });
+
+  // 异步补 records 样式 + tooltip/click
   chrome.storage.local.get(["poopRecords"], (data) => {
     const records = data.poopRecords || {};
-    const today = getToday();
-    
-    for (let i = 0; i < startWeekday; i++) {
-      const emptyCell = document.createElement("div");
-      emptyCell.className = "day-cell empty";
-      emptyCell.style.width = "36px";
-      emptyCell.style.height = "36px";
-      poopCalendarDays.appendChild(emptyCell);
-    }
-    
-    for (let day = 1; day <= lastDay.getDate(); day++) {
-      const cell = document.createElement("div");
+    for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${poopYear}-${String(poopMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      cell.textContent = day;
-      cell.className = "day-cell";
-      cell.dataset.date = dateStr;
-      if (dateStr === today) cell.classList.add("today");
+      const cell = poopCalendarDays.querySelector(`.day-cell[data-date="${dateStr}"]`);
+      if (!cell) continue;
       if (records[dateStr]) {
         cell.classList.add("has-poop");
         const firstRec = records[dateStr][0];
@@ -2355,7 +2362,6 @@ function renderPoopCalendar() {
         hidePoopTooltip();
         showPoopEditModal(dateStr, records[dateStr] || []);
       });
-      poopCalendarDays.appendChild(cell);
     }
   });
 }
@@ -3064,28 +3070,35 @@ function renderPeeCalendar() {
   const firstDay = new Date(peeYear, peeMonth, 1);
   const lastDay = new Date(peeYear, peeMonth + 1, 0);
   const startWeekday = safeGetDay(peeYear, peeMonth, 1);
-  peeCalendarTitle.textContent = t("yearMonth", { y: peeYear, m: peeMonth + 1 });
+  // 同步清空 + 渲染空格子 + 日期 cell（不依赖 storage）
   peeCalendarDays.innerHTML = "";
-  
+  for (let i = 0; i < startWeekday; i++) {
+    const emptyCell = document.createElement("div");
+    emptyCell.className = "day-cell empty";
+    emptyCell.style.width = "36px";
+    emptyCell.style.height = "36px";
+    peeCalendarDays.appendChild(emptyCell);
+  }
+  const today = getToday();
+  const daysInMonth = lastDay.getDate();
+  for (let day = 1; day <= daysInMonth; day++) {
+    const cell = document.createElement("div");
+    const dateStr = `${peeYear}-${String(peeMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    cell.textContent = day;
+    cell.className = "day-cell";
+    cell.dataset.date = dateStr;
+    if (dateStr === today) cell.classList.add("today");
+    peeCalendarDays.appendChild(cell);
+  }
+  peeCalendarTitle.textContent = t("yearMonth", { y: peeYear, m: peeMonth + 1 });
+
+  // 异步补 records 样式 + tooltip/click
   chrome.storage.local.get(["peeRecords"], (data) => {
     const records = data.peeRecords || {};
-    const today = getToday();
-    
-    for (let i = 0; i < startWeekday; i++) {
-      const emptyCell = document.createElement("div");
-      emptyCell.className = "day-cell empty";
-      emptyCell.style.width = "36px";
-      emptyCell.style.height = "36px";
-      peeCalendarDays.appendChild(emptyCell);
-    }
-    
-    for (let day = 1; day <= lastDay.getDate(); day++) {
-      const cell = document.createElement("div");
+    for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${peeYear}-${String(peeMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      cell.textContent = day;
-      cell.className = "day-cell";
-      cell.dataset.date = dateStr;
-      if (dateStr === today) cell.classList.add("today");
+      const cell = peeCalendarDays.querySelector(`.day-cell[data-date="${dateStr}"]`);
+      if (!cell) continue;
       if (records[dateStr]) cell.classList.add("has-pee");
       cell.addEventListener("mouseenter", (e) => showPeeTooltip(e, dateStr));
       cell.addEventListener("mouseleave", hidePeeTooltip);
@@ -3093,7 +3106,6 @@ function renderPeeCalendar() {
         hidePeeTooltip();
         showPeeEditModal(dateStr, records[dateStr] || []);
       });
-      peeCalendarDays.appendChild(cell);
     }
   });
 }
