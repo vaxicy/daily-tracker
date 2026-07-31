@@ -6259,6 +6259,26 @@ if (csvChooser) csvChooser.querySelectorAll(".csv-mod-btn").forEach((btn) => {
 // ==================== 全局键盘绑定：Enter 快速打卡 ====================
 // 在当前 tab 按 Enter 触发该页主操作按钮，复用现有按钮逻辑。
 // 防护：输入框内不拦截、任何弹窗/浮层打开时不拦截、喝水未运行给提示。
+
+// 输入框内按 Enter 也触发打卡：给"备注框/文本输入"绑 Enter → 该页主按钮。
+// 统一 helper，未来新增输入框只需 registerEnterCheckin(input, btn) 一次。
+function registerEnterCheckin(input, btn) {
+  if (!input || !btn) return;
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      btn.click();
+    }
+  });
+}
+// 备注框输入后按 Enter = 打卡（全局 handleGlobalEnter 在 INPUT 内会 return，这里单独补）
+registerEnterCheckin(poopRemarkInput, poopCheckinButton);
+registerEnterCheckin(peeRemarkInput, peeCheckinButton);
+registerEnterCheckin(
+  document.getElementById("periodRemarkInput"),
+  document.getElementById("periodSaveMoodButton")
+);
+
 function isAnyModalOpen() {
   const tagModal = document.getElementById("tagModal");
   const badgeModalOverlay = document.getElementById("badgeModalOverlay");
