@@ -9,8 +9,8 @@
         --text: #0c2a4d;
         --muted: rgba(12,42,77,0.6);
         --primary: #0b6bff;
-        --primary2: #20c6ff;
-        --secondary: #8B5CF6;
+      --primary2: #20c6ff;
+      --secondary: #8B5CF6;
         --secondary2: #A78BFA;
         --eat: #F59E0B;
         --eat2: #FBBF24;
@@ -3954,6 +3954,28 @@
       .lv2 { background: rgba(11,107,255,0.45); }
       .lv3 { background: rgba(11,107,255,0.7); }
       .lv4 { background: linear-gradient(135deg, var(--primary), var(--primary2)); }
+
+      /* 仅柠檬黄：日历方块改用柔和奶薄荷绿阶，避免高饱和黄刺眼 */
+      body[data-theme="lemon"] .drink-legend-bar .drink-lv.lv0,
+      body[data-theme="lemon"] .lv0 { background: color-mix(in srgb, var(--secondary) 10%, transparent); }
+      body[data-theme="lemon"] .drink-legend-bar .drink-lv.lv1,
+      body[data-theme="lemon"] .lv1 { background: color-mix(in srgb, var(--secondary) 35%, transparent); }
+      body[data-theme="lemon"] .drink-legend-bar .drink-lv.lv2,
+      body[data-theme="lemon"] .lv2 { background: color-mix(in srgb, var(--secondary) 60%, transparent); }
+      body[data-theme="lemon"] .drink-legend-bar .drink-lv.lv3,
+      body[data-theme="lemon"] .lv3 { background: color-mix(in srgb, var(--secondary) 85%, transparent); }
+      body[data-theme="lemon"] .drink-legend-bar .drink-lv.lv4,
+      body[data-theme="lemon"] .lv4 { background: linear-gradient(135deg, var(--secondary), var(--secondary2)); color: #fff; text-shadow: 0 1px 2px rgba(60,110,90,0.5); }
+      body[data-theme="lemon"] #pageDrink .day-cell.today {
+        background: color-mix(in srgb, var(--secondary) 20%, transparent);
+      }
+      /* 仅柠檬黄：主按钮用奶薄荷绿底 + 白字（阴影托底保证可读） */
+      body[data-theme="lemon"] .btn-primary {
+        background: linear-gradient(135deg, #7FBFA6, var(--secondary));
+        color: #fff;
+        text-shadow: 0 1px 2px rgba(60,110,90,0.5);
+        box-shadow: 0 5px 16px rgba(127,191,166,0.4);
+      }
 
       /* 喝水日历日期格子 */
       #pageDrink .day-cell.today {

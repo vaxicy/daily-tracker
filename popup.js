@@ -1817,6 +1817,14 @@ function getDrinkLevel(count) {
 
 function getDrinkColor(count) {
   const lv = getDrinkLevel(count);
+  const isLemon = document.body.dataset.theme === "lemon";
+  if (isLemon) {
+    if (lv === 0) return "color-mix(in srgb, var(--secondary) 10%, transparent)";
+    if (lv === 1) return "color-mix(in srgb, var(--secondary) 35%, transparent)";
+    if (lv === 2) return "color-mix(in srgb, var(--secondary) 60%, transparent)";
+    if (lv === 3) return "color-mix(in srgb, var(--secondary) 85%, transparent)";
+    return "linear-gradient(135deg, var(--secondary), var(--secondary2))";
+  }
   if (lv === 0) return "rgba(11,107,255,0.06)";
   if (lv === 1) return "rgba(11,107,255,0.25)";
   if (lv === 2) return "rgba(11,107,255,0.45)";
