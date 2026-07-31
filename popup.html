@@ -4001,6 +4001,12 @@
       body[data-theme="starlilac"] .day-cell.period-date {
         color: #4A50E0;
       }
+      /* 已打卡格子数字在浅紫底上加深蓝紫，避免 starlilac 紫底融字（poop/pee/eat 同修） */
+      body[data-theme="starlilac"] .day-cell.has-poop,
+      body[data-theme="starlilac"] .day-cell.has-pee,
+      body[data-theme="starlilac"] .day-cell.has-eat {
+        color: #1F2B66;
+      }
 
       /* 喝水日历日期格子 */
       #pageDrink .day-cell.today {
