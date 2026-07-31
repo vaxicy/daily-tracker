@@ -102,8 +102,58 @@ function safeGetDay(year, month, day) {
 }
 
 // 启动诊断日志：让用户在 console 验证当前 Chrome 加载的版本
-console.log('[DailyTracker] popup.js loaded @', new Date().toISOString(), 'commit=debug-2026-08-01');
-console.log('[DailyTracker] safeGetDay(2026,7,1) =', safeGetDay(2026, 7, 1), '(should be 6)');
+// 版本戳：写死在 DOM 里，新版才能在 popup 标题旁看到"v2026-08-01"标记
+const DT_BUILD_TAG = 'v2026-08-01-fixCalendar';
+console.log('[DailyTracker] popup.js loaded @', new Date().toISOString(), 'build=' + DT_BUILD_TAG);
+console.log('[DailyTracker] safeGetDay(2026,7,1) =', safeGetDay(2026, 7, 1), '(should be 6=Sat)');
+console.log('[DailyTracker] system TZ offset (min) =', new Date().getTimezoneOffset(), '(负数=东时区, 中国应为 -480)');
+
+// 把版本戳显示在所有日历标题右侧，让用户一眼看到"加载的是新版"
+// 若看到的日历标题旁没有这个标记，说明 Chrome 还在跑旧版 → 必须去 chrome://extensions 点 Reload
+function paintCalendarVersionStamps() {
+  const ids = [
+    'eatCalendarTitle', 'drinkCalendarTitle', 'poopCalendarTitle', 'peeCalendarTitle', 'periodCalendarTitle'
+  ];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // 已加过版本戳就不重复
+    if (el.querySelector('.dt-version-tag')) return;
+    // 标题用 textContent 重设的，所以版本戳得用独立 span 追加
+    const tag = document.createElement('span');
+    tag.className = 'dt-version-tag';
+    tag.textContent = ' ' + DT_BUILD_TAG;
+    tag.style.cssText = 'font-size:10px;font-weight:400;color:var(--muted);margin-left:6px;vertical-align:middle;opacity:0.6;';
+    el.appendChild(tag);
+  });
+}
+// 在 DOMContentLoaded 后打版本戳
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', paintCalendarVersionStamps);
+} else {
+  paintCalendarVersionStamps();
+}
+// 保险：所有日历 rerender 后再补一次（5 个 renderDrink/Eat/Poop/Pee/Period 都会清空 children）
+setTimeout(paintCalendarVersionStamps, 50);
+setTimeout(paintCalendarVersionStamps, 250);
+setTimeout(paintCalendarVersionStamps, 800);
+// 终极保险：MutationObserver 监听每个 title 元素 childList 变化，重新加版本戳
+function watchCalendarTitles() {
+  const ids = [
+    'eatCalendarTitle', 'drinkCalendarTitle', 'poopCalendarTitle', 'peeCalendarTitle', 'periodCalendarTitle'
+  ];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const obs = new MutationObserver(() => paintCalendarVersionStamps());
+    obs.observe(el, { childList: true, characterData: true, subtree: true });
+  });
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', watchCalendarTitles);
+} else {
+  watchCalendarTitles();
+}
 
 // 应用用户配置的时区偏移（小时）到 chrome.storage
 // 偏移单位：小时，正数=加时间（如 +8 = UTC+8 北京），负数=减时间（如 -5 = UTC-5 纽约）
