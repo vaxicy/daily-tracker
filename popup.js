@@ -1825,6 +1825,22 @@ function getDrinkColor(count) {
     if (lv === 3) return "color-mix(in srgb, var(--secondary) 85%, transparent)";
     return "linear-gradient(135deg, var(--secondary), var(--secondary2))";
   }
+  const isJelly = document.body.dataset.theme === "jellylilac";
+  if (isJelly) {
+    if (lv === 0) return "color-mix(in srgb, #7868DC 8%, transparent)";
+    if (lv === 1) return "color-mix(in srgb, #7868DC 25%, transparent)";
+    if (lv === 2) return "color-mix(in srgb, #7868DC 50%, transparent)";
+    if (lv === 3) return "color-mix(in srgb, #7868DC 75%, transparent)";
+    return "linear-gradient(135deg, #FDB7EA, #7868DC)";
+  }
+  const isStar = document.body.dataset.theme === "starlilac";
+  if (isStar) {
+    if (lv === 0) return "color-mix(in srgb, #4A50E0 8%, transparent)";
+    if (lv === 1) return "color-mix(in srgb, #4A50E0 25%, transparent)";
+    if (lv === 2) return "color-mix(in srgb, #4A50E0 50%, transparent)";
+    if (lv === 3) return "color-mix(in srgb, #4A50E0 75%, transparent)";
+    return "linear-gradient(135deg, #FFDBFD, #4A50E0)";
+  }
   if (lv === 0) return "rgba(11,107,255,0.06)";
   if (lv === 1) return "rgba(11,107,255,0.25)";
   if (lv === 2) return "rgba(11,107,255,0.45)";

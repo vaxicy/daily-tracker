@@ -3942,6 +3942,66 @@
         box-shadow: 0 5px 16px rgba(127,191,166,0.4);
       }
 
+      /* 软糖紫：喝水图例糖果色阶 + 按钮粉跳 + 今日紫描边（方案C跳色） */
+      body[data-theme="jellylilac"] .drink-legend-bar .drink-lv.lv0,
+      body[data-theme="jellylilac"] .lv0 { background: color-mix(in srgb, #7868DC 8%, transparent); }
+      body[data-theme="jellylilac"] .drink-legend-bar .drink-lv.lv1,
+      body[data-theme="jellylilac"] .lv1 { background: color-mix(in srgb, #7868DC 25%, transparent); }
+      body[data-theme="jellylilac"] .drink-legend-bar .drink-lv.lv2,
+      body[data-theme="jellylilac"] .lv2 { background: color-mix(in srgb, #7868DC 50%, transparent); }
+      body[data-theme="jellylilac"] .drink-legend-bar .drink-lv.lv3,
+      body[data-theme="jellylilac"] .lv3 { background: color-mix(in srgb, #7868DC 75%, transparent); }
+      body[data-theme="jellylilac"] .drink-legend-bar .drink-lv.lv4,
+      body[data-theme="jellylilac"] .lv4 { background: linear-gradient(135deg, #FDB7EA, #7868DC); }
+      body[data-theme="jellylilac"] .btn-primary {
+        background: linear-gradient(135deg, #FDB7EA, #B7B1F2);
+        box-shadow: 0 5px 16px rgba(253,183,234,0.45);
+      }
+      body[data-theme="jellylilac"] .btn-secondary {
+        color: #D478A8;
+        border: 1px solid rgba(253,183,234,0.5);
+      }
+      body[data-theme="jellylilac"] #pageDrink .day-cell.today {
+        box-shadow: inset 0 0 0 2px #7868DC;
+        color: #7868DC;
+        font-weight: 700;
+      }
+
+      /* 暮星紫：喝水图例冷蓝紫阶梯 + 按钮粉紫跳 + 今日紫描边（与软糖紫同结构） */
+      body[data-theme="starlilac"] .drink-legend-bar .drink-lv.lv0,
+      body[data-theme="starlilac"] .lv0 { background: color-mix(in srgb, #4A50E0 8%, transparent); }
+      body[data-theme="starlilac"] .drink-legend-bar .drink-lv.lv1,
+      body[data-theme="starlilac"] .lv1 { background: color-mix(in srgb, #4A50E0 25%, transparent); }
+      body[data-theme="starlilac"] .drink-legend-bar .drink-lv.lv2,
+      body[data-theme="starlilac"] .lv2 { background: color-mix(in srgb, #4A50E0 50%, transparent); }
+      body[data-theme="starlilac"] .drink-legend-bar .drink-lv.lv3,
+      body[data-theme="starlilac"] .lv3 { background: color-mix(in srgb, #4A50E0 75%, transparent); }
+      body[data-theme="starlilac"] .drink-legend-bar .drink-lv.lv4,
+      body[data-theme="starlilac"] .lv4 { background: linear-gradient(135deg, #FFDBFD, #4A50E0); }
+      body[data-theme="starlilac"] .btn-primary {
+        background: linear-gradient(135deg, #FFDBFD, #8494FF, #4A50E0);
+        color: #1F2B66;
+        box-shadow: 0 6px 20px rgba(74,80,224,0.55);
+      }
+      body[data-theme="starlilac"] .btn-secondary {
+        color: #D478A8;
+        border: 1px solid rgba(201,190,255,0.5);
+      }
+      body[data-theme="starlilac"] #pageDrink .day-cell.today {
+        box-shadow: inset 0 0 0 2px #4A50E0;
+        color: #4A50E0;
+        font-weight: 700;
+      }
+      /* 经期日期数字在浅紫/浅玫红底上加深蓝紫，避免 starlilac 浅底融字 */
+      body[data-theme="starlilac"] .day-cell.period-day-1,
+      body[data-theme="starlilac"] .day-cell.period-day-2,
+      body[data-theme="starlilac"] .day-cell.period-day-3 {
+        color: #1F2B66;
+      }
+      body[data-theme="starlilac"] .day-cell.period-date {
+        color: #1F2B66;
+      }
+
       /* 喝水日历日期格子 */
       #pageDrink .day-cell.today {
         background: rgba(11,107,255,0.25);
