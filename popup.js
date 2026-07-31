@@ -6272,12 +6272,19 @@ function registerEnterCheckin(input, btn) {
   });
 }
 // 备注框输入后按 Enter = 打卡（全局 handleGlobalEnter 在 INPUT 内会 return，这里单独补）
-registerEnterCheckin(poopRemarkInput, poopCheckinButton);
-registerEnterCheckin(peeRemarkInput, peeCheckinButton);
+// 用 getElementById 取按钮，避免引用不存在的全局变量导致静默 return
+function _enterBtn(id) {
+  const el = document.getElementById(id);
+  if (!el) console.warn("[EnterCheckin] 按钮未找到:", id);
+  return el;
+}
+registerEnterCheckin(poopRemarkInput, _enterBtn("poopCheckinBtn"));
+registerEnterCheckin(peeRemarkInput, _enterBtn("peeCheckinBtn"));
 registerEnterCheckin(
   document.getElementById("periodRemarkInput"),
-  document.getElementById("periodSaveMoodButton")
+  _enterBtn("periodSaveMoodButton")
 );
+console.log("[EnterCheckin] 已绑定 Enter→打卡 (poop/pee/period 备注框)");
 
 function isAnyModalOpen() {
   const tagModal = document.getElementById("tagModal");
