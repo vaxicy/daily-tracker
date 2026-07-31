@@ -101,6 +101,10 @@ function safeGetDay(year, month, day) {
   return new Date(year, month, day).getDay();
 }
 
+// 启动诊断日志：让用户在 console 验证当前 Chrome 加载的版本
+console.log('[DailyTracker] popup.js loaded @', new Date().toISOString(), 'commit=debug-2026-08-01');
+console.log('[DailyTracker] safeGetDay(2026,7,1) =', safeGetDay(2026, 7, 1), '(should be 6)');
+
 // 应用用户配置的时区偏移（小时）到 chrome.storage
 // 偏移单位：小时，正数=加时间（如 +8 = UTC+8 北京），负数=减时间（如 -5 = UTC-5 纽约）
 // 不配置时使用浏览器系统时区
