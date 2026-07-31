@@ -1037,7 +1037,8 @@ function renderEatCalendar() {
   const firstDay = new Date(eatYear, eatMonth, 1);
   const lastDay = new Date(eatYear, eatMonth + 1, 0);
   const startWeekday = safeGetDay(eatYear, eatMonth, 1);
-  eatCalendarTitle.textContent = t("yearMonth", { y: eatYear, m: eatMonth + 1 });
+  // [DT-DIAG 2026-08-01 一次性诊断] 排查完即删
+  eatCalendarTitle.textContent = t("yearMonth", { y: eatYear, m: eatMonth + 1 }) + ` [wd=${startWeekday}/n0=${eatCalendarDays.querySelectorAll('.empty').length}]`;
   eatCalendarDays.innerHTML = "";
   
   chrome.storage.local.get(["mealRecords"], (data) => {
@@ -1870,7 +1871,8 @@ function renderDrinkCalendar() {
   const lastDay = new Date(drinkCalYear, drinkCalMonth + 1, 0);
   const startWeekday = safeGetDay(drinkCalYear, drinkCalMonth, 1);
   const daysInMonth = lastDay.getDate();
-  drinkCalendarTitle.textContent = t("yearMonth", { y: drinkCalYear, m: drinkCalMonth + 1 });
+  // [DT-DIAG 2026-08-01 一次性诊断] 排查完即删
+  drinkCalendarTitle.textContent = t("yearMonth", { y: drinkCalYear, m: drinkCalMonth + 1 }) + ` [wd=${startWeekday}/n0=${drinkCalendarDays.querySelectorAll('.empty').length}]`;
   
   chrome.storage.local.get(["drinkRecords"], (data) => {
     const records = data.drinkRecords || {};
