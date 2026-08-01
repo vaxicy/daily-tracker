@@ -3063,6 +3063,33 @@
         border-color: color-mix(in srgb, var(--period) 25%, transparent);
         box-shadow: 0 3px 8px color-mix(in srgb, var(--period) 14%, transparent);
       }
+      /* pink 主题：排尿页薄荷绿在浅粉底对比弱，改用深玫红 #BE185D（CR≈7:1） */
+      body[data-theme="pink"] #pagePee .day-cell:not(.empty) {
+        background: rgba(190,24,93,0.08);
+      }
+      body[data-theme="pink"] #pagePee .day-cell.today {
+        background: rgba(190,24,93,0.25);
+        color: #BE185D;
+      }
+      body[data-theme="pink"] #pagePee .day-cell.has-pee {
+        background: rgba(190,24,93,0.12);
+      }
+      body[data-theme="pink"] #pagePee .day-cell:not(.empty):hover {
+        background: rgba(190,24,93,0.2);
+      }
+      body[data-theme="pink"] #pagePee .calendar-header .calendar-title {
+        color: #BE185D;
+      }
+      body[data-theme="pink"] #pagePee .nav-btn {
+        background: rgba(190,24,93,0.1);
+        color: #BE185D;
+      }
+      body[data-theme="pink"] #pagePee .nav-btn:hover {
+        background: rgba(190,24,93,0.2);
+      }
+      body[data-theme="pink"] #pagePee .weekday {
+        color: #BE185D;
+      }
       body[data-theme="dark"] #customTooltip {
         background: #2b2f3a;
         color: #f0f2f5;
