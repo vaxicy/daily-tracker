@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "__MSG_name__",
     "description": "__MSG_description__",
-    "version": "3.3.5",
+    "version": "3.3.6",
     "default_locale": "zh_CN",
     "action": {
       "default_popup": "popup.html",
