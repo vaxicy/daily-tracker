@@ -29,7 +29,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(12,42,77,0.08)",
       "--day-today": "rgba(11,107,255,0.12)",
       "--scrollbar-color": "#0b6bff",
-      "--scrollbar-hover": "#20c6ff"
+      "--scrollbar-hover": "#20c6ff",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #eaf5ff 0%, #daeaff 100%)"
   },
@@ -63,7 +65,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(236,72,153,0.1)",
       "--day-today": "rgba(236,72,153,0.15)",
       "--scrollbar-color": "#EC4899",
-      "--scrollbar-hover": "#F472B6"
+      "--scrollbar-hover": "#F472B6",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #fce7f3 0%, #fbcfe8 100%)"
   },
@@ -100,7 +104,9 @@ export const THEME_PRESETS = {
       "--day-today": "rgba(51,65,85,0.8)",
       "--scrollbar-color": "#94A3B8",
       "--scrollbar-hover": "#CBD5E1",
-      "--badge": "#1d4ed8"
+      "--badge": "#1d4ed8",
+      "--toast-bg": "rgba(226,232,240,0.92)",
+      "--toast-text": "#0f172a"
     },
     bgGradient: "linear-gradient(150deg, #0f172a 0%, #1e293b 100%)"
   },
@@ -134,7 +140,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(5,150,105,0.1)",
       "--day-today": "rgba(5,150,105,0.15)",
       "--scrollbar-color": "#10B981",
-      "--scrollbar-hover": "#34D399"
+      "--scrollbar-hover": "#34D399",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #ecfdf5 0%, #d1fae5 100%)"
   },
@@ -168,7 +176,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(143,162,138,0.14)",
       "--day-today": "rgba(143,162,138,0.22)",
       "--scrollbar-color": "#8FA28A",
-      "--scrollbar-hover": "#C7D3C0"
+      "--scrollbar-hover": "#C7D3C0",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #F7F4ED 0%, #C7D3C0 100%)"
   },
@@ -202,7 +212,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(176,166,149,0.14)",
       "--day-today": "rgba(176,166,149,0.22)",
       "--scrollbar-color": "#B0A695",
-      "--scrollbar-hover": "#D8CFC0"
+      "--scrollbar-hover": "#D8CFC0",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #F3EEEA 0%, #EBE3D5 100%)"
   },
@@ -236,7 +248,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(139,107,170,0.1)",
       "--day-today": "rgba(139,107,170,0.15)",
       "--scrollbar-color": "#A088C0",
-      "--scrollbar-hover": "#8B6BAA"
+      "--scrollbar-hover": "#8B6BAA",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #FBEFEF 0%, #FBE1EC 100%)"
   },
@@ -270,7 +284,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(184,79,18,0.1)",
       "--day-today": "rgba(184,79,18,0.15)",
       "--scrollbar-color": "#D46D25",
-      "--scrollbar-hover": "#B84F12"
+      "--scrollbar-hover": "#B84F12",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #FFFDF0 0%, #FFF6D6 100%)"
   },
@@ -305,7 +321,9 @@ export const THEME_PRESETS = {
       "--day-today": "rgba(255,154,110,0.18)",
       "--scrollbar-color": "#FFCBA8",
       "--scrollbar-hover": "#FF9A6E",
-      "--badge": "#7FB8E8"
+      "--badge": "#7FB8E8",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #EAF4FF 0%, #FFF1E8 100%)"
   },
@@ -339,7 +357,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(200,52,26,0.12)",
       "--day-today": "rgba(200,52,26,0.18)",
       "--scrollbar-color": "#E73F1E",
-      "--scrollbar-hover": "#C8341A"
+      "--scrollbar-hover": "#C8341A",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #FFF0E8 0%, #FFDCC8 100%)"
   },
@@ -373,7 +393,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(58,38,122,0.1)",
       "--day-today": "rgba(58,38,122,0.15)",
       "--scrollbar-color": "#443199",
-      "--scrollbar-hover": "#3A267A"
+      "--scrollbar-hover": "#3A267A",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #F5F0FA 0%, #EBE0F0 100%)"
   },
@@ -407,7 +429,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(74,127,184,0.12)",
       "--day-today": "rgba(74,127,184,0.18)",
       "--scrollbar-color": "#8CC0EB",
-      "--scrollbar-hover": "#4A7FB8"
+      "--scrollbar-hover": "#4A7FB8",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #E8F0F8 0%, #D0E0F0 100%)"
   },
@@ -441,7 +465,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(210,106,130,0.12)",
       "--day-today": "rgba(210,106,130,0.18)",
       "--scrollbar-color": "#F2A6BE",
-      "--scrollbar-hover": "#D26A82"
+      "--scrollbar-hover": "#D26A82",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #FFF1F4 0%, #FFE0E8 100%)"
   },
@@ -475,7 +501,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(63,107,98,0.1)",
       "--day-today": "rgba(63,107,98,0.15)",
       "--scrollbar-color": "#B1D3B9",
-      "--scrollbar-hover": "#3F6B62"
+      "--scrollbar-hover": "#3F6B62",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #F2F8EE 0%, #E6F2DD 100%)"
   },
@@ -509,7 +537,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(212,93,121,0.13)",
       "--day-today": "rgba(110,87,115,0.18)",
       "--scrollbar-color": "#8A6E92",
-      "--scrollbar-hover": "#6E5773"
+      "--scrollbar-hover": "#6E5773",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #F4ECE0 0%, #E9E2D0 55%, #E0CFB5 100%)"
   },
@@ -543,7 +573,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(168,162,158,0.13)",
       "--day-today": "rgba(107,114,128,0.18)",
       "--scrollbar-color": "#9CA3AF",
-      "--scrollbar-hover": "#6B7280"
+      "--scrollbar-hover": "#6B7280",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #FAFAF9 0%, #E7E5E4 55%, #D6D3D1 100%)"
   },
@@ -577,7 +609,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(166,217,194,0.18)",
       "--day-today": "rgba(168,212,229,0.22)",
       "--scrollbar-color": "#E3D46A",
-      "--scrollbar-hover": "#C9B84A"
+      "--scrollbar-hover": "#C9B84A",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #FFFDF6 0%, #FFF8DC 55%, #F2E48A 100%)"
   },
@@ -611,7 +645,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(143,204,160,0.15)",
       "--day-today": "rgba(224,122,174,0.18)",
       "--scrollbar-color": "#F9B2D7",
-      "--scrollbar-hover": "#E07AAE"
+      "--scrollbar-hover": "#E07AAE",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #F6FFDC 0%, #DAF9DE 35%, #CFECF3 70%, #F9B2D7 100%)"
   },
@@ -645,7 +681,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(0,121,121,0.13)",
       "--day-today": "rgba(0,121,121,0.19)",
       "--scrollbar-color": "#24B1B1",
-      "--scrollbar-hover": "#007979"
+      "--scrollbar-hover": "#007979",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #E0F4F4 0%, #C8E8E8 55%, #A8D8D8 100%)"
   },
@@ -679,7 +717,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(201,125,136,0.13)",
       "--day-today": "rgba(201,125,136,0.19)",
       "--scrollbar-color": "#E2AEB9",
-      "--scrollbar-hover": "#C97D88"
+      "--scrollbar-hover": "#C97D88",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #F8E1E5 0%, #EBC4CC 100%)"
   },
@@ -713,7 +753,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(120,104,220,0.1)",
       "--day-today": "rgba(253,183,234,0.18)",
       "--scrollbar-color": "#7868DC",
-      "--scrollbar-hover": "#B7B1F2"
+      "--scrollbar-hover": "#B7B1F2",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #F5F0FF 0%, #FFF5E0 100%)"
   },
@@ -747,7 +789,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(74,80,224,0.1)",
       "--day-today": "rgba(255,219,253,0.25)",
       "--scrollbar-color": "#4A50E0",
-      "--scrollbar-hover": "#8494FF"
+      "--scrollbar-hover": "#8494FF",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #8494FF 0%, #C9BEFF 60%, #FFDBFD 100%)"
   },
@@ -781,7 +825,9 @@ export const THEME_PRESETS = {
       "--day-hover": "rgba(130,194,114,0.12)",
       "--day-today": "rgba(130,194,114,0.18)",
       "--scrollbar-color": "#82C272",
-      "--scrollbar-hover": "#9BD089"
+      "--scrollbar-hover": "#9BD089",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #ECFAE5 0%, #DDF6D2 55%, #F0F8E8 100%)"
   },
@@ -817,7 +863,9 @@ export const THEME_PRESETS = {
       "--scrollbar-color": "#B8334D",
       "--scrollbar-hover": "#6BC4A8",
       "--bg": "#6B2046",
-      "--badge": "#B91C1C"
+      "--badge": "#B91C1C",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #6B2046 0%, #8E2C4F 55%, #C8344D 100%)"
   },

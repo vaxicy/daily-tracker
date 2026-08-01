@@ -3142,8 +3142,8 @@
         transform: translateX(-50%) translateY(12px);
         opacity: 0;
         pointer-events: auto;
-        background: rgba(12,42,77,0.85);
-        color: #fff;
+        background: var(--toast-bg, rgba(12,42,77,0.85));
+        color: var(--toast-text, #fff);
         padding: 6px 12px;
         border-radius: 8px;
         font-size: 11px;
@@ -4484,11 +4484,6 @@
       }
       body[data-theme="dark"] .tl-dot { border-color: var(--card-bg); }
       body[data-theme="dark"] .tl-card { box-shadow: 0 1px 5px rgba(0,0,0,0.5); }
-
-      body[data-theme="dark"] .toast {
-        background: var(--toast-bg, rgba(226,232,240,0.9));
-        color: var(--toast-text, #0f172a);
-      }
 
       body[data-theme="dark"] .sidebar-panel {
         background: var(--sidebar-bg, rgba(15,23,42,0.97));
