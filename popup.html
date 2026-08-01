@@ -1228,6 +1228,34 @@
       body[data-theme="xmas"] #pagePee .calendar-header .calendar-title {
         color: #B8334D;
       }
+      /* xmas 主题：排尿页薄荷绿 in 深红主题撞色，改用深酒红 #B8334D（CR≈8:1 on 米白卡 AAA） */
+      body[data-theme="xmas"] #pagePee {
+        --pee: #B8334D;
+        --pee2: #D4546A;
+      }
+      body[data-theme="xmas"] #pagePee .day-cell:not(.empty) {
+        background: rgba(184,51,77,0.08);
+      }
+      body[data-theme="xmas"] #pagePee .day-cell.today {
+        background: rgba(184,51,77,0.25);
+      }
+      body[data-theme="xmas"] #pagePee .day-cell.has-pee {
+        background: rgba(184,51,77,0.12);
+      }
+      body[data-theme="xmas"] #pagePee .day-cell:not(.empty):hover {
+        background: rgba(184,51,77,0.2);
+      }
+      body[data-theme="xmas"] #pagePee .nav-btn {
+        background: rgba(184,51,77,0.1);
+      }
+      body[data-theme="xmas"] #pagePee .nav-btn:hover {
+        background: rgba(184,51,77,0.2);
+      }
+      /* xmas 主题：累计统计卡边框/阴影硬编码薄荷绿，覆盖深酒红 */
+      body[data-theme="xmas"] .stats-card.pee-stats {
+        border-color: rgba(184,51,77,0.2);
+        box-shadow: 0 4px 16px rgba(184,51,77,0.08);
+      }
       #pageEat .calendar-header .calendar-title {
         font-size: 15px;
         font-weight: 700;
