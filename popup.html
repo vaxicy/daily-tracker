@@ -689,6 +689,14 @@
       body[data-theme="xmas"] .nav-dot:hover {
         background: var(--text);
       }
+      /* xmas 深酒红底：active 圆点用绿松石主按钮色 + 米白 ring 圈，避免和 --bg 融色消失 */
+      body[data-theme="xmas"] .nav-dot.active {
+        background: #6BC4A8;
+        box-shadow: 0 0 0 2px rgba(248,239,224,0.85);
+      }
+      body[data-theme="xmas"] .nav-dot.active:hover {
+        background: #5BB398;
+      }
       body[data-theme="xmas"] .header-sub,
       body[data-theme="xmas"] .eat-sub,
       body[data-theme="xmas"] .period-sub,
