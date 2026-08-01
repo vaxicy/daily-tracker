@@ -682,6 +682,13 @@
       body[data-theme="xmas"] .calendar-title {
         color: #B8334D;
       }
+      /* xmas 深酒红底：底部导航圆点从白30%改为米白70%，避免融进背景看不见 */
+      body[data-theme="xmas"] .nav-dot {
+        background: color-mix(in srgb, var(--text) 70%, transparent);
+      }
+      body[data-theme="xmas"] .nav-dot:hover {
+        background: var(--text);
+      }
       body[data-theme="xmas"] .header-sub,
       body[data-theme="xmas"] .eat-sub,
       body[data-theme="xmas"] .period-sub,
