@@ -784,5 +784,41 @@ export const THEME_PRESETS = {
       "--scrollbar-hover": "#9BD089"
     },
     bgGradient: "linear-gradient(150deg, #ECFAE5 0%, #DDF6D2 55%, #F0F8E8 100%)"
+  },  xmas: {
+    name: "themeXmasName",
+    dot: "linear-gradient(135deg,#B8334D,#6BC4A8,#D5E7B5)",
+    vars: {
+      "--text": "#F8EFE0",
+      "--muted": "rgba(248,239,224,0.6)",
+      "--primary": "#B8334D",
+      "--primary2": "#6BC4A8",
+      "--primary-glow": "rgba(184,51,77,0.45)",
+      "--secondary": "#6BC4A8",
+      "--secondary2": "#D5E7B5",
+      "--eat": "#B8334D",
+      "--eat2": "#E8BFC8",
+      "--pee": "#6BC4A8",
+      "--pee2": "#CFE9DD",
+      "--poop": "#B09046",
+      "--poop2": "#E3D6A8",
+      "--period": "#C8344D",
+      "--period2": "#E8A8B4",
+      "--period-glow": "rgba(200,52,77,0.4)",
+      "--card-bg": "#F4ECDF",
+      "--card-border": "rgba(184,51,77,0.18)",
+      "--input-bg": "rgba(255,255,255,0.75)",
+      "--modal-bg": "#F4ECDF",
+      "--tooltip-bg": "#F4ECDF",
+      "--sidebar-bg": "rgba(244,236,223,0.97)",
+      "--hover-bg": "rgba(184,51,77,0.08)",
+      "--day-hover": "rgba(184,51,77,0.12)",
+      "--day-today": "rgba(184,51,77,0.18)",
+      "--scrollbar-color": "#B8334D",
+      "--scrollbar-hover": "#6BC4A8",
+      "--bg": "#6B2046",
+      "--badge": "#5A1832"
+    },
+    bgGradient: "linear-gradient(150deg, #6B2046 0%, #8E2C4F 55%, #C8344D 100%)"
   },
+
 };
