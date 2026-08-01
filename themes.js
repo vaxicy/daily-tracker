@@ -787,13 +787,12 @@ export const THEME_PRESETS = {
   },
   xmas: {
     name: "themeXmasName",
-    dot: "linear-gradient(135deg,#B8334D,#6BC4A8,#D5E7B5)",
+    dot: "linear-gradient(135deg,#B8334D,#166534,#D5E7B5)",
     vars: {
       "--text": "#3D1A28",
       "--muted": "rgba(61,26,40,0.6)",
       "--primary": "#B8334D",
       "--primary2": "#6BC4A8",
-      "--badge": "#C8102E",
       "--primary-glow": "rgba(184,51,77,0.45)",
       "--secondary": "#6BC4A8",
       "--secondary2": "#D5E7B5",
@@ -818,7 +817,7 @@ export const THEME_PRESETS = {
       "--scrollbar-color": "#B8334D",
       "--scrollbar-hover": "#6BC4A8",
       "--bg": "#6B2046",
-      "--badge": "#5A1832"
+      "--badge": "#B91C1C"
     },
     bgGradient: "linear-gradient(150deg, #6B2046 0%, #8E2C4F 55%, #C8344D 100%)"
   },
