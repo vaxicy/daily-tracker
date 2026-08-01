@@ -639,7 +639,7 @@ export const THEME_PRESETS = {
       "--card-border": "rgba(224,122,174,0.18)",
       "--input-bg": "rgba(246,255,220,0.85)",
       "--modal-bg": "#FBFDFF",
-      "--tooltip-bg": "#F9B2D7",
+      "--tooltip-bg": "#FCD5E0",
       "--sidebar-bg": "rgba(251,253,255,0.97)",
       "--hover-bg": "rgba(224,122,174,0.08)",
       "--day-hover": "rgba(143,204,160,0.15)",
