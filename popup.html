@@ -1124,16 +1124,16 @@
         pointer-events: auto;
       }
       .day-cell:not(.empty):hover {
-        background: rgba(139,92,246,0.2);
+        background: color-mix(in srgb, var(--primary) 18%, transparent);
         transform: scale(1.05);
       }
       .day-cell.today {
-        background: rgba(139,92,246,0.25);
-        color: var(--secondary);
+        background: color-mix(in srgb, var(--primary) 22%, transparent);
+        color: var(--primary);
         font-weight: 700;
       }
       .day-cell.has-poop {
-        background: rgba(139,92,246,0.12);
+        background: color-mix(in srgb, var(--primary) 10%, transparent);
       }
       .day-cell.has-poop::after {
         content: '💩';
@@ -2782,7 +2782,7 @@
         gap: 0;
         font-size: 12px;
         line-height: 1.2;
-        padding-bottom: 3px;
+        padding: 0;
       }
       /* 血的颜色选择区 */
       .period-blood-row {
@@ -4043,16 +4043,16 @@
 
       /* 喝水日历日期格子 */
       #pageDrink .day-cell:not(.empty) {
-        background: rgba(11,107,255,0.08);
+        background: color-mix(in srgb, var(--primary) 8%, transparent);
       }
       #pageDrink .day-cell.today {
-        background: rgba(11,107,255,0.25);
+        background: color-mix(in srgb, var(--primary) 22%, transparent);
         color: var(--primary);
         font-weight: 700;
         border: 2px solid var(--primary);
       }
       #pageDrink .day-cell:not(.empty):hover {
-        background: rgba(11,107,255,0.18);
+        background: color-mix(in srgb, var(--primary) 16%, transparent);
         transform: scale(1.08);
         z-index: 5;
       }
