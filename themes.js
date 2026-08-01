@@ -793,6 +793,7 @@ export const THEME_PRESETS = {
       "--muted": "rgba(61,26,40,0.6)",
       "--primary": "#B8334D",
       "--primary2": "#6BC4A8",
+      "--badge": "#C8102E",
       "--primary-glow": "rgba(184,51,77,0.45)",
       "--secondary": "#6BC4A8",
       "--secondary2": "#D5E7B5",
