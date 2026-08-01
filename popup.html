@@ -682,20 +682,20 @@
       body[data-theme="xmas"] .calendar-title {
         color: #B8334D;
       }
-      /* xmas 深酒红底：底部导航圆点从白30%改为米白70%，避免融进背景看不见 */
-      body[data-theme="xmas"] .nav-dot {
-        background: color-mix(in srgb, var(--text) 70%, transparent);
+      /* xmas 深酒红底：active 每页一个亮版色（同色相提亮，不撞 --bg），无 ring 圈 */
+      /* 喝酒/吃饭/经期页：酒红系提亮为亮粉，深酒红底上 CR≈4.5:1 */
+      body[data-theme="xmas"] .nav-dot.active.drink,
+      body[data-theme="xmas"] .nav-dot.active.eat,
+      body[data-theme="xmas"] .nav-dot.active.period {
+        background: #E590A4;
       }
-      body[data-theme="xmas"] .nav-dot:hover {
-        background: var(--text);
-      }
-      /* xmas 深酒红底：active 圆点用绿松石主按钮色 + 米白 ring 圈，避免和 --bg 融色消失 */
-      body[data-theme="xmas"] .nav-dot.active {
+      /* 撒尿页：绿松石（--pee）已清晰 */
+      body[data-theme="xmas"] .nav-dot.active.pee {
         background: #6BC4A8;
-        box-shadow: 0 0 0 2px rgba(248,239,224,0.85);
       }
-      body[data-theme="xmas"] .nav-dot.active:hover {
-        background: #5BB398;
+      /* 大便页：黄铜提亮为暖黄 */
+      body[data-theme="xmas"] .nav-dot.active.poop {
+        background: #E3C765;
       }
       body[data-theme="xmas"] .header-sub,
       body[data-theme="xmas"] .eat-sub,
