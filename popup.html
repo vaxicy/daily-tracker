@@ -758,12 +758,11 @@
 
       /* 饮食统计卡片增强 */
       .eat-stats-card {
-        background: rgba(255,255,255,0.7);
-        border: 1px solid rgba(245,158,11,0.15);
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
         border-radius: 14px;
         padding: 14px;
-        backdrop-filter: blur(12px);
-        box-shadow: 0 4px 16px rgba(245,158,11,0.1);
+        box-shadow: 0 4px 16px rgba(245,158,11,0.06);
         margin-bottom: 12px;
         text-align: center;
       }
@@ -775,7 +774,7 @@
         text-align: left;
       }
       .eat-stats-body {
-        background: rgba(255,255,255,0.5);
+        background: color-mix(in srgb, var(--card-bg) 75%, transparent);
         border-radius: 12px;
         padding: 14px 0 10px;
         margin: 10px 0;
@@ -1884,12 +1883,11 @@
 
       /* 统计卡片 */
       .stats-card {
-        background: rgba(255,255,255,0.7);
-        border: 1px solid rgba(139,92,246,0.15);
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
         border-radius: 14px;
         padding: 14px;
-        backdrop-filter: blur(12px);
-        box-shadow: 0 4px 16px rgba(139,92,246,0.08);
+        box-shadow: 0 4px 16px rgba(139,92,246,0.06);
       }
       .stats-card.pee-stats {
         border-color: rgba(16,185,129,0.15);
@@ -1900,7 +1898,7 @@
         box-shadow: 0 4px 16px color-mix(in srgb, var(--poop), transparent 92%);
       }
       .poop-stats-body {
-        background: rgba(255,255,255,0.5);
+        background: color-mix(in srgb, var(--card-bg) 75%, transparent);
         border-radius: 12px;
         padding: 14px 0 10px;
         margin: 10px 0;
@@ -2004,7 +2002,7 @@
         text-align: center;
         padding: 8px 4px 6px;
         border-radius: 12px;
-        background: rgba(255,255,255,0.55);
+        background: color-mix(in srgb, var(--card-bg) 75%, transparent);
         box-sizing: border-box;
       }
       .drink-stat-label {
