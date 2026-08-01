@@ -4167,6 +4167,27 @@
         font-weight: 700;
         border: 2px solid var(--period);
       }
+      /* 今日同时处于经期内：today 永远胜出，经期强度改用边框不抢颜色 */
+      #pagePeriod .day-cell.today.period-day-1 {
+        background: color-mix(in srgb, var(--period) 25%, transparent);
+        color: var(--period);
+        border: 2px solid color-mix(in srgb, var(--period) 45%, transparent);
+      }
+      #pagePeriod .day-cell.today.period-day-2 {
+        background: color-mix(in srgb, var(--period) 25%, transparent);
+        color: var(--period);
+        border: 2px solid color-mix(in srgb, var(--period) 60%, transparent);
+      }
+      #pagePeriod .day-cell.today.period-day-3 {
+        background: color-mix(in srgb, var(--period) 25%, transparent);
+        color: var(--period);
+        border: 2px solid color-mix(in srgb, var(--period) 75%, transparent);
+      }
+      #pagePeriod .day-cell.today.period-day-4 {
+        background: color-mix(in srgb, var(--period) 25%, transparent);
+        color: var(--period);
+        border: 2px solid var(--period);
+      }
       #pagePeriod .day-cell:not(.empty):hover {
         background: color-mix(in srgb, var(--period) 20%, transparent);
       }
