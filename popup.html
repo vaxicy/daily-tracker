@@ -79,11 +79,11 @@
         width: 10px;
         height: 10px;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.3);
+        background: color-mix(in srgb, var(--text) 28%, transparent);
         cursor: pointer;
         transition: all 0.25s;
       }
-      .nav-dot:hover { background: rgba(255, 255, 255, 0.5); }
+      .nav-dot:hover { background: color-mix(in srgb, var(--text) 45%, transparent); }
       .nav-dot.active { transform: scale(1.3); }
       .nav-dot.active.eat { background: var(--eat); }
       .nav-dot.active.drink { background: var(--primary); }
@@ -4894,15 +4894,6 @@
         background: var(--eat);
         color: #fff;
         border-color: var(--eat);
-      }
-
-      /* 暗色主题：底部导航点 */
-      body[data-theme="dark"] .nav-dot {
-        background: color-mix(in srgb, var(--text) 35%, transparent);
-      }
-
-      body[data-theme="dark"] .nav-dot:hover {
-        background: color-mix(in srgb, var(--text) 55%, transparent);
       }
 
       body[data-theme="dark"] .custom-apply {
