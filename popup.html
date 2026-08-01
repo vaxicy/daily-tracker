@@ -1093,11 +1093,11 @@
       }
       .day-cell {
         width: 100%;
-        height: 36px;
+        aspect-ratio: 1;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 8px;
+        border-radius: 50%;
         font-size: 13px;
         font-weight: 500;
         cursor: pointer;
@@ -4013,8 +4013,7 @@
         background: rgba(11,107,255,0.25);
         color: var(--primary);
         font-weight: 700;
-        outline: 2px solid var(--primary);
-        outline-offset: -1px;
+        border: 2px solid var(--primary);
       }
       #pageDrink .day-cell:not(.empty):hover {
         background: rgba(11,107,255,0.18);

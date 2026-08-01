@@ -1042,8 +1042,6 @@ function renderEatCalendar() {
   for (let i = 0; i < startWeekday; i++) {
     const emptyCell = document.createElement("div");
     emptyCell.className = "day-cell empty";
-    emptyCell.style.width = "36px";
-    emptyCell.style.height = "36px";
     eatCalendarDays.appendChild(emptyCell);
   }
   const today = getToday();
@@ -1056,8 +1054,7 @@ function renderEatCalendar() {
     if (dateStr === today) cell.classList.add("today");
     eatCalendarDays.appendChild(cell);
   }
-  // [DT-DIAG 2026-08-01 一次性诊断] 排查完即删（已挪到渲染后，n0 才是当前月真实空格数）
-  eatCalendarTitle.textContent = t("yearMonth", { y: eatYear, m: eatMonth + 1 }) + ` [wd=${startWeekday}/n0=${eatCalendarDays.querySelectorAll('.empty').length}]`;
+  eatCalendarTitle.textContent = t("yearMonth", { y: eatYear, m: eatMonth + 1 });
 
   // 异步补 records 样式 + tooltip/click 事件
   chrome.storage.local.get(["mealRecords"], (data) => {
@@ -2322,8 +2319,6 @@ function renderPoopCalendar() {
   for (let i = 0; i < startWeekday; i++) {
     const emptyCell = document.createElement("div");
     emptyCell.className = "day-cell empty";
-    emptyCell.style.width = "36px";
-    emptyCell.style.height = "36px";
     poopCalendarDays.appendChild(emptyCell);
   }
   const today = getToday();
@@ -3072,8 +3067,6 @@ function renderPeeCalendar() {
   for (let i = 0; i < startWeekday; i++) {
     const emptyCell = document.createElement("div");
     emptyCell.className = "day-cell empty";
-    emptyCell.style.width = "36px";
-    emptyCell.style.height = "36px";
     peeCalendarDays.appendChild(emptyCell);
   }
   const today = getToday();
@@ -5027,8 +5020,6 @@ function renderPeriodCalendar() {
   for (let i = 0; i < startDay; i++) {
     const emptyCell = document.createElement("div");
     emptyCell.className = "day-cell empty";
-    emptyCell.style.width = "36px";
-    emptyCell.style.height = "36px";
     calendarDays.appendChild(emptyCell);
   }
 
