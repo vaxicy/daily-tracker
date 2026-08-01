@@ -784,12 +784,13 @@ export const THEME_PRESETS = {
       "--scrollbar-hover": "#9BD089"
     },
     bgGradient: "linear-gradient(150deg, #ECFAE5 0%, #DDF6D2 55%, #F0F8E8 100%)"
-  },  xmas: {
+  },
+  xmas: {
     name: "themeXmasName",
     dot: "linear-gradient(135deg,#B8334D,#6BC4A8,#D5E7B5)",
     vars: {
-      "--text": "#F8EFE0",
-      "--muted": "rgba(248,239,224,0.6)",
+      "--text": "#3D1A28",
+      "--muted": "rgba(61,26,40,0.6)",
       "--primary": "#B8334D",
       "--primary2": "#6BC4A8",
       "--primary-glow": "rgba(184,51,77,0.45)",
