@@ -653,7 +653,7 @@
       }
       .tag-modal-confirm:hover { transform: translateY(-1px); }
 
-      /* 红色背景主题（xmas）覆盖：页面级标题改浅色，避免深酒红文字 on 深红背景消失 */
+      /* 红色背景主题（xmas）覆盖：页面级大标题用米色，避免深酒红文字 on 深红背景消失 */
       body[data-theme="xmas"] .header-title,
       body[data-theme="xmas"] .eat-title,
       body[data-theme="xmas"] .period-title,
@@ -671,7 +671,10 @@
       body[data-theme="xmas"] .day-num,
       body[data-theme="xmas"] .tab-text,
       body[data-theme="xmas"] .meal-records-title,
-      body[data-theme="xmas"] .today-records-title,
+      body[data-theme="xmas"] .today-records-title {
+        color: #F8EFE0;
+      }
+      /* xmas 日历标题（"2026年X月"）用深酒红主色，与白底卡片对比清晰 */
       body[data-theme="xmas"] .calendar-title {
         color: #B8334D;
       }
