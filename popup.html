@@ -1067,17 +1067,21 @@
         background: rgba(139,92,246,0.2);
       }
       .calendar-grid {
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
         align-items: stretch;
         width: 100%;
+        min-width: 0;
         overflow: visible;
+        box-sizing: border-box;
       }
       .calendar-weekdays {
         display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 4px;
-        margin-bottom: 12px;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+        margin-bottom: 10px;
+        min-width: 0;
+        overflow: visible;
       }
       .weekday {
         width: 100%;
@@ -1085,18 +1089,23 @@
         font-size: 13px;
         font-weight: 600;
         color: var(--muted);
-        padding: 8px 0;
+        padding: 8px 2px;
         box-sizing: border-box;
+        min-width: 0;
+        overflow: visible;
       }
       .calendar-days {
         display: grid;
-        grid-template-columns: repeat(7, 1fr);
+        grid-template-columns: repeat(7, minmax(0, 1fr));
         gap: 6px;
         width: 100%;
+        min-width: 0;
+        overflow: visible;
       }
       .day-cell {
         width: 100%;
-        aspect-ratio: 1;
+        min-width: 0;
+        aspect-ratio: 1 / 1;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1108,7 +1117,7 @@
         position: relative;
         box-sizing: border-box;
         padding: 0;
-        min-height: 40px;
+        margin: 0;
       }
       .day-cell.empty {
         cursor: default;
@@ -1272,6 +1281,7 @@
         backdrop-filter: blur(12px);
         box-shadow: 0 4px 16px rgba(139,92,246,0.1);
         margin-bottom: 12px;
+        overflow: visible !important;
       }
       .checkin-card.pee-card {
         border-color: rgba(16,185,129,0.2);
@@ -2121,6 +2131,7 @@
         backdrop-filter: blur(12px);
         box-shadow: 0 4px 16px color-mix(in srgb, var(--period) 10%, transparent);
         margin-bottom: 12px;
+        overflow: visible !important;
       }
 
       .period-pain-row,
@@ -3896,6 +3907,7 @@
         box-shadow: 0 4px 16px rgba(11,107,255,0.08);
         margin-top: 12px;
         padding: 14px;
+        overflow: visible !important;
       }
       #pageDrink .nav-btn {
         background: rgba(11,107,255,0.08);
