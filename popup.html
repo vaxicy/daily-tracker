@@ -1167,12 +1167,13 @@
         background: color-mix(in srgb, var(--primary) 18%, transparent);
         transform: scale(1.05);
       }
-      /* 今日选中态：统一风格 = 浅亮底 + 深棕字(var(--text)) + 主色描边 + 加粗 */
+      /* 今日选中态：统一风格 = 无描边，仅用「浅亮底 + 深棕字 + 加粗 + 轻微放大」区分 */
       .day-cell.today {
         background: color-mix(in srgb, var(--primary) 22%, transparent);
         color: var(--text);
         font-weight: 700;
-        border: 2px solid var(--primary);
+        transform: scale(1.08);
+        z-index: 5;
       }
       .day-cell.has-poop {
         background: color-mix(in srgb, var(--primary) 10%, transparent);
@@ -1215,7 +1216,9 @@
       #pageEat .day-cell.today {
         background: color-mix(in srgb, var(--eat) 22%, transparent);
         color: var(--text);
-        border: 2px solid var(--eat);
+        font-weight: 700;
+        transform: scale(1.08);
+        z-index: 5;
       }
       #pageEat .day-cell.has-eat {
         background: rgba(245,158,11,0.12);
@@ -1242,7 +1245,9 @@
       body[data-theme="xmas"] #pageDrink .day-cell.today {
         background: rgba(255,255,255,0.22);
         color: var(--text);
-        border: 2px solid var(--primary);
+        font-weight: 700;
+        transform: scale(1.08);
+        z-index: 5;
         text-shadow: none;
       }
       /* lv4 满杯：红绿渐变底 + 白字兜底保可读 */
@@ -1288,7 +1293,9 @@
       #pagePee .day-cell.today {
         background: color-mix(in srgb, var(--pee) 22%, transparent);
         color: var(--text);
-        border: 2px solid var(--pee);
+        font-weight: 700;
+        transform: scale(1.08);
+        z-index: 5;
       }
       #pagePee .day-cell.has-pee {
         background: rgba(16,185,129,0.12);
@@ -1321,7 +1328,8 @@
         background: color-mix(in srgb, var(--secondary) 22%, transparent);
         color: var(--text);
         font-weight: 700;
-        border: 2px solid var(--secondary);
+        transform: scale(1.08);
+        z-index: 5;
       }
       #pagePoop .day-cell:not(.empty):hover {
         background: rgba(139,92,246,0.2);
@@ -3116,7 +3124,9 @@
       body[data-theme="pink"] #pagePee .day-cell.today {
         background: rgba(190,24,93,0.25);
         color: var(--text);
-        border: 2px solid #BE185D;
+        font-weight: 700;
+        transform: scale(1.08);
+        z-index: 5;
       }
       body[data-theme="pink"] #pagePee .day-cell.has-pee {
         background: rgba(190,24,93,0.12);
@@ -4085,7 +4095,8 @@
         color: var(--text);
         font-weight: 700;
         background: color-mix(in srgb, var(--primary) 18%, transparent);
-        border: 2px solid var(--primary);
+        transform: scale(1.08);
+        z-index: 5;
       }
       /* 仅柠檬黄：主按钮用奶薄荷绿底 + 白字（阴影托底保证可读） */
       body[data-theme="lemon"] .btn-primary {
@@ -4118,7 +4129,8 @@
         color: var(--text);
         font-weight: 700;
         background: color-mix(in srgb, var(--primary) 18%, transparent);
-        border: 2px solid var(--primary);
+        transform: scale(1.08);
+        z-index: 5;
       }
 
       /* 暮星紫：喝水图例冷蓝紫阶梯 + 按钮粉紫跳 + 今日紫描边（与软糖紫同结构） */
@@ -4145,7 +4157,8 @@
         color: var(--text);
         font-weight: 700;
         background: color-mix(in srgb, var(--primary) 18%, transparent);
-        border: 2px solid var(--primary);
+        transform: scale(1.08);
+        z-index: 5;
       }
       /* 经期日期数字用主题主色深靛紫，与浅玫红底互补、CR 达 AA */
       body[data-theme="starlilac"] .day-cell.period-day-1,
@@ -4167,17 +4180,20 @@
       #pageDrink .day-cell:not(.empty) {
         background: color-mix(in srgb, var(--primary) 8%, transparent);
       }
-      /* 喝水日历今日：未打卡(lv0-3) 浅亮底+深棕字+主色描边；lv4 满杯渐变底+白字兜底 */
+      /* 喝水日历今日：无描边，浅亮底+深棕字+加粗放大；lv4 满杯渐变底+白字兜底 */
       #pageDrink .day-cell.today {
         background: color-mix(in srgb, var(--primary) 18%, transparent);
         color: var(--text);
         font-weight: 700;
-        border: 2px solid var(--primary);
+        transform: scale(1.08);
+        z-index: 5;
       }
       #pageDrink .day-cell.today.lv4 {
         background: linear-gradient(135deg, var(--primary), var(--primary2));
         color: #fff;
         text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+        transform: scale(1.08);
+        z-index: 5;
       }
       #pageDrink .day-cell:not(.empty):hover {
         background: color-mix(in srgb, var(--primary) 16%, transparent);
@@ -4193,28 +4209,25 @@
         background: color-mix(in srgb, var(--period) 25%, transparent);
         color: var(--text);
         font-weight: 700;
-        border: 2px solid var(--period);
+        transform: scale(1.08);
+        z-index: 5;
       }
-      /* 今日同时处于经期内：today 永远胜出，经期强度改用边框不抢颜色 */
+      /* 今日同时处于经期内：today 放大胜出，经期强度用底色深浅区分（无描边） */
       #pagePeriod .day-cell.today.period-day-1 {
-        background: color-mix(in srgb, var(--period) 25%, transparent);
+        background: color-mix(in srgb, var(--period) 30%, transparent);
         color: var(--text);
-        border: 2px solid color-mix(in srgb, var(--period) 45%, transparent);
       }
       #pagePeriod .day-cell.today.period-day-2 {
-        background: color-mix(in srgb, var(--period) 25%, transparent);
+        background: color-mix(in srgb, var(--period) 35%, transparent);
         color: var(--text);
-        border: 2px solid color-mix(in srgb, var(--period) 60%, transparent);
       }
       #pagePeriod .day-cell.today.period-day-3 {
-        background: color-mix(in srgb, var(--period) 25%, transparent);
+        background: color-mix(in srgb, var(--period) 40%, transparent);
         color: var(--text);
-        border: 2px solid color-mix(in srgb, var(--period) 75%, transparent);
       }
       #pagePeriod .day-cell.today.period-day-4 {
-        background: color-mix(in srgb, var(--period) 25%, transparent);
+        background: color-mix(in srgb, var(--period) 45%, transparent);
         color: var(--text);
-        border: 2px solid var(--period);
       }
       #pagePeriod .day-cell:not(.empty):hover {
         background: color-mix(in srgb, var(--period) 20%, transparent);
@@ -4623,7 +4636,9 @@
       body[data-theme="dark"] .day-cell.today {
         background: var(--day-today, rgba(51,65,85,0.8));
         color: var(--text);
-        border: 2px solid var(--primary);
+        font-weight: 700;
+        transform: scale(1.08);
+        z-index: 5;
       }
 
       body[data-theme="dark"] .meal-records-header {
@@ -5258,7 +5273,8 @@
     background: color-mix(in srgb, var(--primary) 18%, transparent);
     color: var(--text);
     font-weight: 700;
-    border: 2px solid var(--primary);
+    transform: scale(1.08);
+    z-index: 5;
   }
   body[data-theme="aurora"] .day-cell.has-eat {
     background: rgba(127,184,232,0.12);
