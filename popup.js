@@ -1838,34 +1838,37 @@ function getDrinkLevel(count) {
 
 function getDrinkColor(count) {
   const lv = getDrinkLevel(count);
-  const isLemon = document.body.dataset.theme === "lemon";
-  if (isLemon) {
-    if (lv === 0) return "color-mix(in srgb, var(--secondary) 10%, transparent)";
-    if (lv === 1) return "color-mix(in srgb, var(--secondary) 35%, transparent)";
-    if (lv === 2) return "color-mix(in srgb, var(--secondary) 60%, transparent)";
-    if (lv === 3) return "color-mix(in srgb, var(--secondary) 85%, transparent)";
-    return "linear-gradient(135deg, var(--secondary), var(--secondary2))";
+  const theme = document.body.dataset.theme;
+  // lemon：奶薄荷绿阶（避免高饱和黄刺眼）
+  if (theme === "lemon") {
+    const s1 = "var(--secondary)", s2 = "var(--secondary2)";
+    if (lv === 0) return `color-mix(in srgb, ${s1} 10%, transparent)`;
+    if (lv === 1) return `color-mix(in srgb, ${s1} 35%, transparent)`;
+    if (lv === 2) return `color-mix(in srgb, ${s1} 60%, transparent)`;
+    if (lv === 3) return `color-mix(in srgb, ${s1} 85%, transparent)`;
+    return `linear-gradient(135deg, ${s1}, ${s2})`;
   }
-  const isJelly = document.body.dataset.theme === "jellylilac";
-  if (isJelly) {
+  // jellylilac：紫→粉渐变
+  if (theme === "jellylilac") {
     if (lv === 0) return "color-mix(in srgb, #7868DC 8%, transparent)";
     if (lv === 1) return "color-mix(in srgb, #7868DC 25%, transparent)";
     if (lv === 2) return "color-mix(in srgb, #7868DC 50%, transparent)";
     if (lv === 3) return "color-mix(in srgb, #7868DC 75%, transparent)";
     return "linear-gradient(135deg, #FDB7EA, #7868DC)";
   }
-  const isStar = document.body.dataset.theme === "starlilac";
-  if (isStar) {
+  // starlilac：靛蓝→淡粉渐变
+  if (theme === "starlilac") {
     if (lv === 0) return "color-mix(in srgb, #4A50E0 8%, transparent)";
     if (lv === 1) return "color-mix(in srgb, #4A50E0 25%, transparent)";
     if (lv === 2) return "color-mix(in srgb, #4A50E0 50%, transparent)";
     if (lv === 3) return "color-mix(in srgb, #4A50E0 75%, transparent)";
     return "linear-gradient(135deg, #FFDBFD, #4A50E0)";
   }
-  if (lv === 0) return "rgba(11,107,255,0.06)";
-  if (lv === 1) return "rgba(11,107,255,0.25)";
-  if (lv === 2) return "rgba(11,107,255,0.45)";
-  if (lv === 3) return "rgba(11,107,255,0.7)";
+  // 其他 20 个主题（含 dark）一律跟随主色 --primary / --primary2
+  if (lv === 0) return "color-mix(in srgb, var(--primary) 8%, transparent)";
+  if (lv === 1) return "color-mix(in srgb, var(--primary) 25%, transparent)";
+  if (lv === 2) return "color-mix(in srgb, var(--primary) 50%, transparent)";
+  if (lv === 3) return "color-mix(in srgb, var(--primary) 75%, transparent)";
   return "linear-gradient(135deg, var(--primary), var(--primary2))";
 }
 
