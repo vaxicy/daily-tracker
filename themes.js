@@ -617,7 +617,7 @@ export const THEME_PRESETS = {
   },
   macaron: {
     name: "themeMacaronName",
-    dot: "linear-gradient(135deg,#F9B2D7 25%,#CFECF3 50%,#DAF9DE 75%,#F6FFDC 100%)",
+    dot: "linear-gradient(135deg,#F6FFDC 25%,#DAF9DE 50%,#CFECF3 75%,#F9B2D7 100%)",
     vars: {
       "--text": "#4A2C3E",
       "--muted": "rgba(74,44,62,0.6)",
@@ -649,7 +649,7 @@ export const THEME_PRESETS = {
       "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
       "--toast-text": "#ffffff"
     },
-    bgGradient: "linear-gradient(150deg, #F6FFDC 0%, #DAF9DE 35%, #CFECF3 70%, #F9B2D7 100%)"
+    bgGradient: "linear-gradient(150deg, #F9B2D7 0%, #CFECF3 30%, #DAF9DE 65%, #F6FFDC 100%)"
   },
   lagoon: {
     name: "themeLagoonName",
