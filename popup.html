@@ -3066,10 +3066,10 @@
         max-width: 220px;
         padding: 6px 10px;
         border-radius: 8px;
-        background: var(--card, #fff);
+        background: var(--tooltip-bg, #fff);
         color: var(--text);
-        border: 1px solid rgba(12,42,77,0.12);
-        box-shadow: 0 6px 20px rgba(12,42,77,0.18);
+        border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+        box-shadow: 0 6px 20px color-mix(in srgb, var(--primary) 18%, transparent);
         font-size: 11px;
         font-weight: 500;
         line-height: 1.4;
@@ -3086,6 +3086,10 @@
       [data-theme="pink"] #customTooltip {
         border-color: color-mix(in srgb, var(--period) 25%, transparent);
         box-shadow: 0 3px 8px color-mix(in srgb, var(--period) 14%, transparent);
+      }
+      body[data-theme="dark"] #customTooltip {
+        color: #f0f2f5;
+        border-color: color-mix(in srgb, var(--primary) 28%, transparent);
       }
       /* pink 主题：排尿页薄荷绿在浅粉底对比弱，改用深玫红 #BE185D（CR≈7:1） */
       body[data-theme="pink"] #pagePee .day-cell:not(.empty) {
@@ -3124,14 +3128,6 @@
         border-color: rgba(255,255,255,0.15);
         box-shadow: 0 6px 20px rgba(0,0,0,0.4);
       }
-      [data-theme="forest"] #customTooltip {
-        border-color: rgba(34,139,34,0.25);
-        box-shadow: 0 6px 20px rgba(34,139,34,0.18);
-      }
-      [data-theme="forest"] #customTooltip::after {
-        border-color: rgba(34,139,34,0.25);
-      }
-
       /* ============ 隐藏原生滚动条（替代为下方自定义滚动条） ============ */
       *::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
       html { scrollbar-width: none; -ms-overflow-style: none; }
