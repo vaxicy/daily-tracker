@@ -1882,8 +1882,6 @@ function renderDrinkCalendar() {
   for (let i = 0; i < startWeekday; i++) {
     const emptyCell = document.createElement("div");
     emptyCell.className = "day-cell empty";
-    emptyCell.style.width = "36px";
-    emptyCell.style.height = "36px";
     drinkCalendarDays.appendChild(emptyCell);
   }
   const today = getToday();
@@ -1896,8 +1894,7 @@ function renderDrinkCalendar() {
     if (dateStr === today) cell.classList.add("today");
     drinkCalendarDays.appendChild(cell);
   }
-  // [DT-DIAG 2026-08-01 一次性诊断] 排查完即删（已挪到渲染后，n0 才是当前月真实空格数）
-  drinkCalendarTitle.textContent = t("yearMonth", { y: drinkCalYear, m: drinkCalMonth + 1 }) + ` [wd=${startWeekday}/n0=${drinkCalendarDays.querySelectorAll('.empty').length}]`;
+  drinkCalendarTitle.textContent = t("yearMonth", { y: drinkCalYear, m: drinkCalMonth + 1 });
 
   // 异步补 background + tooltip
   chrome.storage.local.get(["drinkRecords"], (data) => {
