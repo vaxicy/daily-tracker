@@ -787,7 +787,7 @@ export const THEME_PRESETS = {
   },
   xmas: {
     name: "themeXmasName",
-    dot: "linear-gradient(135deg,#B8334D,#166534,#D5E7B5)",
+    dot: "linear-gradient(135deg,#B8334D,#6BC4A8,#D5E7B5)",
     vars: {
       "--text": "#3D1A28",
       "--muted": "rgba(61,26,40,0.6)",

@@ -691,6 +691,14 @@
         color: rgba(248, 239, 224, 0.72);
       }
 
+      /* xmas 主题下底部 tab 切换圆点改用薄荷绿（避开写死 #16A34A 在深红底太刺眼） */
+      body[data-theme="xmas"] .nav-dot.active {
+        background: #82CCAB;
+      }
+      body[data-theme="xmas"] .nav-dot.active.period {
+        background: var(--period);
+      }
+
       /* 暗色主题覆盖 */
       body[data-theme="dark"] .tag-modal-content {
         background: #1e1e2e;
