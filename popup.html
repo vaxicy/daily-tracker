@@ -1071,12 +1071,13 @@
         flex-direction: column;
         align-items: stretch;
         width: 100%;
+        overflow: visible;
       }
       .calendar-weekdays {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
         gap: 4px;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
       }
       .weekday {
         width: 100%;
@@ -1157,6 +1158,9 @@
       }
 
       /* 吃页面日历样式 */
+      #pageEat .day-cell:not(.empty) {
+        background: rgba(245,158,11,0.08);
+      }
       #pageEat .day-cell.today {
         background: rgba(245,158,11,0.25);
         color: var(--eat);
@@ -1181,6 +1185,9 @@
       }
 
       /* 撒页面日历样式 */
+      #pagePee .day-cell:not(.empty) {
+        background: rgba(16,185,129,0.08);
+      }
       #pagePee .day-cell.today {
         background: rgba(16,185,129,0.25);
         color: var(--pee);
@@ -1209,6 +1216,17 @@
 
       /* Bristol 分类型着色 */
       /* Bristol 分类型着色 - 与主界面按钮颜色保持一致 */
+      #pagePoop .day-cell:not(.empty) {
+        background: rgba(139,92,246,0.08);
+      }
+      #pagePoop .day-cell.today {
+        background: rgba(139,92,246,0.25);
+        color: var(--secondary);
+        font-weight: 700;
+      }
+      #pagePoop .day-cell:not(.empty):hover {
+        background: rgba(139,92,246,0.2);
+      }
       #pagePoop .day-cell.bristol-1 {
         background: rgba(220,38,38,0.16);
         border-color: rgba(220,38,38,0.35);
@@ -4012,6 +4030,9 @@
       }
 
       /* 喝水日历日期格子 */
+      #pageDrink .day-cell:not(.empty) {
+        background: rgba(11,107,255,0.08);
+      }
       #pageDrink .day-cell.today {
         background: rgba(11,107,255,0.25);
         color: var(--primary);
@@ -4022,6 +4043,20 @@
         background: rgba(11,107,255,0.18);
         transform: scale(1.08);
         z-index: 5;
+      }
+
+      /* 经期页面日历样式（跟随主题 --period 粉） */
+      #pagePeriod .day-cell:not(.empty) {
+        background: color-mix(in srgb, var(--period) 12%, transparent);
+      }
+      #pagePeriod .day-cell.today {
+        background: color-mix(in srgb, var(--period) 25%, transparent);
+        color: var(--period);
+        font-weight: 700;
+        border: 2px solid var(--period);
+      }
+      #pagePeriod .day-cell:not(.empty):hover {
+        background: color-mix(in srgb, var(--period) 20%, transparent);
       }
 
       /* ============ 页面切换动画 ============ */
