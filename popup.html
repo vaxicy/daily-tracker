@@ -657,6 +657,44 @@
       }
       .tag-modal-confirm:hover { transform: translateY(-1px); }
 
+      /* 红色背景主题（xmas）覆盖：页面级标题改浅色，避免深酒红文字 on 深红背景消失 */
+      body[data-theme="xmas"] .header-title,
+      body[data-theme="xmas"] .eat-title,
+      body[data-theme="xmas"] .period-title,
+      body[data-theme="xmas"] .reminder-label,
+      body[data-theme="xmas"] .stats-label,
+      body[data-theme="xmas"] .eat-stat-tag,
+      body[data-theme="xmas"] .stats-card .stats-label,
+      body[data-theme="xmas"] .checkin-card-title,
+      body[data-theme="xmas"] .period-section-title,
+      body[data-theme="xmas"] .form-label,
+      body[data-theme="xmas"] .settings-title,
+      body[data-theme="xmas"] .section-title,
+      body[data-theme="xmas"] .row-label,
+      body[data-theme="xmas"] .toggle-label,
+      body[data-theme="xmas"] .day-num,
+      body[data-theme="xmas"] .tab-text,
+      body[data-theme="xmas"] .meal-records-title,
+      body[data-theme="xmas"] .today-records-title,
+      body[data-theme="xmas"] .calendar-title {
+        color: #F8EFE0;
+      }
+      body[data-theme="xmas"] .header-sub,
+      body[data-theme="xmas"] .eat-sub,
+      body[data-theme="xmas"] .period-sub,
+      body[data-theme="xmas"] .reminder-sub,
+      body[data-theme="xmas"] .stats-sub,
+      body[data-theme="xmas"] .stats-card .stats-detail,
+      body[data-theme="xmas"] .form-hint,
+      body[data-theme="xmas"] .settings-sub,
+      body[data-theme="xmas"] .record-remark,
+      body[data-theme="xmas"] .today-records-sub,
+      body[data-theme="xmas"] .meal-records-sub,
+      body[data-theme="xmas"] .meal-content,
+      body[data-theme="xmas"] .poop-color-name {
+        color: rgba(248, 239, 224, 0.72);
+      }
+
       /* 暗色主题覆盖 */
       body[data-theme="dark"] .tag-modal-content {
         background: #1e1e2e;
