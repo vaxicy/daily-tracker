@@ -4237,13 +4237,12 @@
         color: var(--text);
       }
       #pagePeriod .day-cell.today {
-        background: color-mix(in srgb, var(--period) 25%, transparent);
         color: var(--text);
         font-weight: 700;
         transform: scale(1.08);
         z-index: 5;
       }
-      /* 今日同时处于经期内：today 放大胜出，底色与经期区间统一（由上方 period-day-* 规则统一提供，无需额外加深） */
+      /* 今日同时处于经期内：today 只放大加粗，底色完全继承 period-day-* 统一底色，不做特殊处理 */
       #pagePeriod .day-cell:not(.empty):hover {
         background: color-mix(in srgb, var(--period) 20%, transparent);
       }

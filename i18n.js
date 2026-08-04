@@ -219,7 +219,7 @@ const I18N = {
     periodCycleCleared: "该周期记录已清除",
     periodBackdateConfirm: "确定将 {date} 作为经期第一天吗？",
     periodDateInCycle: "该日期已在某个经期内",
-    periodBackdateHint: "点击可补签为经期第一天",
+    periodBackdateHint: "点击可签到为经期第一天",
     periodNotSelected: "未选择",
 
     // 设置页
@@ -603,7 +603,7 @@ const I18N = {
     periodCycleCleared: "Cycle record cleared",
     periodBackdateConfirm: "Start period on {date}?",
     periodDateInCycle: "This date is already in a period",
-    periodBackdateHint: "Click to backdate as period start",
+    periodBackdateHint: "Click to check in as period start",
     periodNotSelected: "Not selected",
 
     // Settings
@@ -1009,7 +1009,7 @@ const I18N = {
     periodCycleCleared: "Ciclo borrado",
     periodBackdateConfirm: "¿Registrar en fecha anterior?",
     periodDateInCycle: "Día del ciclo",
-    periodBackdateHint: "Puedes registrar días pasados del ciclo",
+    periodBackdateHint: "Toca para registrar el primer día",
     periodNotSelected: "Período no seleccionado",
     funcSettings: "Ajustes de función",
     badgeSettings: "Ajustes de insignia",

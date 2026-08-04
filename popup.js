@@ -5555,9 +5555,9 @@ function renderPeriodCalendar() {
         day.classList.add("selected-period-day");
       }
     } else {
-      // 非经期日期：点击可补签（作为经期第一天）
+      // 非经期日期：点击可签到（作为经期第一天）
       day.style.cursor = "pointer";
-      day.setAttribute("data-tooltip", t("periodBackdateHint") || "点击可补签为经期第一天");
+      day.setAttribute("data-tooltip", t("periodBackdateHint") || "点击可签到为经期第一天");
       day.addEventListener("click", () => {
         if (periodUnsaved) {
           showConfirm(t("periodUnsavedConfirm"), () => {
@@ -5579,7 +5579,7 @@ function renderPeriodCalendar() {
             showToast(t("periodPleaseSaveFirst"));
             return;
           }
-          // 确认补签
+          // 确认签到
           const dateDisplay = formatDateDisplay(dateStr);
           showConfirm(t("periodBackdateConfirm", { date: dateDisplay }), () => {
             // 创建新周期
@@ -6462,7 +6462,7 @@ function initPeriodTracker() {
     });
   }
 
-  // 经期开关 Toggle（开始/结束经期，支持补签）
+  // 经期开关 Toggle（开始/结束经期，支持签到）
   const toggleInput = document.getElementById("periodToggleInput");
   if (toggleInput) {
     toggleInput.addEventListener("change", () => {
@@ -6473,7 +6473,7 @@ function initPeriodTracker() {
       }
       const active = getActivePeriod();
       if (toggleInput.checked) {
-        // 开启经期（支持补签：优先用选中日期，否则用今天）
+        // 开启经期（支持签到：优先用选中日期，否则用今天）
         if (!active) {
           const startDate = (selectedPeriodDate && !getCycleByDate(selectedPeriodDate))
             ? selectedPeriodDate
