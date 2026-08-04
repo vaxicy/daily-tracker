@@ -2821,6 +2821,28 @@
       .day-cell.period-day-3 { background: color-mix(in srgb, var(--period) 50%, transparent); }
       .day-cell.period-day-4 { background: color-mix(in srgb, var(--period) 70%, transparent); color: #fff; }
 
+      /* 非经期页的经期日期加左侧色条，确保与打卡状态色叠加时仍一眼可辨（全主题生效） */
+      .day-cell.period-day-1:not(#pagePeriod .day-cell)::before,
+      .day-cell.period-day-2:not(#pagePeriod .day-cell)::before,
+      .day-cell.period-day-3:not(#pagePeriod .day-cell)::before,
+      .day-cell.period-day-4:not(#pagePeriod .day-cell)::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 12%;
+        bottom: 12%;
+        width: 4px;
+        border-radius: 2px;
+        background: var(--period);
+      }
+      .day-cell.period-day-1:not(#pagePeriod .day-cell),
+      .day-cell.period-day-2:not(#pagePeriod .day-cell),
+      .day-cell.period-day-3:not(#pagePeriod .day-cell),
+      .day-cell.period-day-4:not(#pagePeriod .day-cell) {
+        position: relative;
+        overflow: hidden;
+      }
+
       /* 预测经期：虚线半透明高亮 */
       .day-cell.period-predicted {
         background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--period) 10%, transparent), color-mix(in srgb, var(--period) 10%, transparent) 5px, color-mix(in srgb, var(--period) 18%, transparent) 5px, color-mix(in srgb, var(--period) 18%, transparent) 10px);
@@ -3613,11 +3635,20 @@
       /* 追加记录区域 */
       .edit-add-new-section {
         margin-top: 16px;
-        border-top: 1px dashed rgba(245,158,11,0.25);
-        background: rgba(245,158,11,0.04);
+        background: rgba(12,42,77,0.04);
         border-radius: 10px;
         padding: 14px;
       }
+      .edit-add-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      body[data-theme="dark"] .edit-add-new-section { background: rgba(51,65,85,0.4); }
 
       /* ============ 功能开关侧边栏 ============ */
       .sidebar-toggle-btn {

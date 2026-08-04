@@ -1062,6 +1062,11 @@ function renderEatCalendar() {
     cell.className = "day-cell";
     cell.dataset.date = dateStr;
     if (dateStr === today) cell.classList.add("today");
+    const drinkPInt = getPeriodIntensity(dateStr);
+    if (drinkPInt) cell.classList.add(`period-day-${drinkPInt}`);
+    // 经期日期在所有日历页显示特殊标记
+    const eatPInt = getPeriodIntensity(dateStr);
+    if (eatPInt) cell.classList.add(`period-day-${eatPInt}`);
     eatCalendarDays.appendChild(cell);
   }
   eatCalendarTitle.textContent = t("yearMonth", { y: eatYear, m: eatMonth + 1 });
@@ -1335,8 +1340,8 @@ function showEatEditModal(dateStr, dayRecords) {
   `;
   }).join("") + `
     <!-- 追加新记录区域 -->
-    <div class="edit-add-new-section" style="margin-top:10px;padding:14px;border-top:1px dashed rgba(245,158,11,0.25);">
-      <div style="font-size:13px;font-weight:600;color:var(--eat);margin-bottom:10px;display:flex;align-items:center;gap:4px;">
+    <div class="edit-add-new-section" style="margin-top:10px;padding:14px;">
+      <div class="edit-add-title">
         ${t('appendRecord')}
       </div>
       <!-- 餐次+时间一行 -->
@@ -1355,12 +1360,103 @@ function showEatEditModal(dateStr, dayRecords) {
       <div class="edit-input-row">
         <input class="edit-input" type="text" id="eatAppendRemark" placeholder="${t('remarkPlaceholder')}" maxlength="50" style="font-size:11px;" />
       </div>
+      <!-- 评分 -->
+      <div class="edit-input-row" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <div class="edit-rating-stars" id="eatAppendRatingStars" style="display:flex;gap:0;">
+          <span class="edit-star" data-value="1" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:16px;width:16px;"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="edit-star" data-value="2" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:16px;width:16px;"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="edit-star" data-value="3" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:16px;width:16px;"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="edit-star" data-value="4" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:16px;width:16px;"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+          <span class="edit-star" data-value="5" style="position:relative;cursor:pointer;color:#e0e0e0;user-select:none;display:flex;align-items:center;justify-content:center;height:16px;width:16px;"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span class="edit-fill" style="position:absolute;top:0;left:0;width:100%;height:100%;color:#F59E0B;pointer-events:none;display:flex;align-items:center;justify-content:center;clip-path:inset(0 100% 0 0);"><svg viewBox="0 0 24 24" width="13" height="13" style="display:block;flex-shrink:0;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>
+        </div>
+        <span class="edit-rating-text" id="eatAppendRatingText" style="font-size:9px;color:var(--eat);font-weight:600;min-width:24px;">${getRatingText(0)}</span>
+        <input type="hidden" id="eatAppendRating" value="0" />
+        <div class="edit-fullness-btns" id="eatAppendFullnessBtns" style="display:flex;gap:2px;">
+          ${(t('fullnessLevels') || []).map((lvl, i) => `<button class="edit-fullness-btn" data-level="${i+1}" style="padding:2px 5px;border-radius:10px;border:1px solid rgba(245,158,11,0.2);background:rgba(255,255,255,0.8);color:var(--text);font-size:9px;cursor:pointer;user-select:none;">${lvl}</button>`).join('')}
+        </div>
+        <input type="hidden" id="eatAppendFullness" value="0" />
+      </div>
+      <!-- 标签 -->
+      <div class="edit-input-row" style="margin-bottom:6px;">
+        <div class="edit-tags-grid" id="eatAppendTagsGrid" style="display:flex;flex-wrap:wrap;gap:3px;">
+          ${(() => {
+            const allTags = (t('mealTags') || []);
+            const allEmojis = (t('mealTagEmojis') || []);
+            let tagHtml = allTags.map((tag, i) => `<button class="edit-tag-btn" data-tag="${tag}" style="display:inline-flex;align-items:center;gap:1px;padding:1px 5px;border-radius:6px;border:1px solid rgba(245,158,11,0.15);background:transparent;color:var(--muted);font-size:9px;cursor:pointer;user-select:none;">${allEmojis[i] || ''} ${tag}</button>`).join('');
+            customMealTags.forEach((ct) => {
+              tagHtml += `<button class="edit-tag-btn" data-tag="${ct.name}" data-custom="1" style="display:inline-flex;align-items:center;gap:1px;padding:1px 5px;border-radius:6px;border:1px solid rgba(245,158,11,0.15);background:transparent;color:var(--muted);font-size:9px;cursor:pointer;user-select:none;">${ct.emoji} ${ct.name}</button>`;
+            });
+            return tagHtml;
+          })()}
+        </div>
+      </div>
       <button class="edit-save-btn" id="eatAppendBtn" style="background:var(--eat);font-size:12px;padding:6px 12px;">${t('appendRecordBtn')}</button>
     </div>
   `;
 
   // 追加按钮事件
   document.getElementById("eatAppendBtn").addEventListener("click", () => {
+    // 绑定评分星标交互（仅绑一次）
+    const appendStarContainer = document.getElementById("eatAppendRatingStars");
+    if (appendStarContainer && !appendStarContainer.dataset.bound) {
+      appendStarContainer.dataset.bound = "1";
+      let appendRating = 0;
+      function updateAppendStars(rating) {
+        appendStarContainer.querySelectorAll(".edit-star").forEach((star, i) => {
+          const starValue = i + 1;
+          const fill = star.querySelector(".edit-fill");
+          if (rating === 0 || starValue > Math.floor(rating) + (rating % 1 >= 0.5 ? 1 : 0)) {
+            fill.style.clipPath = "inset(0 100% 0 0)";
+          } else {
+            fill.style.clipPath = "inset(0 0% 0 0)";
+          }
+        });
+      }
+      appendStarContainer.querySelectorAll(".edit-star").forEach((star, starIdx) => {
+        star.addEventListener("click", () => {
+          const rating = starIdx + 1;
+          appendRating = appendRating === rating ? 0 : rating;
+          document.getElementById("eatAppendRating").value = appendRating;
+          updateAppendStars(appendRating);
+          document.getElementById("eatAppendRatingText").textContent = getRatingText(appendRating);
+        });
+      });
+    }
+    // 绑定饱腹感交互
+    const appendFullnessContainer = document.getElementById("eatAppendFullnessBtns");
+    if (appendFullnessContainer && !appendFullnessContainer.dataset.bound) {
+      appendFullnessContainer.dataset.bound = "1";
+      appendFullnessContainer.querySelectorAll(".edit-fullness-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const level = parseInt(btn.dataset.level);
+          const currentLevel = parseInt(document.getElementById("eatAppendFullness").value) || 0;
+          const newLevel = currentLevel === level ? 0 : level;
+          document.getElementById("eatAppendFullness").value = newLevel;
+          appendFullnessContainer.querySelectorAll(".edit-fullness-btn").forEach(b => {
+            const isActive = parseInt(b.dataset.level) === newLevel;
+            b.classList.toggle("active", isActive);
+            b.style.background = isActive ? 'var(--eat)' : 'rgba(255,255,255,0.8)';
+            b.style.color = isActive ? '#fff' : 'var(--text)';
+            b.style.borderColor = isActive ? 'var(--eat)' : 'rgba(245,158,11,0.2)';
+          });
+        });
+      });
+    }
+    // 绑定标签交互
+    const appendTagsContainer = document.getElementById("eatAppendTagsGrid");
+    if (appendTagsContainer && !appendTagsContainer.dataset.bound) {
+      appendTagsContainer.dataset.bound = "1";
+      appendTagsContainer.querySelectorAll(".edit-tag-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const isActive = btn.classList.contains("active");
+          btn.classList.toggle("active", !isActive);
+          btn.style.background = !isActive ? 'rgba(245,158,11,0.12)' : 'transparent';
+          btn.style.color = !isActive ? 'var(--eat)' : 'var(--muted)';
+          btn.style.borderColor = !isActive ? 'var(--eat)' : 'rgba(245,158,11,0.15)';
+        });
+      });
+    }
+
     const type = document.getElementById("eatAppendType").value;
     const content = document.getElementById("eatAppendContent").value.trim();
     const remark = document.getElementById("eatAppendRemark")?.value.trim() || "";
@@ -1379,11 +1475,30 @@ function showEatEditModal(dateStr, dayRecords) {
     chrome.storage.local.get(["mealRecords"], (data) => {
       const records = data.mealRecords || {};
       if (!records[dateStr]) records[dateStr] = [];
-      records[dateStr].push({ content, time: recordTime, type, remark, timestamp: Date.now(), isBackfill: !isToday });
+      const appendRating = parseInt(document.getElementById("eatAppendRating").value) || 0;
+      const appendFullness = parseInt(document.getElementById("eatAppendFullness").value) || 0;
+      const appendTags = Array.from(document.querySelectorAll("#eatAppendTagsGrid .edit-tag-btn.active")).map(b => b.dataset.tag);
+      records[dateStr].push({ content, time: recordTime, type, remark, rating: appendRating, fullness: appendFullness, tags: appendTags, timestamp: Date.now(), isBackfill: !isToday });
       persistRecords('mealRecords', records, () => {
         showToast(isToday ? t('toastMealAdded') : "🍽️ " + t('makeUpCheckinSuccess'));
         document.getElementById("eatAppendContent").value = "";
         document.getElementById("eatAppendRemark").value = "";
+        document.getElementById("eatAppendRating").value = "0";
+        document.getElementById("eatAppendRatingText").textContent = getRatingText(0);
+        document.getElementById("eatAppendFullness").value = "0";
+        document.querySelectorAll("#eatAppendRatingStars .edit-fill").forEach(f => f.style.clipPath = "inset(0 100% 0 0)");
+        document.querySelectorAll("#eatAppendFullnessBtns .edit-fullness-btn").forEach(b => {
+          b.classList.remove("active");
+          b.style.background = 'rgba(255,255,255,0.8)';
+          b.style.color = 'var(--text)';
+          b.style.borderColor = 'rgba(245,158,11,0.2)';
+        });
+        document.querySelectorAll("#eatAppendTagsGrid .edit-tag-btn.active").forEach(b => {
+          b.classList.remove("active");
+          b.style.background = 'transparent';
+          b.style.color = 'var(--muted)';
+          b.style.borderColor = 'rgba(245,158,11,0.15)';
+        });
         renderEatCalendar();
         updateMealRecords();
         chrome.storage.local.get(["mealRecords"], (d) => {
@@ -1902,6 +2017,8 @@ function renderDrinkCalendar() {
     cell.className = "day-cell";
     cell.dataset.date = dateStr;
     if (dateStr === today) cell.classList.add("today");
+    const drinkPInt = getPeriodIntensity(dateStr);
+    if (drinkPInt) cell.classList.add(`period-day-${drinkPInt}`);
     drinkCalendarDays.appendChild(cell);
   }
   drinkCalendarTitle.textContent = t("yearMonth", { y: drinkCalYear, m: drinkCalMonth + 1 });
@@ -2426,6 +2543,8 @@ function renderPoopCalendar() {
     cell.className = "day-cell";
     cell.dataset.date = dateStr;
     if (dateStr === today) cell.classList.add("today");
+    const poopPInt = getPeriodIntensity(dateStr);
+    if (poopPInt) cell.classList.add(`period-day-${poopPInt}`);
     poopCalendarDays.appendChild(cell);
   }
   poopCalendarTitle.textContent = t("yearMonth", { y: poopYear, m: poopMonth + 1 });
@@ -2662,8 +2781,8 @@ function showPoopEditModal(dateStr, dayRecords) {
   `;
   }).join("") + `
     <!-- 追加新记录区域 -->
-    <div class="edit-add-new-section" style="margin-top:10px;padding:14px;border-top:1px dashed rgba(139,69,19,0.25);">
-      <div style="font-size:13px;font-weight:600;color:var(--poop);margin-bottom:10px;display:flex;align-items:center;gap:4px;">
+    <div class="edit-add-new-section" style="margin-top:10px;padding:14px;">
+      <div class="edit-add-title">
         ${t('appendRecord')}
       </div>
       <!-- 时间一行 -->
@@ -3269,6 +3388,8 @@ function renderPeeCalendar() {
     cell.className = "day-cell";
     cell.dataset.date = dateStr;
     if (dateStr === today) cell.classList.add("today");
+    const peePInt = getPeriodIntensity(dateStr);
+    if (peePInt) cell.classList.add(`period-day-${peePInt}`);
     peeCalendarDays.appendChild(cell);
   }
   peeCalendarTitle.textContent = t("yearMonth", { y: peeYear, m: peeMonth + 1 });
@@ -3458,8 +3579,8 @@ function showPeeEditModal(dateStr, dayRecords) {
   `;
   }).join("") + `
     <!-- 追加新记录区域 -->
-    <div class="edit-add-new-section" style="margin-top:10px;padding:14px;border-top:1px dashed rgba(59,130,246,0.25);">
-      <div style="font-size:13px;font-weight:600;color:var(--pee);margin-bottom:10px;display:flex;align-items:center;gap:4px;">
+    <div class="edit-add-new-section" style="margin-top:10px;padding:14px;">
+      <div class="edit-add-title">
         ${t('appendRecord')}
       </div>
       <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
@@ -5234,6 +5355,19 @@ function clearPeriodUnsaved() {
   periodUnsaved = false;
   const btn = document.getElementById("periodSaveMoodBtn");
   if (btn) btn.classList.remove("unsaved");
+}
+
+// 返回某日期的经期强度等级 1~4（不在经期返回 0）
+function getPeriodIntensity(dateStr) {
+  for (let i = 0; i < periodCycles.length; i++) {
+    const cycle = periodCycles[i];
+    const range = getDatesInRange(cycle.startDate, cycle.endDate);
+    if (range.includes(dateStr)) {
+      const idx = range.indexOf(dateStr);
+      return Math.min(4, Math.ceil((idx + 1) / 2));
+    }
+  }
+  return 0;
 }
 
 // 渲染经期日历
