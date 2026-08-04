@@ -2814,12 +2814,9 @@
       #periodCycleTable { scrollbar-width: thin; scrollbar-color: var(--period) transparent; }
 
       /* 日历中经期日期的样式（仅经期页使用，非经期页已移除 period-day 类）
-         用 #pagePeriod 前缀提高特异性，压过下方 #pagePeriod .day-cell:not(.empty) 的整页淡粉规则 */
+         注意：period-day-1~4 的统一底色定义在下方 #pagePeriod .day-cell:not(.empty)
+         透明规则之后（同特异性时后写胜出），此处只保留 period-day-0（非经期淡粉外）。 */
       #pagePeriod .day-cell.period-day-0 { background: transparent; }
-#pagePeriod .day-cell.period-day-1 { background: color-mix(in srgb, var(--period) 45%, transparent); }
-#pagePeriod .day-cell.period-day-2 { background: color-mix(in srgb, var(--period) 62%, transparent); }
-#pagePeriod .day-cell.period-day-3 { background: color-mix(in srgb, var(--period) 80%, transparent); }
-#pagePeriod .day-cell.period-day-4 { background: color-mix(in srgb, var(--period) 92%, transparent); color: var(--text); }
 
       /* 预测经期：虚线半透明高亮 */
       .day-cell.period-predicted {
@@ -4187,7 +4184,8 @@
       /* 经期日期数字用主题主色深靛紫，与浅玫红底互补、CR 达 AA */
       body[data-theme="starlilac"] .day-cell.period-day-1,
       body[data-theme="starlilac"] .day-cell.period-day-2,
-      body[data-theme="starlilac"] .day-cell.period-day-3 {
+      body[data-theme="starlilac"] .day-cell.period-day-3,
+      body[data-theme="starlilac"] .day-cell.period-day-4 {
         color: #4A50E0;
       }
       body[data-theme="starlilac"] .day-cell.period-date {
@@ -4229,6 +4227,15 @@
       #pagePeriod .day-cell:not(.empty) {
         background: transparent;
       }
+      /* 经期区间统一明显底色：本块位于 :not(.empty) 透明规则之后，
+         同特异性时后写胜出，确保第 1 天到最后 1 天都显示粉色底 */
+      #pagePeriod .day-cell.period-day-1,
+      #pagePeriod .day-cell.period-day-2,
+      #pagePeriod .day-cell.period-day-3,
+      #pagePeriod .day-cell.period-day-4 {
+        background: color-mix(in srgb, var(--period) 55%, transparent);
+        color: var(--text);
+      }
       #pagePeriod .day-cell.today {
         background: color-mix(in srgb, var(--period) 25%, transparent);
         color: var(--text);
@@ -4236,23 +4243,7 @@
         transform: scale(1.08);
         z-index: 5;
       }
-      /* 今日同时处于经期内：today 放大胜出，经期强度用底色深浅区分（无描边，且比单纯 period 更深一档） */
-      #pagePeriod .day-cell.today.period-day-1 {
-        background: color-mix(in srgb, var(--period) 45%, transparent);
-        color: var(--text);
-      }
-      #pagePeriod .day-cell.today.period-day-2 {
-        background: color-mix(in srgb, var(--period) 60%, transparent);
-        color: var(--text);
-      }
-      #pagePeriod .day-cell.today.period-day-3 {
-        background: color-mix(in srgb, var(--period) 76%, transparent);
-        color: var(--text);
-      }
-      #pagePeriod .day-cell.today.period-day-4 {
-        background: color-mix(in srgb, var(--period) 92%, transparent);
-        color: var(--text);
-      }
+      /* 今日同时处于经期内：today 放大胜出，底色与经期区间统一（由上方 period-day-* 规则统一提供，无需额外加深） */
       #pagePeriod .day-cell:not(.empty):hover {
         background: color-mix(in srgb, var(--period) 20%, transparent);
       }
