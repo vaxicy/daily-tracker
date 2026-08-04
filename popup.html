@@ -2814,12 +2814,13 @@
       #periodCycleTable::-webkit-scrollbar-track { background: transparent; }
       #periodCycleTable { scrollbar-width: thin; scrollbar-color: var(--period) transparent; }
 
-      /* 日历中经期日期的样式（仅经期页使用，非经期页已移除 period-day 类） */
-      .day-cell.period-day-0 { background: transparent; }
-      .day-cell.period-day-1 { background: color-mix(in srgb, var(--period) 30%, transparent); }
-      .day-cell.period-day-2 { background: color-mix(in srgb, var(--period) 48%, transparent); }
-      .day-cell.period-day-3 { background: color-mix(in srgb, var(--period) 68%, transparent); }
-      .day-cell.period-day-4 { background: color-mix(in srgb, var(--period) 88%, transparent); color: var(--text); }
+      /* 日历中经期日期的样式（仅经期页使用，非经期页已移除 period-day 类）
+         用 #pagePeriod 前缀提高特异性，压过下方 #pagePeriod .day-cell:not(.empty) 的整页淡粉规则 */
+      #pagePeriod .day-cell.period-day-0 { background: transparent; }
+      #pagePeriod .day-cell.period-day-1 { background: color-mix(in srgb, var(--period) 35%, transparent); }
+      #pagePeriod .day-cell.period-day-2 { background: color-mix(in srgb, var(--period) 52%, transparent); }
+      #pagePeriod .day-cell.period-day-3 { background: color-mix(in srgb, var(--period) 70%, transparent); }
+      #pagePeriod .day-cell.period-day-4 { background: color-mix(in srgb, var(--period) 88%, transparent); color: var(--text); }
 
       /* 预测经期：虚线半透明高亮 */
       .day-cell.period-predicted {
@@ -4227,7 +4228,7 @@
 
       /* 经期页面日历样式（跟随主题 --period 粉） */
       #pagePeriod .day-cell:not(.empty) {
-        background: color-mix(in srgb, var(--period) 12%, transparent);
+        background: transparent;
       }
       #pagePeriod .day-cell.today {
         background: color-mix(in srgb, var(--period) 25%, transparent);

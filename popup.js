@@ -2604,7 +2604,7 @@ function showPoopEditModal(dateStr, dayRecords) {
         </div>
         <div class="bristol-selector-add" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('bristolTypeLabel')}</span>
-          ${(t("bristolTypes") || []).map((label, i) => `<button class="bristol-btn bristol-btn-add" data-add-type="${i+1}" data-tooltip="${label}(${(t("bristolDescs") || [])[i] || ''})">${i+1}</button>`).join("")}
+          ${(t("bristolTypes") || []).map((label, i) => `<button class="bristol-btn" data-type="${i+1}" data-tooltip="${label}(${(t("bristolDescs") || [])[i] || ''})">${i+1}</button>`).join("")}
         </div>
         <div class="poop-amount-selector" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopAmountLabel')}</span>
@@ -2650,11 +2650,11 @@ function showPoopEditModal(dateStr, dayRecords) {
     });
 
     // 补打卡表单 Bristol 按钮事件
-    editModalBody.querySelectorAll('.bristol-selector-add .bristol-btn-add').forEach(btn => {
+    editModalBody.querySelectorAll('.bristol-selector-add .bristol-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const type = parseInt(btn.dataset.addType);
+        const type = parseInt(btn.dataset.type);
         const isActive = btn.classList.contains('active');
-        editModalBody.querySelectorAll('.bristol-selector-add .bristol-btn-add').forEach(b => b.classList.remove('active'));
+        editModalBody.querySelectorAll('.bristol-selector-add .bristol-btn').forEach(b => b.classList.remove('active'));
         if (!isActive) btn.classList.add('active');
       });
     });
@@ -2688,8 +2688,8 @@ function showPoopEditModal(dateStr, dayRecords) {
       });
       // 读取补打卡表单中的 Bristol 类型
       let addBristol = 0;
-      editModalBody.querySelectorAll('.bristol-selector-add .bristol-btn-add').forEach(btn => {
-        if (btn.classList.contains('active')) addBristol = parseInt(btn.dataset.addType);
+      editModalBody.querySelectorAll('.bristol-selector-add .bristol-btn').forEach(btn => {
+        if (btn.classList.contains('active')) addBristol = parseInt(btn.dataset.type);
       });
 
       chrome.storage.local.get(["poopRecords"], (data) => {
@@ -2793,17 +2793,17 @@ function showPoopEditModal(dateStr, dayRecords) {
       <!-- Bristol 选择 -->
       <div style="font-size:10px;color:var(--muted);white-space:nowrap;margin-top:6px;">${t('bristolTypeLabel')}</div>
       <div class="bristol-selector-add" style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;">
-        ${bristolTypes.map((label, i) => `<button class="bristol-btn-add" data-add-type="${i+1}" data-tooltip="${label}(${bristolDescs[i] || ''})" style="width:26px;height:26px;border-radius:8px;border:1px solid rgba(0,0,0,0.15);background:rgba(255,255,255,0.8);color:var(--text);font-size:12px;cursor:pointer;user-select:none;">${i+1}</button>`).join('')}
+        ${bristolTypes.map((label, i) => `<button class="bristol-btn" data-type="${i+1}" data-tooltip="${label}(${bristolDescs[i] || ''})">${i+1}</button>`).join('')}
       </div>
       <!-- 排便量 -->
       <div class="edit-input-row" style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopAmountLabel')}</span>
-        ${poopAmounts.map((label, i) => `<button class="poop-amount-btn-add" data-add-amount="${i+1}" style="padding:2px 5px;border-radius:10px;border:1px solid rgba(139,69,19,0.2);background:rgba(255,255,255,0.8);color:var(--text);font-size:9px;cursor:pointer;user-select:none;">${label}</button>`).join('')}
+        ${poopAmounts.map((label, i) => `<button class="poop-amount-btn-sm" data-amount="${i+1}" id="poopAppendAmount${i+1}">${label}</button>`).join('')}
       </div>
       <!-- 颜色 -->
       <div class="poop-color-label" style="font-size:10px;color:var(--muted);white-space:nowrap;margin-top:6px;">${t('poopColorLabel')}</div>
       <div class="poop-color-picker-add" style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
-        ${poopColors.map((label, i) => `<button class="poop-color-btn-add" data-add-color="${i+1}" data-tooltip="${label}" style="width:22px;height:22px;border-radius:50%;border:2px solid rgba(0,0,0,0.15);background:${POOP_COLOR_MAP[i] || '#eee'};cursor:pointer;"></button>`).join('')}
+        ${poopColors.map((label, i) => `<button class="poop-color-btn-sm" data-color="${i+1}" data-tooltip="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid rgba(0,0,0,0.15);"></button>`).join('')}
       </div>
       <div class="edit-input-row" style="margin-top:8px;">
         <input class="edit-input" type="text" id="poopAppendRemark" placeholder="${t('remarkPlaceholder')}" maxlength="50" style="font-size:11px;" />
@@ -2817,39 +2817,39 @@ function showPoopEditModal(dateStr, dayRecords) {
     const appendBtn = document.getElementById("poopAppendBtn");
     if (!appendBtn) return;
     // Bristol 选择
-    editModalBody.querySelectorAll(".bristol-selector-add .bristol-btn-add").forEach(btn => {
+    editModalBody.querySelectorAll(".bristol-selector-add .bristol-btn").forEach(btn => {
       btn.addEventListener("click", () => {
-        const type = parseInt(btn.dataset.addType);
+        const type = parseInt(btn.dataset.type);
         const active = btn.classList.contains("active");
-        editModalBody.querySelectorAll(".bristol-selector-add .bristol-btn-add").forEach(b => { b.classList.remove("active"); b.style.border = "1px solid rgba(0,0,0,0.15)"; });
+        editModalBody.querySelectorAll(".bristol-selector-add .bristol-btn").forEach(b => { b.classList.remove("active"); b.style.border = "1px solid rgba(0,0,0,0.15)"; });
         if (!active) { btn.classList.add("active"); btn.style.border = "2px solid var(--poop)"; }
       });
     });
     // 排便量
-    editModalBody.querySelectorAll(".poop-amount-btn-add").forEach(btn => {
+    editModalBody.querySelectorAll(".poop-amount-btn-sm").forEach(btn => {
       btn.addEventListener("click", () => {
-        const amount = parseInt(btn.dataset.addAmount);
+        const amount = parseInt(btn.dataset.amount);
         const active = btn.classList.contains("active");
-        editModalBody.querySelectorAll(".poop-amount-btn-add").forEach(b => b.classList.remove("active"));
+        editModalBody.querySelectorAll(".poop-amount-btn-sm").forEach(b => b.classList.remove("active"));
         if (!active) btn.classList.add("active");
       });
     });
     // 颜色
-    editModalBody.querySelectorAll(".poop-color-btn-add").forEach(btn => {
+    editModalBody.querySelectorAll(".poop-color-btn-sm").forEach(btn => {
       btn.addEventListener("click", () => {
-        const color = parseInt(btn.dataset.addColor);
+        const color = parseInt(btn.dataset.color);
         const active = btn.classList.contains("active");
-        editModalBody.querySelectorAll(".poop-color-btn-add").forEach(b => { b.classList.remove("active"); b.style.border = "2px solid rgba(0,0,0,0.15)"; });
+        editModalBody.querySelectorAll(".poop-color-btn-sm").forEach(b => { b.classList.remove("active"); b.style.border = "2px solid rgba(0,0,0,0.15)"; });
         if (!active) { btn.classList.add("active"); btn.style.border = "2px solid var(--poop)"; }
       });
     });
     appendBtn.addEventListener("click", () => {
       let addBristol = 0;
-      editModalBody.querySelectorAll(".bristol-selector-add .bristol-btn-add").forEach(btn => { if (btn.classList.contains("active")) addBristol = parseInt(btn.dataset.addType); });
+      editModalBody.querySelectorAll(".bristol-selector-add .bristol-btn").forEach(btn => { if (btn.classList.contains("active")) addBristol = parseInt(btn.dataset.type); });
       let addAmount = 0;
-      editModalBody.querySelectorAll(".poop-amount-btn-add").forEach(btn => { if (btn.classList.contains("active")) addAmount = parseInt(btn.dataset.addAmount); });
+      editModalBody.querySelectorAll(".poop-amount-btn-sm").forEach(btn => { if (btn.classList.contains("active")) addAmount = parseInt(btn.dataset.amount); });
       let addColor = 0;
-      editModalBody.querySelectorAll(".poop-color-btn-add").forEach(btn => { if (btn.classList.contains("active")) addColor = parseInt(btn.dataset.addColor); });
+      editModalBody.querySelectorAll(".poop-color-btn-sm").forEach(btn => { if (btn.classList.contains("active")) addColor = parseInt(btn.dataset.color); });
       const remark = document.getElementById("poopAppendRemark").value.trim();
       const timeVal = document.getElementById("poopAppendTime").value;
       const recordTime = timeVal ? (() => { const [h, m] = timeVal.split(":"); return `${h.padStart(2,"0")}:${m.padStart(2,"0")}`; })() : new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
@@ -3422,6 +3422,11 @@ function showPeeEditModal(dateStr, dayRecords) {
     const colorBtns = peeColors.map((label, i) =>
       `<button class="pee-color-btn-sm" data-color="${i+1}" data-tooltip="${label}" style="background:${PEE_COLOR_MAP[i] || '#eee'};border:2px solid rgba(0,0,0,0.15);"></button>`
     ).join("");
+    // 渲染尿量选择器（补打卡表单）
+    const peeAmounts = t("peeAmounts") || [];
+    const amountBtns = peeAmounts.map((label, i) =>
+      `<button class="pee-amount-btn-sm" data-amount="${i+1}" id="peeAddAmount${i+1}">${label}</button>`
+    ).join("");
 
     editModalBody.innerHTML = `
       <div class="edit-empty" style="margin-bottom: 12px;">${t('noPeeRecord')}</div>
@@ -3443,6 +3448,10 @@ function showPeeEditModal(dateStr, dayRecords) {
         </div>
         <div class="edit-input-row">
           <input class="edit-input" type="text" id="peeAddRemark" placeholder="${t('remarkPlaceholder')}" />
+        </div>
+        <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:var(--muted);">${t('peeAmountLabel')}:</span>
+          ${amountBtns}
         </div>
         <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="font-size:11px;color:var(--muted);">${t('peeColorLabel')}:</span>
@@ -3483,6 +3492,22 @@ function showPeeEditModal(dateStr, dayRecords) {
         }
       });
     });
+
+    // 补打卡表单：尿量按钮点击事件
+    let addPeeAmount = 0;
+    editModalBody.querySelectorAll(".pee-amount-btn-sm").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const amount = parseInt(btn.dataset.amount);
+        if (addPeeAmount === amount) {
+          addPeeAmount = 0;
+          btn.classList.remove("active");
+        } else {
+          addPeeAmount = amount;
+          editModalBody.querySelectorAll(".pee-amount-btn-sm").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+        }
+      });
+    });
     
     document.getElementById("peeAddBtn").addEventListener("click", () => {
       const remark = document.getElementById("peeAddRemark").value.trim();
@@ -3504,7 +3529,7 @@ function showPeeEditModal(dateStr, dayRecords) {
       chrome.storage.local.get(["peeRecords"], (data) => {
         const records = data.peeRecords || {};
         if (!records[dateStr]) records[dateStr] = [];
-        records[dateStr].push({ time: recordTime, remark, amount: selectedPeeAmount, color: addFormColor, timestamp: Date.now(), isBackfill: !isToday });
+        records[dateStr].push({ time: recordTime, remark, amount: addPeeAmount, color: addFormColor, timestamp: Date.now(), isBackfill: !isToday });
         persistRecords('peeRecords', records, () => {
           showToast(isToday ? "💧 " + t('checkinSuccess') : "💧 " + t('makeUpCheckinSuccess'));
           renderPeeCalendar();
