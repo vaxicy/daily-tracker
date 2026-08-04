@@ -5335,7 +5335,19 @@ function loadPeriodCycles(callback) {
 }
 
 // 保存经期周期数据
+// 数据清洗：自动修复结束日期早于开始日期的错乱周期
+function sanitizePeriodCycles() {
+  periodCycles.forEach(c => {
+    if (c.endDate && c.startDate && c.endDate < c.startDate) {
+      const tmp = c.startDate;
+      c.startDate = c.endDate;
+      c.endDate = tmp;
+    }
+  });
+}
+
 function savePeriodCycles() {
+  sanitizePeriodCycles();
   persistRecords('periodCycles', periodCycles, () => {
     renderPeriodCalendar();
     updatePeriodStats();
@@ -5357,8 +5369,12 @@ function formatDateStr(d) {
 // 获取日期范围内的所有日期字符串
 function getDatesInRange(startDate, endDate) {
   const dates = [];
-  const start = new Date(startDate);
-  const end = endDate ? new Date(endDate) : new Date(getToday());
+  let start = new Date(startDate);
+  let end = endDate ? new Date(endDate) : new Date(getToday());
+  // 防御：结束日期早于开始日期时自动交换，避免错乱数据导致空范围
+  if (end < start) {
+    const tmp = start; start = end; end = tmp;
+  }
   const cur = new Date(start);
   while (cur <= end) {
     dates.push(formatDateStr(cur));
@@ -6219,7 +6235,7 @@ function updatePeriodStats() {
   const durations = completed.map(c => {
     const s = new Date(c.startDate + "T00:00:00");
     const e = new Date(c.endDate + "T00:00:00");
-    return Math.round((e - s) / 86400000) + 1;
+    return Math.max(1, Math.round((e - s) / 86400000) + 1);
   });
 
   const avgDuration = durations.length > 0
@@ -6255,7 +6271,7 @@ function renderPeriodBarChart() {
   const chartData = sorted.map((cycle) => {
     const start = new Date(cycle.startDate + "T00:00:00");
     const end = new Date(cycle.endDate + "T00:00:00");
-    const duration = Math.round((end - start) / 86400000) + 1;
+    const duration = Math.max(1, Math.round((end - start) / 86400000) + 1);
     let cycleLen = null;
     const ci = periodCycles.indexOf(cycle);
     if (ci > 0 && periodCycles[ci - 1].endDate) {
@@ -6343,7 +6359,7 @@ function renderPeriodCycleTable() {
     const durs = completed.map(c => {
       const s = new Date(c.startDate + "T00:00:00");
       const e = new Date(c.endDate + "T00:00:00");
-      return Math.round((e - s) / 86400000) + 1;
+      return Math.max(1, Math.round((e - s) / 86400000) + 1);
     });
     return Math.round(durs.reduce((a, b) => a + b, 0) / durs.length);
   })();
@@ -6357,19 +6373,19 @@ function renderPeriodCycleTable() {
     const isActive = active && active.startDate === cycle.startDate;
     const ci = periodCycles.indexOf(cycle);
 
-    // 计算持续天数（统一归零时间，避免时分秒误差）
+    // 计算持续天数（统一归零时间，避免时分秒误差；防御负数）
     let duration = null;
     let rangeStr = "";
     const cycleStart = new Date(cycle.startDate + "T00:00:00");
     if (cycle.endDate) {
       const endDate = new Date(cycle.endDate + "T00:00:00");
-      duration = Math.round((endDate - cycleStart) / 86400000) + 1;
+      duration = Math.max(1, Math.round((endDate - cycleStart) / 86400000) + 1);
       const endFmt = cycle.endDate.slice(5); // MM-DD
       rangeStr = `${cycle.startDate.slice(5)} ~ ${endFmt}`;
     } else if (isActive) {
       const todayStr = getToday();
       const today = new Date(todayStr + "T00:00:00");
-      duration = Math.round((today - cycleStart) / 86400000) + 1;
+      duration = Math.max(1, Math.round((today - cycleStart) / 86400000) + 1);
       rangeStr = t("periodActiveShort");
     }
 
@@ -6396,7 +6412,8 @@ function renderPeriodCycleTable() {
 
     html += `<div class="tl-item">
       <div class="${dotClass}"></div>
-      <div class="${cardClass}">
+      <div class="${cardClass}" data-start="${cycle.startDate}">
+        <button class="tl-card-delete" data-start="${cycle.startDate}" title="${t("periodDelete") || "删除记录"}">×</button>
         <div class="tl-card-title">${titleText}</div>
         <div class="tl-card-range">${rangeStr ? rangeStr : cycle.startDate}</div>
         <div class="tl-card-meta">${t("periodCycleTableDuration")}: ${duration !== null ? duration + " " + t("periodBarChartDay") : '--'}  ·  ${t("periodCycleTableCycleLen")}: ${cycleLenStr}</div>
@@ -6407,6 +6424,23 @@ function renderPeriodCycleTable() {
 
   html += `</div>`;
   container.innerHTML = html;
+
+  // 绑定历史记录卡片删除事件
+  container.querySelectorAll(".tl-card-delete").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const start = btn.getAttribute("data-start");
+      showConfirm(t("periodDeleteConfirm") || "确定删除这条经期记录吗？", () => {
+        const idx = periodCycles.findIndex(c => c.startDate === start);
+        if (idx >= 0) {
+          periodCycles.splice(idx, 1);
+          savePeriodCycles();
+          updatePeriodToggleBtn();
+          showToast(t("periodDeleted") || "记录已删除");
+        }
+      });
+    });
+  });
 
   // 进度条动画（延迟一帧让 DOM 先渲染）
   requestAnimationFrame(() => {
