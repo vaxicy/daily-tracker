@@ -1062,11 +1062,7 @@ function renderEatCalendar() {
     cell.className = "day-cell";
     cell.dataset.date = dateStr;
     if (dateStr === today) cell.classList.add("today");
-    const drinkPInt = getPeriodIntensity(dateStr);
-    if (drinkPInt) cell.classList.add(`period-day-${drinkPInt}`);
-    // 经期日期在所有日历页显示特殊标记
-    const eatPInt = getPeriodIntensity(dateStr);
-    if (eatPInt) cell.classList.add(`period-day-${eatPInt}`);
+    // 饮食页不显示经期标记
     eatCalendarDays.appendChild(cell);
   }
   eatCalendarTitle.textContent = t("yearMonth", { y: eatYear, m: eatMonth + 1 });
@@ -2105,8 +2101,8 @@ function showDrinkEditModal(dateStr, dayRecords) {
           </div>
         `).join("")}
     </div>
-    <div class="edit-add-new-section" style="margin-top:10px;padding:14px;border-top:1px dashed rgba(11,107,255,0.25);">
-      <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:4px;">
+    <div class="edit-add-new-section" style="margin-top:10px;padding:14px;">
+      <div class="edit-add-title">
         ${t('appendRecord')}
       </div>
       <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
