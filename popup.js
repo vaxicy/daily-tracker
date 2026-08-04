@@ -832,8 +832,8 @@ function updateMealRecords() {
               <span class="meal-type-tag ${meal.type}">${typeLabel[meal.type]}</span>
               <span class="meal-time">${meal.time}</span>
               <div class="meal-actions">
-                <button class="meal-action-btn edit-meal" data-index="${index}" data-tooltip="${t('editTitle')}">✏️</button>
-                <button class="meal-action-btn delete-meal" data-index="${index}" data-tooltip="${t('deleteTitle')}">🗑️</button>
+                <button class="meal-action-btn edit-meal" data-index="${index}" data-tooltip="editTitle">✏️</button>
+                <button class="meal-action-btn delete-meal" data-index="${index}" data-tooltip="deleteTitle">🗑️</button>
               </div>
             </div>
             <span class="meal-content">${meal.content}</span>
@@ -1843,7 +1843,7 @@ function updateDrinkStats() {
     }
 
     document.getElementById("drinkStatsRow").innerHTML =
-      `<div class="drink-stat-item"><div class="drink-stat-label">${t("today")}</div><div class="drink-stat-val editable" id="drinkTodayCount" data-tooltip="${t("adjustDrink")}">${todayCount}</div></div>` +
+      `<div class="drink-stat-item"><div class="drink-stat-label">${t("today")}</div><div class="drink-stat-val editable" id="drinkTodayCount" data-tooltip="adjustDrink">${todayCount}</div></div>` +
       `<div class="drink-stat-item"><div class="drink-stat-label">${t("week")}</div><div class="drink-stat-val">${weekCount}</div></div>` +
       `<div class="drink-stat-item"><div class="drink-stat-label">${t("month")}</div><div class="drink-stat-val">${monthCount}</div></div>`;
 
@@ -3211,8 +3211,8 @@ function updatePoopTodayStatus() {
           <span class="record-remark">${rec.remark || t('noRemark')}</span>
           ${rec.color ? `<span class="record-color-dot" style="background:${POOP_COLOR_MAP[rec.color - 1] || '#eee'};" data-tooltip="${poopColors[rec.color - 1] || ""}"></span>` : ""}
           <div class="record-actions">
-            <button class="record-action-btn edit-poop-record" data-index="${idx}" data-tooltip="${t('editTitle')}">✏️</button>
-            <button class="record-action-btn delete-poop-record" data-index="${idx}" data-tooltip="${t('deleteTitle')}">🗑️</button>
+            <button class="record-action-btn edit-poop-record" data-index="${idx}" data-tooltip="editTitle">✏️</button>
+            <button class="record-action-btn delete-poop-record" data-index="${idx}" data-tooltip="deleteTitle">🗑️</button>
           </div>
         </div>
       `).join("");
@@ -3990,8 +3990,8 @@ function updatePeeTodayStatus() {
           <span class="record-remark">${rec.remark || t('noRemark')}${amountText}</span>
           ${colorDot}
           <div class="record-actions">
-            <button class="record-action-btn edit-pee-record" data-index="${idx}" data-tooltip="${t('editTitle')}">✏️</button>
-            <button class="record-action-btn delete-pee-record" data-index="${idx}" data-tooltip="${t('deleteTitle')}">🗑️</button>
+            <button class="record-action-btn edit-pee-record" data-index="${idx}" data-tooltip="editTitle">✏️</button>
+            <button class="record-action-btn delete-pee-record" data-index="${idx}" data-tooltip="deleteTitle">🗑️</button>
           </div>
         </div>
       `;
@@ -4920,6 +4920,16 @@ function renderLangOptions() {
   });
 }
 
+// 角标内容选择器全局状态与函数（供 setLanguage / 语言切换时调用）
+var badgeContentType = "drink_today";
+function getBadgeI18nKey(val) {
+  return "badgeOpt" + val.split("_").map(function(s){ return s.charAt(0).toUpperCase() + s.slice(1); }).join("");
+}
+function updateBadgeContentLabel() {
+  var el = document.getElementById("badgeContentLabel");
+  if (el) el.textContent = t(getBadgeI18nKey(badgeContentType));
+}
+
 // 选择并应用语言
 function selectLang(lang) {
   setLanguage(lang);
@@ -5010,14 +5020,6 @@ loadLanguage(() => {
     });
   }
   // === 角标内容选择器 ===
-  var badgeContentType = "drink_today";
-  function getBadgeI18nKey(val) {
-    return "badgeOpt" + val.split("_").map(function(s){ return s.charAt(0).toUpperCase() + s.slice(1); }).join("");
-  }
-  function updateBadgeContentLabel() {
-    var el = document.getElementById("badgeContentLabel");
-    if (el) el.textContent = t(getBadgeI18nKey(badgeContentType));
-  }
   chrome.storage.local.get(["badgeContentType"], function(data) {
     badgeContentType = data.badgeContentType || "drink_today";
     updateBadgeContentLabel();
@@ -5092,8 +5094,8 @@ function renderReminderList() {
         </div>
       </div>
       <div class="reminder-item-actions">
-        <button class="reminder-item-btn edit-reminder" data-id="${r.id}" data-tooltip="${_t("editReminder")}">✏️</button>
-        <button class="reminder-item-btn delete-reminder" data-id="${r.id}" data-tooltip="${_t("delete")}">🗑️</button>
+        <button class="reminder-item-btn edit-reminder" data-id="${r.id}" data-tooltip="editReminder">✏️</button>
+        <button class="reminder-item-btn delete-reminder" data-id="${r.id}" data-tooltip="delete">🗑️</button>
       </div>
     </div>
   `).join("");
@@ -5497,7 +5499,7 @@ function renderPeriodCalendar() {
       const deleteBtn = document.createElement("button");
       deleteBtn.className = "period-cell-delete-btn";
       deleteBtn.innerHTML = "×";
-      deleteBtn.setAttribute("data-tooltip", t("periodClearCycle") || "清除本次周期");
+      deleteBtn.setAttribute("data-tooltip", "periodClearCycle");
       deleteBtn.addEventListener("click", (ev) => {
         ev.stopPropagation(); // 阻止触发日期点击事件
         showConfirm(t("periodClearCycleConfirm") || "确定清除本次周期记录吗？", () => {
@@ -5557,7 +5559,7 @@ function renderPeriodCalendar() {
     } else {
       // 非经期日期：点击可签到（作为经期第一天）
       day.style.cursor = "pointer";
-      day.setAttribute("data-tooltip", t("periodBackdateHint") || "点击可签到为经期第一天");
+      day.setAttribute("data-tooltip", "periodBackdateHint");
       day.addEventListener("click", () => {
         if (periodUnsaved) {
           showConfirm(t("periodUnsavedConfirm"), () => {

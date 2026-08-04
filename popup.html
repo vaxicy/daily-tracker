@@ -2844,10 +2844,11 @@
       .day-cell.period-date {
         cursor: pointer;
       }
-      .day-cell.selected-period-day {
+      .day-cell.selected-period-day:not(.today) {
         box-shadow: 0 0 0 2px var(--period);
         border-radius: 8px;
       }
+      /* today 已用放大+加粗+浅亮底区分，不再叠加选中描边，避免 20 号等 today 出现多余描边 */
       /* 日期单元格删除按钮（右上角，悬停显示） */
       .period-cell-delete-btn {
         position: absolute;
