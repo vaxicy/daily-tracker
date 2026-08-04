@@ -3615,11 +3615,11 @@ function showPeeEditModal(dateStr, dayRecords) {
       </div>
       <div class="edit-input-row" style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('peeAmountLabel')}</span>
-        ${peeAmounts.map((label, i) => `<button class="pee-amount-btn-add" data-add-amount="${i+1}" style="padding:2px 5px;border-radius:10px;border:1px solid rgba(59,130,246,0.2);background:rgba(255,255,255,0.8);color:var(--text);font-size:9px;cursor:pointer;user-select:none;">${label}</button>`).join('')}
+        ${peeAmounts.map((label, i) => `<button class="pee-amount-btn-sm" data-add-amount="${i+1}">${label}</button>`).join('')}
       </div>
       <div class="edit-input-row" style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <span style="font-size:11px;color:var(--muted);">${t('peeColorLabel')}:</span>
-        ${peeColors.map((label, i) => `<button class="pee-color-btn-add" data-add-color="${i+1}" data-tooltip="${label}" style="width:22px;height:22px;border-radius:50%;border:2px solid rgba(0,0,0,0.15);background:${PEE_COLOR_MAP[i] || '#eee'};cursor:pointer;"></button>`).join('')}
+        ${peeColors.map((label, i) => `<button class="pee-color-btn-sm" data-add-color="${i+1}" data-tooltip="${label}" style="background:${PEE_COLOR_MAP[i] || '#eee'};"></button>`).join('')}
         <span id="peeAppendColorLabel" style="font-size:11px;color:var(--pee);font-weight:600;"></span>
       </div>
       <div class="edit-input-row" style="margin-top:8px;">
@@ -3632,29 +3632,29 @@ function showPeeEditModal(dateStr, dayRecords) {
   (function bindPeeAppend() {
     const appendBtn = document.getElementById("peeAppendBtn");
     if (!appendBtn) return;
-    editModalBody.querySelectorAll(".pee-amount-btn-add").forEach(btn => {
+    editModalBody.querySelectorAll(".pee-amount-btn-sm[data-add-amount]").forEach(btn => {
       btn.addEventListener("click", () => {
         const amount = parseInt(btn.dataset.addAmount);
         const active = btn.classList.contains("active");
-        editModalBody.querySelectorAll(".pee-amount-btn-add").forEach(b => b.classList.remove("active"));
+        editModalBody.querySelectorAll(".pee-amount-btn-sm[data-add-amount]").forEach(b => b.classList.remove("active"));
         if (!active) btn.classList.add("active");
       });
     });
-    editModalBody.querySelectorAll(".pee-color-btn-add").forEach(btn => {
+    editModalBody.querySelectorAll(".pee-color-btn-sm[data-add-color]").forEach(btn => {
       btn.addEventListener("click", () => {
         const color = parseInt(btn.dataset.addColor);
         const label = btn.dataset.tooltip;
         const active = btn.classList.contains("active");
-        editModalBody.querySelectorAll(".pee-color-btn-add").forEach(b => { b.classList.remove("active"); b.style.border = "2px solid rgba(0,0,0,0.15)"; });
-        if (!active) { btn.classList.add("active"); btn.style.border = "2px solid var(--pee)"; document.getElementById("peeAppendColorLabel").textContent = label; }
+        editModalBody.querySelectorAll(".pee-color-btn-sm[data-add-color]").forEach(b => b.classList.remove("active"));
+        if (!active) { btn.classList.add("active"); document.getElementById("peeAppendColorLabel").textContent = label; }
         else document.getElementById("peeAppendColorLabel").textContent = "";
       });
     });
     appendBtn.addEventListener("click", () => {
       let addAmount = 0;
-      editModalBody.querySelectorAll(".pee-amount-btn-add").forEach(btn => { if (btn.classList.contains("active")) addAmount = parseInt(btn.dataset.addAmount); });
+      editModalBody.querySelectorAll(".pee-amount-btn-sm[data-add-amount]").forEach(btn => { if (btn.classList.contains("active")) addAmount = parseInt(btn.dataset.addAmount); });
       let addColor = 0;
-      editModalBody.querySelectorAll(".pee-color-btn-add").forEach(btn => { if (btn.classList.contains("active")) addColor = parseInt(btn.dataset.addColor); });
+      editModalBody.querySelectorAll(".pee-color-btn-sm[data-add-color]").forEach(btn => { if (btn.classList.contains("active")) addColor = parseInt(btn.dataset.addColor); });
       const remark = document.getElementById("peeAppendRemark").value.trim();
       const timeVal = document.getElementById("peeAppendTime").value;
       const recordTime = timeVal ? (() => { const [h, m] = timeVal.split(":"); return `${h.padStart(2,"0")}:${m.padStart(2,"0")}`; })() : new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });

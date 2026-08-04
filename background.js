@@ -125,7 +125,7 @@ function bgTpl(key, vars) {
 
 let currentBgLang = "zh";
 chrome.storage.local.get(["language"], (data) => {
-  currentBgLang = data.language || "zh";
+  currentBgLang = (data && data.language) || "zh";
 });
 chrome.storage.onChanged.addListener((changes) => {
   if (changes.language) {
