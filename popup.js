@@ -180,6 +180,16 @@ function formatDateDisplay(dateStr) {
   return t("dateDisplay", { y, m: parseInt(m), d: parseInt(d) });
 }
 
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // ==================== 公共存储操作 ====================
 // 通用删除记录：从指定 key 的存储中删除某天某条记录
 // callback(records, targetDate, isEmpty) 在存储写入完成后调用
@@ -1916,6 +1926,7 @@ function renderDrinkCalendar() {
 
       cell.addEventListener("mouseenter", (e) => showDrinkTooltip(e, dateStr, dayRecords));
       cell.addEventListener("mouseleave", hideDrinkTooltip);
+      cell.addEventListener("click", () => showDrinkEditModal(dateStr, dayRecords));
     }
   });
 }
@@ -1957,6 +1968,88 @@ function hideDrinkTooltip(e) {
   tooltipHideTimeout = setTimeout(() => {
     document.getElementById("tooltip").classList.remove("show");
   }, 200);
+}
+
+function showDrinkEditModal(dateStr, dayRecords) {
+  const editModal = document.getElementById("editModal");
+  const editModalBody = document.getElementById("editModalBody");
+  const editModalTitle = document.getElementById("editModalTitle");
+  const isToday = dateStr === getToday();
+  editModalTitle.textContent = formatDateDisplay(dateStr) + " " + t("drinkTitle");
+  editModalBody.innerHTML = `
+    <div class="edit-records-list">
+      ${dayRecords.length === 0
+        ? `<div class="edit-empty">${isToday ? t("noDrinkRecordToday") : t("noDrinkRecord")}</div>`
+        : dayRecords.map((rec, i) => `
+          <div class="edit-record-item">
+            <span class="edit-record-time">💧 ${rec.time}</span>
+            <span class="edit-record-note">${rec.remark ? escapeHtml(rec.remark) : ""}</span>
+            <button class="edit-record-delete" data-drink-idx="${i}">✕</button>
+          </div>
+        `).join("")}
+    </div>
+    <div class="edit-add-new-section" style="margin-top:10px;padding:14px;border-top:1px dashed rgba(11,107,255,0.25);">
+      <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:10px;display:flex;align-items:center;gap:4px;">
+        ${t('appendRecord')}
+      </div>
+      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;">
+          <input type="radio" name="drinkAppendTimeMode" value="default" checked /> ${t('defaultTime')}
+        </label>
+        <input type="time" class="edit-input" id="drinkAppendTime" value="${new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" })}" style="width:110px;font-size:12px;padding:6px 8px;" />
+      </div>
+      <div class="edit-input-row" style="margin-top:8px;">
+        <input class="edit-input" type="text" id="drinkAppendRemark" placeholder="${t('drinkRemarkPlaceholder')}" maxlength="50" style="font-size:11px;" />
+      </div>
+      <button class="edit-save-btn" id="drinkAppendBtn" style="background:var(--primary);font-size:12px;padding:6px 12px;margin-top:6px;">${t('addOneDrink')}</button>
+    </div>
+  `;
+  editModal.classList.add("show");
+
+  // 删除单条
+  editModalBody.querySelectorAll("[data-drink-idx]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = Number(btn.dataset.drinkIdx);
+      chrome.storage.local.get(["drinkRecords"], (data) => {
+        const records = data.drinkRecords || {};
+        if (records[dateStr] && records[dateStr][idx]) {
+          records[dateStr].splice(idx, 1);
+          if (records[dateStr].length === 0) delete records[dateStr];
+          persistRecords('drinkRecords', records, () => {
+            showToast("🗑 " + t('deleteSuccess'));
+            renderDrinkCalendar();
+            updateDrinkUI();
+            chrome.storage.local.get(["drinkRecords"], (d) => {
+              showDrinkEditModal(dateStr, d.drinkRecords[dateStr] || []);
+            });
+          });
+        }
+      });
+    });
+  });
+
+  // 追加一次喝水
+  const appendBtn = document.getElementById("drinkAppendBtn");
+  if (appendBtn) {
+    appendBtn.addEventListener("click", () => {
+      const remark = document.getElementById("drinkAppendRemark").value.trim();
+      const timeVal = document.getElementById("drinkAppendTime").value;
+      const recordTime = timeVal ? (() => { const [h, m] = timeVal.split(":"); return `${h.padStart(2,"0")}:${m.padStart(2,"0")}`; })() : new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
+      chrome.storage.local.get(["drinkRecords"], (data) => {
+        const records = data.drinkRecords || {};
+        if (!records[dateStr]) records[dateStr] = [];
+        records[dateStr].push({ time: recordTime, remark, timestamp: Date.now(), isBackfill: !isToday });
+        persistRecords('drinkRecords', records, () => {
+          showToast(isToday ? "💧 " + t('checkinSuccess') : "💧 " + t('makeUpCheckinSuccess'));
+          renderDrinkCalendar();
+          updateDrinkUI();
+          chrome.storage.local.get(["drinkRecords"], (d) => {
+            showDrinkEditModal(dateStr, d.drinkRecords[dateStr] || []);
+          });
+        });
+      });
+    });
+  }
 }
 
 document.getElementById("drinkPrevMonth").addEventListener("click", () => {
@@ -2567,7 +2660,102 @@ function showPoopEditModal(dateStr, dayRecords) {
       </div>
     </div>
   `;
-  }).join("");
+  }).join("") + `
+    <!-- 追加新记录区域 -->
+    <div class="edit-add-new-section" style="margin-top:10px;padding:14px;border-top:1px dashed rgba(139,69,19,0.25);">
+      <div style="font-size:13px;font-weight:600;color:var(--poop);margin-bottom:10px;display:flex;align-items:center;gap:4px;">
+        ${t('appendRecord')}
+      </div>
+      <!-- 时间一行 -->
+      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;">
+          <input type="radio" name="poopAppendTimeMode" value="default" checked /> ${t('defaultTime')}
+        </label>
+        <input type="time" class="edit-input" id="poopAppendTime" value="${new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" })}" style="width:110px;font-size:12px;padding:6px 8px;" />
+      </div>
+      <!-- Bristol 选择 -->
+      <div style="font-size:10px;color:var(--muted);white-space:nowrap;margin-top:6px;">${t('bristolTypeLabel')}</div>
+      <div class="bristol-selector-add" style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;">
+        ${bristolTypes.map((label, i) => `<button class="bristol-btn-add" data-add-type="${i+1}" data-tooltip="${label}(${bristolDescs[i] || ''})" style="width:26px;height:26px;border-radius:8px;border:1px solid rgba(0,0,0,0.15);background:rgba(255,255,255,0.8);color:var(--text);font-size:12px;cursor:pointer;user-select:none;">${i+1}</button>`).join('')}
+      </div>
+      <!-- 排便量 -->
+      <div class="edit-input-row" style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopAmountLabel')}</span>
+        ${poopAmounts.map((label, i) => `<button class="poop-amount-btn-add" data-add-amount="${i+1}" style="padding:2px 5px;border-radius:10px;border:1px solid rgba(139,69,19,0.2);background:rgba(255,255,255,0.8);color:var(--text);font-size:9px;cursor:pointer;user-select:none;">${label}</button>`).join('')}
+      </div>
+      <!-- 颜色 -->
+      <div class="poop-color-label" style="font-size:10px;color:var(--muted);white-space:nowrap;margin-top:6px;">${t('poopColorLabel')}</div>
+      <div class="poop-color-picker-add" style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
+        ${poopColors.map((label, i) => `<button class="poop-color-btn-add" data-add-color="${i+1}" data-tooltip="${label}" style="width:22px;height:22px;border-radius:50%;border:2px solid rgba(0,0,0,0.15);background:${POOP_COLOR_MAP[i] || '#eee'};cursor:pointer;"></button>`).join('')}
+      </div>
+      <div class="edit-input-row" style="margin-top:8px;">
+        <input class="edit-input" type="text" id="poopAppendRemark" placeholder="${t('remarkPlaceholder')}" maxlength="50" style="font-size:11px;" />
+      </div>
+      <button class="edit-save-btn" id="poopAppendBtn" style="background:var(--poop);font-size:12px;padding:6px 12px;margin-top:6px;">${t('appendRecordBtn')}</button>
+    </div>
+  `;
+
+  // 追加记录按钮事件
+  (function bindPoopAppend() {
+    const appendBtn = document.getElementById("poopAppendBtn");
+    if (!appendBtn) return;
+    // Bristol 选择
+    editModalBody.querySelectorAll(".bristol-selector-add .bristol-btn-add").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const type = parseInt(btn.dataset.addType);
+        const active = btn.classList.contains("active");
+        editModalBody.querySelectorAll(".bristol-selector-add .bristol-btn-add").forEach(b => { b.classList.remove("active"); b.style.border = "1px solid rgba(0,0,0,0.15)"; });
+        if (!active) { btn.classList.add("active"); btn.style.border = "2px solid var(--poop)"; }
+      });
+    });
+    // 排便量
+    editModalBody.querySelectorAll(".poop-amount-btn-add").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const amount = parseInt(btn.dataset.addAmount);
+        const active = btn.classList.contains("active");
+        editModalBody.querySelectorAll(".poop-amount-btn-add").forEach(b => b.classList.remove("active"));
+        if (!active) btn.classList.add("active");
+      });
+    });
+    // 颜色
+    editModalBody.querySelectorAll(".poop-color-btn-add").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const color = parseInt(btn.dataset.addColor);
+        const active = btn.classList.contains("active");
+        editModalBody.querySelectorAll(".poop-color-btn-add").forEach(b => { b.classList.remove("active"); b.style.border = "2px solid rgba(0,0,0,0.15)"; });
+        if (!active) { btn.classList.add("active"); btn.style.border = "2px solid var(--poop)"; }
+      });
+    });
+    appendBtn.addEventListener("click", () => {
+      let addBristol = 0;
+      editModalBody.querySelectorAll(".bristol-selector-add .bristol-btn-add").forEach(btn => { if (btn.classList.contains("active")) addBristol = parseInt(btn.dataset.addType); });
+      let addAmount = 0;
+      editModalBody.querySelectorAll(".poop-amount-btn-add").forEach(btn => { if (btn.classList.contains("active")) addAmount = parseInt(btn.dataset.addAmount); });
+      let addColor = 0;
+      editModalBody.querySelectorAll(".poop-color-btn-add").forEach(btn => { if (btn.classList.contains("active")) addColor = parseInt(btn.dataset.addColor); });
+      const remark = document.getElementById("poopAppendRemark").value.trim();
+      const timeVal = document.getElementById("poopAppendTime").value;
+      const recordTime = timeVal ? (() => { const [h, m] = timeVal.split(":"); return `${h.padStart(2,"0")}:${m.padStart(2,"0")}`; })() : new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
+      chrome.storage.local.get(["poopRecords"], (data) => {
+        const records = data.poopRecords || {};
+        if (!records[dateStr]) records[dateStr] = [];
+        const newRec = { time: recordTime, remark, timestamp: Date.now(), isBackfill: !isToday };
+        if (addAmount > 0) newRec.amount = addAmount;
+        if (addColor > 0) newRec.color = addColor;
+        if (addBristol > 0) newRec.bristolType = addBristol;
+        records[dateStr].push(newRec);
+        persistRecords('poopRecords', records, () => {
+          showToast(isToday ? "💩 " + t('checkinSuccess') : "💩 " + t('makeUpCheckinSuccess'));
+          renderPoopCalendar();
+          updatePoopTodayStatus();
+          updatePoopStats();
+          chrome.storage.local.get(["poopRecords"], (d) => {
+            showPoopEditModal(dateStr, d.poopRecords[dateStr] || []);
+          });
+        });
+      });
+    });
+  })();
 
   // Bristol 按钮点击事件（事件委托）
   editModalBody.querySelectorAll(".bristol-btn").forEach(btn => {
@@ -3268,7 +3456,79 @@ function showPeeEditModal(dateStr, dayRecords) {
       </div>
     </div>
   `;
-  }).join("");
+  }).join("") + `
+    <!-- 追加新记录区域 -->
+    <div class="edit-add-new-section" style="margin-top:10px;padding:14px;border-top:1px dashed rgba(59,130,246,0.25);">
+      <div style="font-size:13px;font-weight:600;color:var(--pee);margin-bottom:10px;display:flex;align-items:center;gap:4px;">
+        ${t('appendRecord')}
+      </div>
+      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;">
+          <input type="radio" name="peeAppendTimeMode" value="default" checked /> ${t('defaultTime')}
+        </label>
+        <input type="time" class="edit-input" id="peeAppendTime" value="${new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" })}" style="width:110px;font-size:12px;padding:6px 8px;" />
+      </div>
+      <div class="edit-input-row" style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('peeAmountLabel')}</span>
+        ${peeAmounts.map((label, i) => `<button class="pee-amount-btn-add" data-add-amount="${i+1}" style="padding:2px 5px;border-radius:10px;border:1px solid rgba(59,130,246,0.2);background:rgba(255,255,255,0.8);color:var(--text);font-size:9px;cursor:pointer;user-select:none;">${label}</button>`).join('')}
+      </div>
+      <div class="edit-input-row" style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--muted);">${t('peeColorLabel')}:</span>
+        ${peeColors.map((label, i) => `<button class="pee-color-btn-add" data-add-color="${i+1}" data-tooltip="${label}" style="width:22px;height:22px;border-radius:50%;border:2px solid rgba(0,0,0,0.15);background:${PEE_COLOR_MAP[i] || '#eee'};cursor:pointer;"></button>`).join('')}
+        <span id="peeAppendColorLabel" style="font-size:11px;color:var(--pee);font-weight:600;"></span>
+      </div>
+      <div class="edit-input-row" style="margin-top:8px;">
+        <input class="edit-input" type="text" id="peeAppendRemark" placeholder="${t('remarkPlaceholder')}" maxlength="50" style="font-size:11px;" />
+      </div>
+      <button class="edit-save-btn" id="peeAppendBtn" style="background:var(--pee);font-size:12px;padding:6px 12px;margin-top:6px;">${t('appendRecordBtn')}</button>
+    </div>
+  `;
+
+  (function bindPeeAppend() {
+    const appendBtn = document.getElementById("peeAppendBtn");
+    if (!appendBtn) return;
+    editModalBody.querySelectorAll(".pee-amount-btn-add").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const amount = parseInt(btn.dataset.addAmount);
+        const active = btn.classList.contains("active");
+        editModalBody.querySelectorAll(".pee-amount-btn-add").forEach(b => b.classList.remove("active"));
+        if (!active) btn.classList.add("active");
+      });
+    });
+    editModalBody.querySelectorAll(".pee-color-btn-add").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const color = parseInt(btn.dataset.addColor);
+        const label = btn.dataset.tooltip;
+        const active = btn.classList.contains("active");
+        editModalBody.querySelectorAll(".pee-color-btn-add").forEach(b => { b.classList.remove("active"); b.style.border = "2px solid rgba(0,0,0,0.15)"; });
+        if (!active) { btn.classList.add("active"); btn.style.border = "2px solid var(--pee)"; document.getElementById("peeAppendColorLabel").textContent = label; }
+        else document.getElementById("peeAppendColorLabel").textContent = "";
+      });
+    });
+    appendBtn.addEventListener("click", () => {
+      let addAmount = 0;
+      editModalBody.querySelectorAll(".pee-amount-btn-add").forEach(btn => { if (btn.classList.contains("active")) addAmount = parseInt(btn.dataset.addAmount); });
+      let addColor = 0;
+      editModalBody.querySelectorAll(".pee-color-btn-add").forEach(btn => { if (btn.classList.contains("active")) addColor = parseInt(btn.dataset.addColor); });
+      const remark = document.getElementById("peeAppendRemark").value.trim();
+      const timeVal = document.getElementById("peeAppendTime").value;
+      const recordTime = timeVal ? (() => { const [h, m] = timeVal.split(":"); return `${h.padStart(2,"0")}:${m.padStart(2,"0")}`; })() : new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
+      chrome.storage.local.get(["peeRecords"], (data) => {
+        const records = data.peeRecords || {};
+        if (!records[dateStr]) records[dateStr] = [];
+        records[dateStr].push({ time: recordTime, remark, amount: addAmount, color: addColor, timestamp: Date.now(), isBackfill: !isToday });
+        persistRecords('peeRecords', records, () => {
+          showToast(isToday ? "💧 " + t('checkinSuccess') : "💧 " + t('makeUpCheckinSuccess'));
+          renderPeeCalendar();
+          updatePeeTodayStatus();
+          updatePeeStats();
+          chrome.storage.local.get(["peeRecords"], (d) => {
+            showPeeEditModal(dateStr, d.peeRecords[dateStr] || []);
+          });
+        });
+      });
+    });
+  })();
 
   // 尿量按钮点击事件（事件委托）
   editModalBody.querySelectorAll(".pee-amount-btn-sm").forEach(btn => {
