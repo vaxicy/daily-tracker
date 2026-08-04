@@ -4225,7 +4225,7 @@
       }
 
       /* 经期页面日历样式（跟随主题 --period 粉） */
-      #pagePeriod .day-cell:not(.empty) {
+      #pagePeriod .day-cell:not(.empty):not(.today) {
         background: transparent;
       }
       /* 经期区间统一明显底色：本块位于 :not(.empty) 透明规则之后，
@@ -4238,12 +4238,19 @@
         color: var(--text);
       }
       #pagePeriod .day-cell.today {
+        background: color-mix(in srgb, var(--period) 22%, transparent);
         color: var(--text);
         font-weight: 700;
         transform: scale(1.08);
         z-index: 5;
       }
       /* 今日同时处于经期内：today 只放大加粗，底色完全继承 period-day-* 统一底色，不做特殊处理 */
+      #pagePeriod .day-cell.today.period-day-1,
+      #pagePeriod .day-cell.today.period-day-2,
+      #pagePeriod .day-cell.today.period-day-3,
+      #pagePeriod .day-cell.today.period-day-4 {
+        background: color-mix(in srgb, var(--period) 55%, transparent);
+      }
       #pagePeriod .day-cell:not(.empty):hover {
         background: color-mix(in srgb, var(--period) 20%, transparent);
       }
