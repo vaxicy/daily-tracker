@@ -1107,6 +1107,8 @@ function showEatEditModal(dateStr, dayRecords) {
     
     editModalBody.innerHTML = `
       <div class="edit-empty" style="margin-bottom: 12px;">${t('noMeal')}</div>
+      <div class="edit-add-new-section" style="margin-top:0;">
+      <div class="edit-add-title">${t('addRecord')}</div>
       <!-- 餐次+时间一行 -->
       <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
         <select class="edit-type-select" id="eatAddType" style="flex:1;min-width:0;padding:6px 10px;">
@@ -1137,8 +1139,9 @@ function showEatEditModal(dateStr, dayRecords) {
         <span class="rating-text" id="eatAddRatingText" style="font-size:10px;color:var(--eat);font-weight:600;">${t('ratingNone')}</span>
       </div>
       <button class="edit-save-btn" id="eatAddBtn" style="background: var(--eat);font-size:12px;padding:6px 12px;">${t('addRecordBtn')}</button>
+      </div>
     `;
-    
+
     // 评价星级交互（5颗星，支持半星）
     const addRatingStars = document.querySelectorAll("#eatAddRating .star");
     let addRating = 0;
@@ -2013,8 +2016,6 @@ function renderDrinkCalendar() {
     cell.className = "day-cell";
     cell.dataset.date = dateStr;
     if (dateStr === today) cell.classList.add("today");
-    const drinkPInt = getPeriodIntensity(dateStr);
-    if (drinkPInt) cell.classList.add(`period-day-${drinkPInt}`);
     drinkCalendarDays.appendChild(cell);
   }
   drinkCalendarTitle.textContent = t("yearMonth", { y: drinkCalYear, m: drinkCalMonth + 1 });
@@ -2539,8 +2540,6 @@ function renderPoopCalendar() {
     cell.className = "day-cell";
     cell.dataset.date = dateStr;
     if (dateStr === today) cell.classList.add("today");
-    const poopPInt = getPeriodIntensity(dateStr);
-    if (poopPInt) cell.classList.add(`period-day-${poopPInt}`);
     poopCalendarDays.appendChild(cell);
   }
   poopCalendarTitle.textContent = t("yearMonth", { y: poopYear, m: poopMonth + 1 });
@@ -2587,36 +2586,39 @@ function showPoopEditModal(dateStr, dayRecords) {
 
     editModalBody.innerHTML = `
       <div class="edit-empty" style="margin-bottom: 12px;">${t('noPoopRecord')}</div>
-      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
-        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;">
-          <input type="radio" name="poopTimeMode" value="default" checked /> ${t('defaultTime')}
-        </label>
-        <span id="poopDefaultTimeDisplay" style="font-size:12px;color:#999;font-weight:500;">${defaultTimeStr}</span>
+      <div class="edit-add-new-section" style="margin-top:0;">
+        <div class="edit-add-title">${t('makeUpCheckin')}</div>
+        <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
+          <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;">
+            <input type="radio" name="poopTimeMode" value="default" checked /> ${t('defaultTime')}
+          </label>
+          <span id="poopDefaultTimeDisplay" style="font-size:12px;color:#999;font-weight:500;">${defaultTimeStr}</span>
+        </div>
+        <div class="edit-input-row" id="poopCustomTimeRow" style="display:none;">
+          <input type="time" class="edit-input" id="poopCustomTime" value="${defaultTimeStr}" />
+        </div>
+        <div class="edit-input-row">
+          <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="radio" name="poopTimeMode" value="custom" /> ${t('customTime')}
+          </label>
+        </div>
+        <div class="bristol-selector-add" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('bristolTypeLabel')}</span>
+          ${(t("bristolTypes") || []).map((label, i) => `<button class="bristol-btn bristol-btn-add" data-add-type="${i+1}" data-tooltip="${label}(${(t("bristolDescs") || [])[i] || ''})">${i+1}</button>`).join("")}
+        </div>
+        <div class="poop-amount-selector" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopAmountLabel')}</span>
+          ${(t("poopAmounts") || []).map((label, i) => `<button class="poop-amount-btn-sm" data-amount="${i+1}" id="poopAddAmount${i+1}">${label}</button>`).join("")}
+        </div>
+        <div class="poop-color-selector" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopColorLabel')}</span>
+          ${(t("poopColors") || []).map((label, i) => `<button class="poop-color-btn-sm" data-color="${i+1}" id="poopAddColor${i+1}" data-tooltip="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid rgba(0,0,0,0.15);"></button>`).join("")}
+        </div>
+        <div class="edit-input-row" style="margin-top:8px;">
+          <input class="edit-input" type="text" id="poopAddRemark" placeholder="${t('remarkPlaceholder')}" />
+        </div>
+        <button class="edit-save-btn" id="poopAddBtn" style="background: var(--secondary);margin-top:10px;">${t('makeUpCheckinBtn')}</button>
       </div>
-      <div class="edit-input-row" id="poopCustomTimeRow" style="display:none;">
-        <input type="time" class="edit-input" id="poopCustomTime" value="${defaultTimeStr}" />
-      </div>
-      <div class="edit-input-row">
-        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
-          <input type="radio" name="poopTimeMode" value="custom" /> ${t('customTime')}
-        </label>
-      </div>
-      <div class="bristol-selector-add" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('bristolTypeLabel')}</span>
-        ${(t("bristolTypes") || []).map((label, i) => `<button class="bristol-btn bristol-btn-add" data-add-type="${i+1}" data-tooltip="${label}(${(t("bristolDescs") || [])[i] || ''})">${i+1}</button>`).join("")}
-      </div>
-      <div class="poop-amount-selector" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopAmountLabel')}</span>
-        ${(t("poopAmounts") || []).map((label, i) => `<button class="poop-amount-btn-sm" data-amount="${i+1}" id="poopAddAmount${i+1}">${label}</button>`).join("")}
-      </div>
-      <div class="poop-color-selector" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopColorLabel')}</span>
-        ${(t("poopColors") || []).map((label, i) => `<button class="poop-color-btn-sm" data-color="${i+1}" id="poopAddColor${i+1}" data-tooltip="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid rgba(0,0,0,0.15);"></button>`).join("")}
-      </div>
-      <div class="edit-input-row" style="margin-top:8px;">
-        <input class="edit-input" type="text" id="poopAddRemark" placeholder="${t('remarkPlaceholder')}" />
-      </div>
-      <button class="edit-save-btn" id="poopAddBtn" style="background: var(--secondary);margin-top:10px;">${t('makeUpCheckinBtn')}</button>
     `;
     
     // 切换时间模式
@@ -3384,8 +3386,6 @@ function renderPeeCalendar() {
     cell.className = "day-cell";
     cell.dataset.date = dateStr;
     if (dateStr === today) cell.classList.add("today");
-    const peePInt = getPeriodIntensity(dateStr);
-    if (peePInt) cell.classList.add(`period-day-${peePInt}`);
     peeCalendarDays.appendChild(cell);
   }
   peeCalendarTitle.textContent = t("yearMonth", { y: peeYear, m: peeMonth + 1 });
@@ -3425,29 +3425,32 @@ function showPeeEditModal(dateStr, dayRecords) {
 
     editModalBody.innerHTML = `
       <div class="edit-empty" style="margin-bottom: 12px;">${t('noPeeRecord')}</div>
-      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
-        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;">
-          <input type="radio" name="peeTimeMode" value="default" checked /> ${t('defaultTime')}
-        </label>
-        <span id="peeDefaultTimeDisplay" style="font-size:12px;color:#999;font-weight:500;">${defaultTimeStr}</span>
+      <div class="edit-add-new-section" style="margin-top:0;">
+        <div class="edit-add-title">${t('makeUpCheckin')}</div>
+        <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
+          <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;">
+            <input type="radio" name="peeTimeMode" value="default" checked /> ${t('defaultTime')}
+          </label>
+          <span id="peeDefaultTimeDisplay" style="font-size:12px;color:#999;font-weight:500;">${defaultTimeStr}</span>
+        </div>
+        <div class="edit-input-row" id="peeCustomTimeRow" style="display:none;">
+          <input type="time" class="edit-input" id="peeCustomTime" value="${defaultTimeStr}" />
+        </div>
+        <div class="edit-input-row">
+          <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="radio" name="peeTimeMode" value="custom" /> ${t('customTime')}
+          </label>
+        </div>
+        <div class="edit-input-row">
+          <input class="edit-input" type="text" id="peeAddRemark" placeholder="${t('remarkPlaceholder')}" />
+        </div>
+        <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:var(--muted);">${t('peeColorLabel')}:</span>
+          ${colorBtns}
+          <span id="peeAddColorLabel" style="font-size:11px;color:var(--pee);font-weight:600;"></span>
+        </div>
+        <button class="edit-save-btn" id="peeAddBtn" style="background: var(--pee);">${t('makeUpCheckinBtn')}</button>
       </div>
-      <div class="edit-input-row" id="peeCustomTimeRow" style="display:none;">
-        <input type="time" class="edit-input" id="peeCustomTime" value="${defaultTimeStr}" />
-      </div>
-      <div class="edit-input-row">
-        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;">
-          <input type="radio" name="peeTimeMode" value="custom" /> ${t('customTime')}
-        </label>
-      </div>
-      <div class="edit-input-row">
-        <input class="edit-input" type="text" id="peeAddRemark" placeholder="${t('remarkPlaceholder')}" />
-      </div>
-      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <span style="font-size:11px;color:var(--muted);">${t('peeColorLabel')}:</span>
-        ${colorBtns}
-        <span id="peeAddColorLabel" style="font-size:11px;color:var(--pee);font-weight:600;"></span>
-      </div>
-      <button class="edit-save-btn" id="peeAddBtn" style="background: var(--pee);">${t('makeUpCheckinBtn')}</button>
     `;
     
     // 切换时间模式

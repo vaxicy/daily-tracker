@@ -2814,34 +2814,12 @@
       #periodCycleTable::-webkit-scrollbar-track { background: transparent; }
       #periodCycleTable { scrollbar-width: thin; scrollbar-color: var(--period) transparent; }
 
-      /* 日历中经期日期的样式 */
+      /* 日历中经期日期的样式（仅经期页使用，非经期页已移除 period-day 类） */
       .day-cell.period-day-0 { background: transparent; }
-      .day-cell.period-day-1 { background: color-mix(in srgb, var(--period) 18%, transparent); }
-      .day-cell.period-day-2 { background: color-mix(in srgb, var(--period) 35%, transparent); }
-      .day-cell.period-day-3 { background: color-mix(in srgb, var(--period) 55%, transparent); }
-      .day-cell.period-day-4 { background: color-mix(in srgb, var(--period) 75%, transparent); color: var(--text); }
-
-      /* 非经期页的经期日期加左侧色条，确保与打卡状态色叠加时仍一眼可辨（全主题生效） */
-      .day-cell.period-day-1:not(#pagePeriod .day-cell)::before,
-      .day-cell.period-day-2:not(#pagePeriod .day-cell)::before,
-      .day-cell.period-day-3:not(#pagePeriod .day-cell)::before,
-      .day-cell.period-day-4:not(#pagePeriod .day-cell)::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 12%;
-        bottom: 12%;
-        width: 4px;
-        border-radius: 2px;
-        background: var(--period);
-      }
-      .day-cell.period-day-1:not(#pagePeriod .day-cell),
-      .day-cell.period-day-2:not(#pagePeriod .day-cell),
-      .day-cell.period-day-3:not(#pagePeriod .day-cell),
-      .day-cell.period-day-4:not(#pagePeriod .day-cell) {
-        position: relative;
-        overflow: hidden;
-      }
+      .day-cell.period-day-1 { background: color-mix(in srgb, var(--period) 30%, transparent); }
+      .day-cell.period-day-2 { background: color-mix(in srgb, var(--period) 48%, transparent); }
+      .day-cell.period-day-3 { background: color-mix(in srgb, var(--period) 68%, transparent); }
+      .day-cell.period-day-4 { background: color-mix(in srgb, var(--period) 88%, transparent); color: var(--text); }
 
       /* 预测经期：虚线半透明高亮 */
       .day-cell.period-predicted {
@@ -3632,12 +3610,12 @@
         font-weight: 600;
       }
 
-      /* 追加记录区域 */
+      /* 追加记录区域（与编辑记录卡片 .edit-record-item 视觉统一：同底色、同圆角、同 padding） */
       .edit-add-new-section {
         margin-top: 16px;
         background: rgba(12,42,77,0.04);
         border-radius: 10px;
-        padding: 14px;
+        padding: 10px;
       }
       .edit-add-title {
         font-size: 13px;
@@ -4260,19 +4238,19 @@
       }
       /* 今日同时处于经期内：today 放大胜出，经期强度用底色深浅区分（无描边，且比单纯 period 更深一档） */
       #pagePeriod .day-cell.today.period-day-1 {
-        background: color-mix(in srgb, var(--period) 38%, transparent);
+        background: color-mix(in srgb, var(--period) 45%, transparent);
         color: var(--text);
       }
       #pagePeriod .day-cell.today.period-day-2 {
-        background: color-mix(in srgb, var(--period) 48%, transparent);
+        background: color-mix(in srgb, var(--period) 60%, transparent);
         color: var(--text);
       }
       #pagePeriod .day-cell.today.period-day-3 {
-        background: color-mix(in srgb, var(--period) 62%, transparent);
+        background: color-mix(in srgb, var(--period) 76%, transparent);
         color: var(--text);
       }
       #pagePeriod .day-cell.today.period-day-4 {
-        background: color-mix(in srgb, var(--period) 82%, transparent);
+        background: color-mix(in srgb, var(--period) 92%, transparent);
         color: var(--text);
       }
       #pagePeriod .day-cell:not(.empty):hover {
