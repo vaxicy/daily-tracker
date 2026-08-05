@@ -1,0 +1,10 @@
+{
+  "name": {
+    "message": "Daily Habit Tracker - 健康習慣",
+    "description": "Extension name"
+  },
+  "description": {
+    "message": "食事・水分・排便・排尿・生理を記録。データローカル保存のプライベート健康習慣トラッカー。",
+    "description": "Extension description"
+  }
+}

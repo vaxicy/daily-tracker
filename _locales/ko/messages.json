@@ -1,0 +1,10 @@
+{
+  "name": {
+    "message": "Daily Habit Tracker - 건강 습관",
+    "description": "Extension name"
+  },
+  "description": {
+    "message": "식사, 수분, 배변, 배뇨, 생리 기록. 데이터 로컬 저장 프라이빗 일일 건강 습관 추적기.",
+    "description": "Extension description"
+  }
+}
