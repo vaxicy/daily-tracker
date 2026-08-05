@@ -29,7 +29,7 @@
 可为吃药、运动等事项设置多个定时提醒，灵活配置提醒名称、图标与提醒时间，随时启用或禁用。
 
 【个性化设置】
-提供 24 款主题风格，支持中/英/西三语切换，可设置默认打开页面。首次使用会自动根据浏览器语言选择默认语言。
+提供 24 款主题风格，支持中/英/西/日/韩五语切换，可设置默认打开页面。首次使用会自动根据浏览器语言选择默认语言。
 
 【快捷操作】
 支持按 Enter 键快速打卡：当前在哪个模块（饮食/喝水/排便/排尿/经期），按 Enter 即可触发对应打卡按钮，无需鼠标点击。
@@ -65,7 +65,7 @@ Toggle menstrual cycle tracking with a calendar view showing period distribution
 Set multiple timed reminders for medications, exercise, and more. Flexibly configure the name, icon, and time, and enable or disable them anytime.
 
 【Personalization】
-24 theme styles available. Supports Chinese, English, and Spanish language switching. Set your default opening page. First-time use automatically selects the default language based on your browser language.
+24 theme styles available. Supports Chinese, English, Spanish, Japanese, and Korean language switching. Set your default opening page. First-time use automatically selects the default language based on your browser language.
 
 【Quick Actions】
 Press Enter to quickly check in: in any module (diet, water, bowel, bladder, period), Enter triggers the corresponding check-in button without clicking.
@@ -101,7 +101,7 @@ Seguimiento del ciclo menstrual con vista de calendario. Registra estado de áni
 Configura múltiples recordatorios para medicamentos, ejercicio, etc., con nombre, icono y hora personalizables, activables o desactivables en cualquier momento.
 
 【Personalización】
-24 estilos de temas. Cambio de idioma chino/inglés/español. Página de inicio predeterminada configurable. El primer uso detecta automáticamente el idioma del navegador.
+24 estilos de temas. Cambio de idioma chino/inglés/español/japonés/coreano. Página de inicio predeterminada configurable. El primer uso detecta automáticamente el idioma del navegador.
 
 【Acciones rápidas】
 Presiona Enter para registrar rápidamente en cualquier módulo (dieta, agua, deposiciones, micción, menstruación).
@@ -137,7 +137,7 @@ Bristol便スケール（7タイプ）による科学的な排便評価に対応
 お薬、運動など、複数の定時リマインダーを設定。名称、アイコン、時間を自由に設定し、必要に応じて有効/無効を切り替え。
 
 【パーソナライズ】
-24種類のテーマスタイル。中国語/英語/スペイン語の切り替えに対応。デフォルトで開くページも設定可能。初回使用時はブラウザの言語を自動検出します。
+24種類のテーマスタイル。中国語/英語/スペイン語/日本語/韓国語の切り替えに対応。デフォルトで開くページも設定可能。初回使用時はブラウザの言語を自動検出します。
 
 【クイック操作】
 Enterキーで素早く記録。食事・水分・排便・排尿・生理の各画面で、Enterキーを押すと対応する記録ボタンがクリックされます。
@@ -173,7 +173,7 @@ Bristol 대변 척도(7가지 유형)를 기반으로 한 과학적인 배변 �
 약 복용, 운동 등 여러 가지 정시 알림을 설정할 수 있습니다. 이름, 아이콘, 시간을 자유롭게 구성하고 필요에 따라 켜고 끌 수 있습니다.
 
 【개인화 설정】
-24가지 테마 스타일을 제공합니다. 중국어/영어/스페인어 언어 전환을 지원하며, 기본으로 열리는 페이지를 설정할 수 있습니다. 처음 사용 시 브라우저 언어를 자동 감지합니다.
+24가지 테마 스타일을 제공합니다. 중국어/영어/스페인어/일본어/한국어 언어 전환을 지원하며, 기본으로 열리는 페이지를 설정할 수 있습니다. 처음 사용 시 브라우저 언어를 자동 감지합니다.
 
 【빠른 조작】
 Enter 키로 빠르게 기록할 수 있습니다. 식사/수분/배변/배뇨/생리 모듈에서 Enter 키를 누를면 해당 기록 버튼이 클릭됩니다.
@@ -196,4 +196,4 @@ Enter 키로 빠르게 기록할 수 있습니다. 식사/수분/배변/배뇨/�
 | ja | ~1,050 | ✅ |
 | ko | ~1,120 | ✅ |
 
-> 注：扩展 UI 当前支持中/英/西三语；日/韩描述用于商店本地化展示，不代表扩展界面已支持该语言。
+> 注：扩展 UI 已支持中/英/西/日/韩五语；商店描述与日/韩 manifest 字段同步配置，便于对应地区用户浏览。
