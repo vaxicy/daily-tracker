@@ -4908,6 +4908,8 @@ function renderLangOptions() {
     { id: "zh", label: t("langZh") },
     { id: "en", label: t("langEn") },
     { id: "es", label: t("langEs") },
+    { id: "ja", label: t("langJa") },
+    { id: "ko", label: t("langKo") },
   ];
   LANGS.forEach(l => {
     const item = document.createElement("div");
@@ -4937,12 +4939,16 @@ function selectLang(lang) {
   // 刷新主题下拉选项文案（随语言切换）
   renderThemeOptions();
   applyTheme(currentThemeId);
-  const langName = lang === "zh" ? t("langZh") : lang === "es" ? t("langEs") : t("langEn");
+  const langName = lang === "zh" ? t("langZh")
+    : lang === "ja" ? t("langJa")
+    : lang === "ko" ? t("langKo")
+    : lang === "es" ? t("langEs")
+    : t("langEn");
   showToast(t("toastDefaultLang", { lang: langName }));
   // 同步刷新语言下拉、角标内容标签、喝水动态状态、bristol 选择器
   renderLangOptions();
   const lt = document.getElementById("langTriggerLabel");
-  if (lt) lt.textContent = t("lang" + (lang === "zh" ? "Zh" : lang === "es" ? "Es" : "En"));
+  if (lt) lt.textContent = t("lang" + (lang === "zh" ? "Zh" : lang === "ja" ? "Ja" : lang === "ko" ? "Ko" : lang === "es" ? "Es" : "En"));
   updateBadgeContentLabel();
   applyRunningUI(isRunning);
   applyNotifUI(notifToggle?.checked);
@@ -6665,6 +6671,10 @@ function exportCsv(module) {
     if (module === "eat") {
       const typeMap = currentLang === "en"
         ? { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" }
+        : currentLang === "ja"
+        ? { breakfast: "朝食", lunch: "昼食", dinner: "夕食", snack: "間食" }
+        : currentLang === "ko"
+        ? { breakfast: "아침", lunch: "점심", dinner: "저녁", snack: "간식" }
         : { breakfast: "早餐", lunch: "午餐", dinner: "晚餐", snack: "加餐" };
       headers = ["日期", "时间", "餐型", "评分", "饱腹度", "标签", "备注"];
       const records = rec || {};
