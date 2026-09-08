@@ -4,7 +4,7 @@
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-已上架-4285F4)](https://chromewebstore.google.com/detail/%E5%90%83%E5%96%9D%E6%8B%89%E6%92%92-daily-habit-tracker/nokpjbnbcbcmhjmhdhoooncbpdhclknn?authuser=0&hl=zh-CN)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)](https://developer.chrome.com/docs/extensions/mv3/intro/)
-[![Version](https://img.shields.io/badge/version-3.2.5-blue)](https://github.com/vaxicy/daily-tracker)
+[![Version](https://img.shields.io/badge/version-3.5.0-blue)](https://github.com/vaxicy/daily-tracker)
 [![License](https://img.shields.io/badge/License-NonCommercial-blue.svg)](LICENSE)
 
 一个功能丰富的 Chrome 浏览器扩展，帮助你全方位记录和管理日常生活中的饮食、饮水、排便、排尿和经期情况，培养健康的生活习惯。
@@ -62,9 +62,9 @@
 - **开关控制**：可随时启用/禁用提醒
 
 ### 🎨 个性化设置
-- **多主题**：默认蓝调、少女粉、暗色模式、森林绿四种主题风格
+- **多主题**：数十款主题风格（含暗色主题），设置页一键切换
 - **主题切换动画**：平滑的过渡动画
-- **双语支持**：中文/English 一键切换（200+ 翻译键值对）
+- **多语言支持**：中文 / English / Español / 日本語 / 한국어 / Français 六语一键切换（400+ 翻译键值对）
 - **默认首页**：可设置喜欢的页面作为默认打开页
 - **角标定制**：自定义显示内容（喝水/排便/排尿/饮食 × 今日/本周/本月）
 - **数据备份**：导出 JSON 备份 / 从 JSON 恢复
