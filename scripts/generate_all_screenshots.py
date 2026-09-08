@@ -140,15 +140,16 @@ COPY = {
     },
 }
 
-# layout constants
-BANNER = (45, 40, 1035, 152)
-SINGLE_POPUP = (70, 200, 232)          # x, y, w
-DUAL_POPUP_LEFT = (55, 200, 228)
-DUAL_POPUP_RIGHT = (300, 200, 228)
-CARD_COLS_SINGLE = (360, 735)          # for single-popup layouts
-CARD_COLS_DUAL = (570, 925)            # for dual-popup layout (03)
-CARD_Y = (192, 300)
-CARD_W, CARD_H = 355, 94
+# layout constants — banner right edge == cards right edge == 1235 (45px margins)
+BANNER = (45, 40, 1235, 152)
+SINGLE_POPUP = (45, 200, 232)          # x, y, w (left-aligned with banner)
+DUAL_POPUP_LEFT = (45, 200, 228)
+DUAL_POPUP_RIGHT = (293, 200, 228)     # 20px gap after left popup
+# per-layout card geometry: (col1_x, col2_x, card_w); col gap 30, right edge 1235
+CARD_GEOM_SINGLE = (317, 791, 444)
+CARD_GEOM_DUAL = (561, 913, 322)
+CARD_Y = (192, 310)                    # 24px row gap
+CARD_H = 94
 
 
 # ---- white Material-ish icons ----
@@ -272,7 +273,7 @@ def compose(suffix, lang):
             ph = round(cap.height * scale)
             cap = cap.resize((pw, ph), Image.LANCZOS)
             paste_rounded(img, cap, (px, py))
-        card_cols = CARD_COLS_DUAL
+        cx1, cx2, card_w = CARD_GEOM_DUAL
     else:
         module = {"01-water": "drink", "02-diet": "eat", "04-period": "period", "05-personalize": "drink"}[suffix]
         px, py, pw = SINGLE_POPUP
@@ -281,21 +282,21 @@ def compose(suffix, lang):
         ph = round(cap.height * scale)
         cap = cap.resize((pw, ph), Image.LANCZOS)
         paste_rounded(img, cap, (px, py))
-        card_cols = CARD_COLS_SINGLE
+        cx1, cx2, card_w = CARD_GEOM_SINGLE
 
     # 2x2 cards
     for i, (t, s, ic) in enumerate(copy["cards"]):
         row, col = divmod(i, 2)
-        x = card_cols[col]
+        x = cx1 if col == 0 else cx2
         y = CARD_Y[row]
         # shadow
         sh = Image.new("RGBA", img.size, (0, 0, 0, 0))
         ImageDraw.Draw(sh).rounded_rectangle(
-            [x, y, x+CARD_W, y+CARD_H], radius=16, fill=(20, 40, 80, 40))
+            [x, y, x+card_w, y+CARD_H], radius=16, fill=(20, 40, 80, 40))
         sh = sh.filter(ImageFilter.GaussianBlur(8))
         img.alpha_composite(sh)
         dd = ImageDraw.Draw(img)
-        dd.rounded_rectangle([x, y, x+CARD_W, y+CARD_H], radius=16, fill=(255,255,255,255))
+        dd.rounded_rectangle([x, y, x+card_w, y+CARD_H], radius=16, fill=(255,255,255,255))
         ccx, ccy = x + 34, y + CARD_H // 2
         dd.ellipse([ccx-17, ccy-17, ccx+17, ccy+17], fill=theme["banner"])
         fn = ICONS.get(f"icon_{ic}")
