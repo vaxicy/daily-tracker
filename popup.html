@@ -713,6 +713,62 @@
         color: rgba(248, 239, 224, 0.72);
       }
 
+      /* 酒渍玫深酒紫底（winerose）覆盖：页面级大标题用奶白，避免深色文字 on 深紫底消失 */
+      body[data-theme="winerose"] .header-title,
+      body[data-theme="winerose"] .eat-title,
+      body[data-theme="winerose"] .period-title,
+      body[data-theme="winerose"] .reminder-label,
+      body[data-theme="winerose"] .stats-label,
+      body[data-theme="winerose"] .eat-stat-tag,
+      body[data-theme="winerose"] .stats-card .stats-label,
+      body[data-theme="winerose"] .checkin-card-title,
+      body[data-theme="winerose"] .period-section-title,
+      body[data-theme="winerose"] .form-label,
+      body[data-theme="winerose"] .settings-title,
+      body[data-theme="winerose"] .section-title,
+      body[data-theme="winerose"] .row-label,
+      body[data-theme="winerose"] .toggle-label,
+      body[data-theme="winerose"] .day-num,
+      body[data-theme="winerose"] .tab-text,
+      body[data-theme="winerose"] .meal-records-title,
+      body[data-theme="winerose"] .today-records-title {
+        color: #F8F4EC;
+      }
+      /* winerose 日历标题（"2026年X月"）用奶白，与深酒紫卡片对比清晰 */
+      body[data-theme="winerose"] .calendar-title {
+        color: #F8F4EC;
+      }
+      /* winerose 深酒紫底：active 每页一个亮版色（同色相提亮，不撞 --bg），无 ring 圈 */
+      /* 喝酒/吃饭/经期页：洋红系提亮为亮粉，深酒紫底上 CR≈4.5:1 */
+      body[data-theme="winerose"] .nav-dot.active.drink,
+      body[data-theme="winerose"] .nav-dot.active.eat,
+      body[data-theme="winerose"] .nav-dot.active.period {
+        background: #FF8FB7;
+      }
+      /* 撒尿页：洋红 --pee 在深紫底可读 */
+      body[data-theme="winerose"] .nav-dot.active.pee {
+        background: #E83C91;
+      }
+      /* 大便页：浅紫 */
+      body[data-theme="winerose"] .nav-dot.active.poop {
+        background: #B8A8C0;
+      }
+      body[data-theme="winerose"] .header-sub,
+      body[data-theme="winerose"] .eat-sub,
+      body[data-theme="winerose"] .period-sub,
+      body[data-theme="winerose"] .reminder-sub,
+      body[data-theme="winerose"] .stats-sub,
+      body[data-theme="winerose"] .stats-card .stats-detail,
+      body[data-theme="winerose"] .form-hint,
+      body[data-theme="winerose"] .settings-sub,
+      body[data-theme="winerose"] .record-remark,
+      body[data-theme="winerose"] .today-records-sub,
+      body[data-theme="winerose"] .meal-records-sub,
+      body[data-theme="winerose"] .meal-content,
+      body[data-theme="winerose"] .poop-color-name {
+        color: rgba(248, 244, 236, 0.72);
+      }
+
       /* 暗色主题覆盖 */
       body[data-theme="dark"] .tag-modal-content {
         background: #1e1e2e;
@@ -1287,6 +1343,53 @@
       body[data-theme="xmas"] .stats-card.pee-stats {
         border-color: rgba(184,51,77,0.2);
         box-shadow: 0 4px 16px rgba(184,51,77,0.08);
+      }
+      body[data-theme="winerose"] #pageEat .calendar-header .calendar-title,
+      body[data-theme="winerose"] #pagePee .calendar-header .calendar-title {
+        color: #F8F4EC;
+      }
+      /* winerose 主题：排尿页洋红在深紫底清晰，但 cell 背景用更深的洋红保持对比 */
+      body[data-theme="winerose"] #pagePee {
+        --pee: #E83C91;
+        --pee2: #FF8FB7;
+      }
+      body[data-theme="winerose"] #pagePee .day-cell:not(.empty) {
+        background: rgba(232,60,145,0.10);
+      }
+      body[data-theme="winerose"] #pagePee .day-cell.today {
+        background: rgba(232,60,145,0.30);
+      }
+      /* winerose 深酒紫底：today 浅亮底 + 奶白字 + 主色描边（与 xmas 风格一致） */
+      body[data-theme="winerose"] #pageDrink .day-cell.today {
+        background: rgba(255,255,255,0.22);
+        color: var(--text);
+        font-weight: 700;
+        transform: scale(1.08);
+        z-index: 5;
+        text-shadow: none;
+      }
+      /* lv4 满杯：洋红渐变底 + 白字兜底保可读 */
+      body[data-theme="winerose"] #pageDrink .day-cell.today.lv4 {
+        background: linear-gradient(135deg, var(--primary), var(--primary2));
+        color: #fff;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+      }
+      body[data-theme="winerose"] #pagePee .day-cell.has-pee {
+        background: rgba(232,60,145,0.18);
+      }
+      body[data-theme="winerose"] #pagePee .day-cell:not(.empty):hover {
+        background: rgba(232,60,145,0.24);
+      }
+      body[data-theme="winerose"] #pagePee .nav-btn {
+        background: rgba(232,60,145,0.12);
+      }
+      body[data-theme="winerose"] #pagePee .nav-btn:hover {
+        background: rgba(232,60,145,0.24);
+      }
+      /* winerose 主题：累计统计卡边框/阴影硬编码薄荷绿，覆盖深酒紫 */
+      body[data-theme="winerose"] .stats-card.pee-stats {
+        border-color: rgba(232,60,145,0.24);
+        box-shadow: 0 4px 16px rgba(232,60,145,0.10);
       }
       #pageEat .calendar-header .calendar-title {
         font-size: 15px;
