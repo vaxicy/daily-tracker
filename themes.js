@@ -869,5 +869,43 @@ export const THEME_PRESETS = {
     },
     bgGradient: "linear-gradient(150deg, #6B2046 0%, #8E2C4F 55%, #C8344D 100%)"
   },
+  berrydusk: {
+    name: "themeBerryduskName",
+    dot: "linear-gradient(135deg,#601D49,#BD5579,#EA9D9D,#FFEBB8)",
+    vars: {
+      "--text": "#601D49",
+      "--muted": "rgba(96,29,73,0.6)",
+      "--primary": "#BD5579",
+      "--primary2": "#EA9D9D",
+      "--primary-glow": "rgba(189,85,121,0.45)",
+      "--secondary": "#601D49",
+      "--secondary2": "#4A0F35",
+      "--eat": "#BD5579",
+      "--eat2": "#EAD0D8",
+      "--pee": "#EA9D9D",
+      "--pee2": "#F6D5D5",
+      "--poop": "#601D49",
+      "--poop2": "#4A0F35",
+      "--period": "#C43D5F",
+      "--period2": "#E8A8B4",
+      "--period-glow": "rgba(196,61,95,0.4)",
+      "--card-bg": "#FFF6DC",
+      "--card-border": "rgba(189,85,121,0.18)",
+      "--input-bg": "rgba(255,255,255,0.75)",
+      "--modal-bg": "#FFF6DC",
+      "--tooltip-bg": "#FFF6DC",
+      "--sidebar-bg": "rgba(255,246,220,0.97)",
+      "--hover-bg": "rgba(189,85,121,0.08)",
+      "--day-hover": "rgba(189,85,121,0.12)",
+      "--day-today": "rgba(189,85,121,0.18)",
+      "--scrollbar-color": "#BD5579",
+      "--scrollbar-hover": "#EA9D9D",
+      "--bg": "#FFEBB8",
+      "--badge": "#C43D5F",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
+    },
+    bgGradient: "linear-gradient(150deg, #FFEBB8 0%, #F8D6CF 55%, #EA9D9D 100%)"
+  },
 
 };
