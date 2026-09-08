@@ -1,151 +1,186 @@
 #!/usr/bin/env python3
-"""Regenerate store-assets screenshot-05-personalize.png (zh + en) using PIL.
+"""Generate the 5th store screenshot (zh + en) using Playwright headless.
 
-The original was a one-off HTML→PNG mockup. The copy inside was outdated
-(mentioned 4 themes and bilingual); this script re-renders a similar
-composition with the current state: 30 themes, 6 languages, Enter shortcut,
-local-only privacy.
+Renders a full HTML mockup in real Chromium so the output uses actual
+fonts, shadows, and rounded corners (not synthetic PIL). All resources
+(images, icons) are inlined as data URIs to keep file:// rendering self-
+contained.
 """
 import os
-from PIL import Image, ImageDraw, ImageFont
+import sys
+import tempfile
+from playwright.sync_api import sync_playwright
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(ROOT, "store-assets", "screenshots")
 
 W, H = 1280, 800
-NAVY = (24, 50, 90)
-BANNER = (29, 78, 216)         # primary blue
-BG = (224, 234, 252)           # light blue canvas
-CARD = (255, 255, 255)
-ICON_BG = (29, 78, 216)
-TEXT = (24, 50, 90)
-SUB = (90, 110, 140)
-ACCENT = (11, 107, 255)
 
+# SVG icons inlined as data URIs (4 feature cards)
+ICON_THEME = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjkiLz48cGF0aCBkPSJNMTIgM3YxOE0zIDEuaDE4TTUuNiA1LjZsMTIuOCAxMi44TTE4LjQgNS42TDUuNiAxOC40Ii8+PC9zdmc+"
+ICON_GLOBE = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjkiLz48cGF0aCBkPSJNMyAxMmgxOE0xMiAzYTE0IDE0IDAgMDExIDE4TTEyIDNhMTQgMTQgMCAwMC0xIDE4Ii8+PC9zdmc+"
+ICON_ENTER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyLjQiIHN0cm9rZS1saW5lY2FwPSJyb3VubmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMCA0djhhNCA0IDAgMDEtNCA0SDRNOCAxMmw0IDRNOCAxMmw0LTQiLz48L3N2Zz4="
+ICON_LOCK = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHg9IjQiIHk9IjEwIiB3aWR0aD0iMTYiIGhlaWdodD0iMTEiIHJ4PSIyIi8+PHBhdGggZD0iTTggMTBWN2E0IDQgMCAwMTggMHYzIi8+PC9zdmc+"
+CUP_ICON = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjIyIiBoZWlnaHQ9IjIyIj48cGF0aCBmaWxsPSIjRkY2QjZCIiBkPSJNNSAzaDExbC0xIDRINkw1IDN6bTAgNWgxMWwtLjUgMTFhMyAzIDAgMDEtMyAzaC00YTMgMyAwIDAxLTMtM0w1IDh6Ii8+PHBhdGggZmlsbD0iI0ZGQjNCMyIgZD0iTTE2IDZoMmEyIDIgMCAwMTIgMnYzYTIgMiAwIDAxLTIgMmgtMi41bC41LTd6Ii8+PC9zdmc+"
 
-def find_font(size, bold=False, latin=False):
-    """Return a font path. latin=True prefers Arial for English/digit clarity."""
-    if latin:
-        cands = [r"C:\Windows\Fonts\segoeuib.ttf" if bold else r"C:\Windows\Fonts\segoeui.ttf",
-                 r"C:\Windows\Fonts\arialbd.ttf" if bold else r"C:\Windows\Fonts\arial.ttf",
-                 r"C:\Windows\Fonts\msyhbd.ttc" if bold else r"C:\Windows\Fonts\msyh.ttc"]
-    else:
-        cands = [r"C:\Windows\Fonts\msyhbd.ttc" if bold else r"C:\Windows\Fonts\msyh.ttc",
-                 r"C:\Windows\Fonts\segoeuib.ttf" if bold else r"C:\Windows\Fonts\segoeui.ttf"]
-    for c in cands:
-        if os.path.exists(c):
-            try:
-                return ImageFont.truetype(c, size)
-            except Exception:
-                continue
-    return ImageFont.load_default()
+TEMPLATE = """<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+* {{ box-sizing: border-box; }}
+html, body {{ margin: 0; padding: 0; background: #E8EEF7; font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; color: #1E2A4A; }}
+.chrome {{ width: {w}px; height: {h}px; background: #E8EEF7; position: relative; overflow: hidden; }}
+.titlebar {{ height: 38px; background: linear-gradient(#F8F8F8, #ECECEC); border-bottom: 1px solid #D0D0D0; display: flex; align-items: center; padding: 0 14px; }}
+.lights {{ display: flex; gap: 8px; }}
+.lights span {{ width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,.25); }}
+.lights .r {{ background: #FF5F57; }}
+.lights .y {{ background: #FEBC2E; }}
+.lights .g {{ background: #28C840; }}
+.tab {{ margin-left: 22px; height: 26px; line-height: 26px; padding: 0 14px; background: #FFFFFF; border: 1px solid #D0D0D0; border-bottom: 1px solid #FFFFFF; border-top-left-radius: 6px; border-top-right-radius: 6px; font-size: 12px; color: #333; display: flex; align-items: center; gap: 6px; max-width: 220px; }}
+.tab .favicon {{ width: 14px; height: 14px; background: linear-gradient(135deg, #1D4ED8, #3B82F6); border-radius: 3px; }}
+.tab .close {{ margin-left: 4px; color: #999; font-size: 13px; }}
+.toolbar {{ height: 40px; background: #FFFFFF; border-bottom: 1px solid #D8D8D8; display: flex; align-items: center; padding: 0 14px; gap: 8px; }}
+.urlbar {{ flex: 1; height: 26px; background: #F1F3F4; border-radius: 13px; display: flex; align-items: center; padding: 0 14px; font-size: 12px; color: #5F6368; }}
+.urlbar .lock {{ margin-right: 6px; color: #188038; font-size: 11px; }}
+.page {{ background: #E8EEF7; padding: 32px 36px; display: flex; justify-content: center; }}
+.popup {{ width: 980px; background: #FFFFFF; border-radius: 18px; box-shadow: 0 16px 40px rgba(15,30,60,.14); overflow: hidden; }}
+.banner {{ background: linear-gradient(120deg, #1D4ED8, #2563EB 60%, #3B82F6); color: #FFFFFF; padding: 28px 36px 32px; }}
+.banner h1 {{ margin: 0; font-size: 30px; font-weight: 700; letter-spacing: 0.5px; }}
+.banner p {{ margin: 8px 0 0; font-size: 14.5px; opacity: .9; }}
+.body {{ padding: 28px 36px 36px; background: #F4F7FD; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 18px; height: 460px; }}
+.card {{ background: #FFFFFF; border-radius: 14px; padding: 18px 20px; box-shadow: 0 4px 12px rgba(20,40,80,.06); display: flex; align-items: center; gap: 14px; min-height: 92px; }}
+.card .ic {{ width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #1D4ED8, #3B82F6); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 4px 10px rgba(29,78,216,.25); }}
+.card .ic img {{ width: 26px; height: 26px; }}
+.card .t {{ font-size: 16.5px; font-weight: 700; color: #1E2A4A; line-height: 1.3; }}
+.card .s {{ font-size: 13px; color: #6B7A99; margin-top: 4px; line-height: 1.3; }}
+.preview {{ grid-column: 1 / 3; grid-row: 2; background: #FFFFFF; border-radius: 16px; box-shadow: 0 4px 14px rgba(20,40,80,.07); padding: 20px 22px; min-height: 168px; }}
+.preview .ph {{ display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: #1E2A4A; }}
+.preview .ph .ic {{ width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; }}
+.preview .timer {{ margin-top: 12px; font-size: 36px; font-weight: 800; color: #1D4ED8; letter-spacing: 1px; font-variant-numeric: tabular-nums; }}
+.preview .row {{ margin-top: 12px; display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #6B7A99; }}
+.preview .row .pill {{ background: #EEF2FB; border-radius: 999px; padding: 4px 10px; }}
+.preview .row .toggle {{ width: 34px; height: 18px; background: #1D4ED8; border-radius: 999px; position: relative; margin-left: auto; }}
+.preview .row .toggle::after {{ content: ""; position: absolute; width: 14px; height: 14px; background: #FFFFFF; border-radius: 50%; top: 2px; left: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.2); }}
+.preview .cta {{ margin-top: 14px; display: flex; gap: 8px; }}
+.preview .cta .b1 {{ background: linear-gradient(135deg, #1D4ED8, #3B82F6); color: #FFFFFF; padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(29,78,216,.3); }}
+.preview .cta .b2 {{ background: #EEF2FB; color: #4B5B7A; padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; }}
+.lang-panel {{ grid-column: 3 / 5; grid-row: 2; background: #FFFFFF; border-radius: 16px; box-shadow: 0 4px 14px rgba(20,40,80,.07); padding: 18px 20px; display: flex; flex-direction: column; min-height: 168px; }}
+.lang-panel h3 {{ margin: 0 0 10px; font-size: 14px; color: #1E2A4A; font-weight: 700; display: flex; align-items: center; gap: 6px; }}
+.lang-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }}
+.lang-row {{ display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: #F4F7FD; border-radius: 8px; font-size: 13px; color: #1E2A4A; }}
+.lang-row .code {{ font-size: 11px; font-weight: 700; color: #1D4ED8; background: #DDE7FB; border-radius: 4px; padding: 1px 5px; }}
+.lang-row .active {{ margin-left: auto; color: #1D4ED8; font-weight: 700; font-size: 12px; }}
+</style></head>
+<body><div class="chrome">
+  <div class="titlebar">
+    <div class="lights"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+    <div class="tab"><div class="favicon"></div>Daily Habit Tracker — {tab}<span class="close">×</span></div>
+  </div>
+  <div class="toolbar"><div class="urlbar"><span class="lock">🔒</span>chrome-extension://__MSG_@@extension_id__/popup.html</div></div>
+  <div class="page"><div class="popup">
+    <div class="banner">
+      <h1>{title}</h1>
+      <p>{subtitle}</p>
+    </div>
+    <div class="body">
+      <div class="card"><div class="ic"><img src="{icon_theme}" alt=""></div><div><div class="t">{card1_t}</div><div class="s">{card1_s}</div></div></div>
+      <div class="card"><div class="ic"><img src="{icon_globe}" alt=""></div><div><div class="t">{card2_t}</div><div class="s">{card2_s}</div></div></div>
+      <div class="card"><div class="ic"><img src="{icon_enter}" alt=""></div><div><div class="t">{card3_t}</div><div class="s">{card3_s}</div></div></div>
+      <div class="card"><div class="ic"><img src="{icon_lock}" alt=""></div><div><div class="t">{card4_t}</div><div class="s">{card4_s}</div></div></div>
+      <div class="preview">
+        <div class="ph"><div class="ic"><img src="{cup}" alt=""></div>{ph}</div>
+        <div class="timer">47:23</div>
+        <div class="row"><span class="pill">{pill_running}</span><div class="toggle"></div></div>
+        <div class="cta"><div class="b1">{b1}</div><div class="b2">{b2}</div></div>
+      </div>
+      <div class="lang-panel">
+        <h3>{lang_h}</h3>
+        <div class="lang-grid">
+          <div class="lang-row"><span class="code">ZH</span>中文<span class="active">✓</span></div>
+          <div class="lang-row"><span class="code">EN</span>English</div>
+          <div class="lang-row"><span class="code">ES</span>Español</div>
+          <div class="lang-row"><span class="code">JA</span>日本語</div>
+          <div class="lang-row"><span class="code">KO</span>한국어</div>
+          <div class="lang-row"><span class="code">FR</span>Français</div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</div></body></html>"""
 
-
-def text_w(draw, s, font):
-    b = draw.textbbox((0, 0), s, font=font)
-    return b[2] - b[0], b[3] - b[1]
-
-
-def draw_text(draw, xy, s, font, fill):
-    draw.text(xy, s, font=font, fill=fill)
-
-
-def center_x(draw, s, font, cx, fill):
-    w, _ = text_w(draw, s, font)
-    draw.text((cx - w // 2, _[0] if False else xy[1]), s, font=font, fill=fill)
-
-
-# ---- per-language content ----
 CONTENT = {
     "zh": {
         "title": "个性化 & 隐私",
         "subtitle": "30 款主题、六语界面、Enter 快捷、数据本地保存",
-        "cards": [
-            ("多主题风格", "default 蓝调、少女粉、森林绿…", "彩"),
-            ("六语界面", "中 / 英 / 西 / 日 / 韩 / 法", "语"),
-            ("Enter 快捷打卡", "任一模块按 Enter 直接记录", "E"),
-            ("本地存储", "无感联网，隐私自己掌控", "隐"),
-        ],
+        "card1_t": "多主题风格",
+        "card1_s": "default 蓝调、少女粉、森林绿…",
+        "card2_t": "六语界面",
+        "card2_s": "中 / 英 / 西 / 日 / 韩 / 法",
+        "card3_t": "Enter 快捷打卡",
+        "card3_s": "任一模块按 Enter 直接记录",
+        "card4_t": "本地存储",
+        "card4_s": "无感联网，隐私自己掌控",
+        "ph": "喝水提醒",
+        "pill_running": "运行中 / Running",
+        "b1": "我喝了！",
+        "b2": "重置倒计时",
+        "tab": "主题设置",
+        "lang_h": "🌐 当前语言：中文 (默认)",
     },
     "en": {
         "title": "Personalize & Privacy",
         "subtitle": "30 themes, six languages, Enter shortcut, all data stays local",
-        "cards": [
-            ("Many Themes", "30 themes incl. dark & xmas", "T"),
-            ("Six Languages", "ZH / EN / ES / JA / KO / FR", "L"),
-            ("Enter Shortcut", "Press Enter to log in any module", "E"),
-            ("Local Storage", "No internet, your data stays put", "P"),
-        ],
+        "card1_t": "Many Themes",
+        "card1_s": "30 themes incl. dark & xmas",
+        "card2_t": "Six Languages",
+        "card2_s": "ZH / EN / ES / JA / KO / FR",
+        "card3_t": "Enter Shortcut",
+        "card3_s": "Press Enter to log in any module",
+        "card4_t": "Local Storage",
+        "card4_s": "No internet, your data stays put",
+        "ph": "Drink Reminder",
+        "pill_running": "Timer / Running",
+        "b1": "I drank!",
+        "b2": "Reset Timer",
+        "tab": "Settings",
+        "lang_h": "🌐 Current language: English",
     },
 }
 
 
 def render(lang):
-    img = Image.new("RGB", (W, H), BG)
-    d = ImageDraw.Draw(img)
-
-    f_title = find_font(54, bold=True)
-    f_sub = find_font(24)
-    f_card_t = find_font(28, bold=True)
-    f_card_s = find_font(20)
-    f_latin = find_font(48, bold=True, latin=True)
-
-    # Top navy strip
-    d.rectangle([0, 0, W, 14], fill=NAVY)
-
-    # Banner (blue rounded)
-    bx, by, bw, bh = 80, 60, W - 160, 110
-    d.rounded_rectangle([bx, by, bx + bw, by + bh], radius=18, fill=BANNER)
-    draw_text(d, (bx + 32, by + 18), CONTENT[lang]["title"], f_title, (255, 255, 255))
-    draw_text(d, (bx + 32, by + 78), CONTENT[lang]["subtitle"], f_sub, (220, 230, 255))
-
-    # 2x2 cards
-    cw, ch = 460, 120
-    gx, gy = 80, 200
-    gap_x, gap_y = 40, 24
-    for i, (t, s, icon) in enumerate(CONTENT[lang]["cards"]):
-        row, col = divmod(i, 2)
-        x = gx + col * (cw + gap_x)
-        y = gy + row * (ch + gap_y)
-        d.rounded_rectangle([x, y, x + cw, y + ch], radius=14, fill=CARD)
-        d.ellipse([x + 22, y + 22, x + 22 + 76, y + 22 + 76], fill=ICON_BG)
-        # centered letter inside the circle (icon may be Chinese or Latin)
-        icon_font = f_card_t if any('\u4e00' <= ch <= '\u9fff' for ch in icon) else f_latin
-        iw, ih = text_w(d, icon, icon_font)
-        draw_text(d, (x + 22 + 38 - iw // 2, y + 22 + 38 - ih // 2 - 6), icon, icon_font, (255, 255, 255))
-        draw_text(d, (x + 120, y + 28), t, f_card_t, TEXT)
-        draw_text(d, (x + 120, y + 70), s, f_card_s, SUB)
-
-    # Drink page preview (left) — simple geometric mockup
-    px, py, pw, ph = 80, 500, 320, 280
-    d.rounded_rectangle([px, py, px + pw, py + ph], radius=18, fill=(255, 255, 255))
-    # header strip
-    d.rounded_rectangle([px + 14, py + 14, px + pw - 14, py + 62], radius=10, fill=(240, 246, 255))
-    draw_text(d, (px + 28, py + 26), "喝水提醒" if lang == "zh" else "Drink Reminder", f_card_t, TEXT)
-    # timer card
-    d.rounded_rectangle([px + 14, py + 72, px + pw - 14, py + 146], radius=10, fill=(240, 246, 255))
-    f_big = find_font(40, bold=True, latin=True)
-    draw_text(d, (px + 28, py + 84), "47:23", f_big, ACCENT)
-    # toggle row
-    d.rounded_rectangle([px + 14, py + 156, px + pw - 14, py + 196], radius=10, fill=(240, 246, 255))
-    draw_text(d, (px + 28, py + 170), "开始提醒 / Running" if lang == "zh" else "Timer / Running", f_card_s, TEXT)
-    # CTA + reset
-    d.rounded_rectangle([px + 14, py + 206, px + 160, py + 250], radius=22, fill=ACCENT)
-    draw_text(d, (px + 50, py + 216), "我喝了!" if lang == "zh" else "I drank!", f_card_t, (255, 255, 255))
-    d.rounded_rectangle([px + 170, py + 206, px + pw - 14, py + 250], radius=22, fill=(228, 233, 245))
-    draw_text(d, (px + 200, py + 216), "重置" if lang == "zh" else "Reset", f_card_t, SUB)
-    # mini calendar header
-    draw_text(d, (px + 28, py + 262), "2026 / 7" if lang == "zh" else "Jul 2026", f_card_s, ACCENT)
-    return img
+    c = CONTENT[lang]
+    return TEMPLATE.format(
+        w=W, h=H,
+        title=c["title"], subtitle=c["subtitle"],
+        card1_t=c["card1_t"], card1_s=c["card1_s"],
+        card2_t=c["card2_t"], card2_s=c["card2_s"],
+        card3_t=c["card3_t"], card3_s=c["card3_s"],
+        card4_t=c["card4_t"], card4_s=c["card4_s"],
+        ph=c["ph"], pill_running=c["pill_running"],
+        b1=c["b1"], b2=c["b2"], tab=c["tab"], lang_h=c["lang_h"],
+        icon_theme=ICON_THEME, icon_globe=ICON_GLOBE,
+        icon_enter=ICON_ENTER, icon_lock=ICON_LOCK, cup=CUP_ICON,
+    )
 
 
 def main():
-    for lang in ("zh", "en"):
-        out = os.path.join(OUT_DIR, lang, "screenshot-05-personalize.png")
-        img = render(lang)
-        img.save(out, "PNG")
-        # ensure RGB / 1280x800
-        print("wrote", out, img.size, img.mode)
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        for lang in ("zh", "en"):
+            ctx = browser.new_context(
+                viewport={"width": W, "height": H},
+                device_scale_factor=1,  # avoid 2x = 2560x1600 (per Web Store size rule)
+            )
+            page = ctx.new_page()
+            html = render(lang)
+            page.set_content(html, wait_until="load")
+            # screenshot to bytes (Playwright's Python writer fails on non-ASCII paths)
+            png_bytes = page.screenshot(clip={"x": 0, "y": 0, "width": W, "height": H}, omit_background=False)
+            ctx.close()
+            out = os.path.join(OUT_DIR, lang, "screenshot-05-personalize.png")
+            with open(out, "wb") as f:
+                f.write(png_bytes)
+            print("wrote", out)
+        browser.close()
     print("ALL DONE")
 
 
