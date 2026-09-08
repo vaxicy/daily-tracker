@@ -52,12 +52,14 @@
       }
 
       /* 页面容器 */
-      .page { 
-        display: none; 
-        padding-bottom: 0; 
-        min-height: 340px; 
+      .page {
+        display: none;
+        padding-bottom: 0;
+        min-height: 340px;
         position: relative;
         z-index: 1;
+        /* 浮动导航点(高约22px)固定在底部，给内容留出空间避免滚动到底时重叠 */
+        padding-bottom: 44px;
       }
       .page.active { display: block; }
 

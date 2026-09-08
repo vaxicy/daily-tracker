@@ -9,7 +9,21 @@ Layout parameters were measured from screenshot-01-water.png (grid overlay):
 - cards: 355x94, cols x=305/680, rows y=192/300, radius 16
 """
 import os
+import time
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
+
+
+def save_retry(img, path, tries=8):
+    """Windows intermittently raises OSError 22 on write (file briefly locked)."""
+    last = None
+    for _ in range(tries):
+        try:
+            img.save(path, "PNG")
+            return
+        except OSError as e:
+            last = e
+            time.sleep(0.6)
+    raise last
 
 # Relative paths only: the runner sets cwd to the project root, so every
 # path handed to open() is pure ASCII (Windows non-ASCII absolute paths
@@ -25,7 +39,8 @@ BG_TOP = (233, 244, 255)
 BG_BOT = (218, 234, 255)
 
 BANNER = (45, 40, 1035, 152)
-POPUP_X, POPUP_Y, POPUP_W = 48, 173, 214
+# popup region matches screenshots 01-04 (measured from screenshot-01 grid)
+POPUP_X, POPUP_Y, POPUP_W = 70, 200, 232
 CARD_W, CARD_H = 355, 94
 CARD_COLS = (305, 680)
 CARD_ROWS = (192, 300)
@@ -173,7 +188,7 @@ def compose(lang):
     img = img.convert("RGB")
 
     out = os.path.join(OUT_DIR, lang, "screenshot-05-personalize.png")
-    img.save(out, "PNG")
+    save_retry(img, out)
     print("wrote", out, img.size, img.mode)
 
 
