@@ -1,0 +1,10 @@
+{
+  "name": {
+    "message": "Daily Habit Tracker - Alimentation, Eau, Selles & Miction",
+    "description": "Extension name"
+  },
+  "description": {
+    "message": "Suivez alimentation, eau, selles, miction et règles. Suivi santé privé, toutes les données restent locales.",
+    "description": "Extension description"
+  }
+}

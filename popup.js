@@ -4910,6 +4910,7 @@ function renderLangOptions() {
     { id: "es", label: t("langEs") },
     { id: "ja", label: t("langJa") },
     { id: "ko", label: t("langKo") },
+    { id: "fr", label: t("langFr") },
   ];
   LANGS.forEach(l => {
     const item = document.createElement("div");
@@ -4943,12 +4944,13 @@ function selectLang(lang) {
     : lang === "ja" ? t("langJa")
     : lang === "ko" ? t("langKo")
     : lang === "es" ? t("langEs")
+    : lang === "fr" ? t("langFr")
     : t("langEn");
   showToast(t("toastDefaultLang", { lang: langName }));
   // 同步刷新语言下拉、角标内容标签、喝水动态状态、bristol 选择器
   renderLangOptions();
   const lt = document.getElementById("langTriggerLabel");
-  if (lt) lt.textContent = t("lang" + (lang === "zh" ? "Zh" : lang === "ja" ? "Ja" : lang === "ko" ? "Ko" : lang === "es" ? "Es" : "En"));
+  if (lt) lt.textContent = t("lang" + (lang === "zh" ? "Zh" : lang === "ja" ? "Ja" : lang === "ko" ? "Ko" : lang === "es" ? "Es" : lang === "fr" ? "Fr" : "En"));
   updateBadgeContentLabel();
   applyRunningUI(isRunning);
   applyNotifUI(notifToggle?.checked);
@@ -5007,7 +5009,7 @@ loadLanguage(() => {
   // 渲染语言下拉并同步触发按钮文案
   renderLangOptions();
   const lt = document.getElementById("langTriggerLabel");
-  if (lt) lt.textContent = t("lang" + (currentLang === "zh" ? "Zh" : currentLang === "es" ? "Es" : "En"));
+  if (lt) lt.textContent = t("lang" + (currentLang === "zh" ? "Zh" : currentLang === "es" ? "Es" : currentLang === "ja" ? "Ja" : currentLang === "ko" ? "Ko" : currentLang === "fr" ? "Fr" : "En"));
   applyI18n();
   // 重新应用动态状态文本，避免被 applyI18n 覆盖
   applyRunningUI(isRunning);
@@ -6675,6 +6677,8 @@ function exportCsv(module) {
         ? { breakfast: "朝食", lunch: "昼食", dinner: "夕食", snack: "間食" }
         : currentLang === "ko"
         ? { breakfast: "아침", lunch: "점심", dinner: "저녁", snack: "간식" }
+        : currentLang === "fr"
+        ? { breakfast: "Petit-déjeuner", lunch: "Déjeuner", dinner: "Dîner", snack: "Encas" }
         : { breakfast: "早餐", lunch: "午餐", dinner: "晚餐", snack: "加餐" };
       headers = ["日期", "时间", "餐型", "评分", "饱腹度", "标签", "备注"];
       const records = rec || {};

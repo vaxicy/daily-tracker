@@ -105,6 +105,16 @@ const BG_I18N = {
     testNotifBody: "This is a test notification to verify everything works.",
     reminderNotifBody: "Time to {label}!",
     reminderButton: "Got it",
+  },
+  fr: {
+    notifTitle: "Rappel de boisson 💧",
+    notifBody: "Il est temps de boire ! Restez hydraté pour votre santé.",
+    notifDrank: "J'ai bu ✓",
+    notifSkip: "Ignorer",
+    testNotifTitle: "Notification de test 🔔",
+    testNotifBody: "Ceci est une notification de test pour vérifier le bon fonctionnement.",
+    reminderNotifBody: "C'est l'heure de {label} !",
+    reminderButton: "Compris",
   }
 };
 
