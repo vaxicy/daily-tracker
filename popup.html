@@ -4282,6 +4282,11 @@
         box-shadow: 0 5px 16px rgba(127,191,166,0.4);
       }
 
+      /* 青梅绿：主按钮浅绿底，白字看不清，改为主题深色字 var(--text) */
+      body[data-theme="greenplum"] .btn-primary {
+        color: var(--text);
+      }
+
       /* 软糖紫：喝水图例糖果色阶 + 按钮粉跳 + 今日紫描边（方案C跳色） */
       body[data-theme="jellylilac"] .drink-legend-bar .drink-lv.lv0,
       body[data-theme="jellylilac"] .lv0 { background: color-mix(in srgb, #7868DC 8%, transparent); }
