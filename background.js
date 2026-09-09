@@ -165,11 +165,13 @@ logInfo("后台脚本已加载", {
 chrome.runtime.onStartup.addListener(() => {
   logInfo("浏览器启动");
   restoreAlarm();
+  createBadgeRefreshAlarm();
   updateBadge();
 });
 
 chrome.runtime.onInstalled.addListener((details) => {
   logInfo(`扩展安装/更新: ${details.reason}`);
+  createBadgeRefreshAlarm();
   updateBadge();
 });
 
@@ -401,6 +403,12 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     } else {
       logInfo("[KeepAlive] 所有通知已处理，停止 keep-alive");
     }
+    return;
+  }
+
+  if (alarm.name === "badgeRefresh") {
+    logInfo("[角标] 周期刷新");
+    updateBadge();
     return;
   }
 
@@ -686,7 +694,27 @@ function scheduleDailyBadgeReset() {
   });
   logInfo("[角标] 每日跨日清零闹钟已创建", { nextFire: tomorrow.toLocaleString() });
 }
+
+// 周期性刷新角标（修复待机/休眠后角标色回退默认的问题）
+function createBadgeRefreshAlarm() {
+  chrome.alarms.get("badgeRefresh", (alarm) => {
+    if (!alarm) {
+      chrome.alarms.create("badgeRefresh", {
+        delayInMinutes: 0,
+        periodInMinutes: 1
+      }, () => {
+        if (chrome.runtime.lastError) {
+          logError("[角标] 刷新闹钟创建失败", { error: chrome.runtime.lastError.message });
+        } else {
+          logInfo("[角标] 刷新闹钟已创建，周期 1 分钟");
+        }
+      });
+    }
+  });
+}
+
 scheduleDailyBadgeReset();
+createBadgeRefreshAlarm();
 
 // SW 每次唤醒（首次安装/浏览器启动/alarm 或 storage 唤醒）顶层代码重新执行，
 // 主动重写角标色，修复"过一段时间角标自己变蓝回退默认色"的问题。
