@@ -73,7 +73,8 @@ function updateBadge() {
       chrome.action.setBadgeText({ text: txt });
       chrome.action.setBadgeBackgroundColor({ color: themeColor });
       if (chrome.action.setBadgeTextColor) {
-        chrome.action.setBadgeTextColor({ color: '#ffffff' });
+        const badgeTextColor = theme === 'greenplum' ? '#450C3F' : '#ffffff';
+        chrome.action.setBadgeTextColor({ color: badgeTextColor });
       }
     }
   );
