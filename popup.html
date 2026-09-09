@@ -37,7 +37,12 @@
       .sidebar-panel::-webkit-scrollbar,
       .tag-modal-body::-webkit-scrollbar,
       .badge-modal::-webkit-scrollbar,
-      .custom-scrollable::-webkit-scrollbar { display: none; width: 0; height: 0; }
+      .custom-scrollable::-webkit-scrollbar,
+      .reminder-modal-body::-webkit-scrollbar,
+      .reminder-list::-webkit-scrollbar,
+      .meal-records::-webkit-scrollbar,
+      .today-records-list::-webkit-scrollbar,
+      #periodCycleTable::-webkit-scrollbar { display: none; width: 0; height: 0; }
       body {
         font-family: ui-sans-serif, system-ui, -apple-system,
           "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
@@ -2939,11 +2944,7 @@
         font-size: 24px;
         margin-bottom: 4px;
       }
-      /* 周期记录内嵌卡片 + 细滚动条 */
-      #periodCycleTable::-webkit-scrollbar { width: 4px; }
-      #periodCycleTable::-webkit-scrollbar-thumb { background: var(--period-glow); border-radius: 4px; }
-      #periodCycleTable::-webkit-scrollbar-track { background: transparent; }
-      #periodCycleTable { scrollbar-width: thin; scrollbar-color: var(--period) transparent; }
+      /* 周期记录内嵌卡片（原生滚动条已统一隐藏，由 JS 自定义滚动条接管） */
 
       /* 日历中经期日期的样式（仅经期页使用，非经期页已移除 period-day 类）
          注意：period-day-1~4 的统一底色定义在下方 #pagePeriod .day-cell:not(.empty)
@@ -3304,10 +3305,31 @@
       }
       /* ============ 隐藏原生滚动条（替代为下方自定义滚动条） ============ */
       *::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
-      html { scrollbar-width: none; -ms-overflow-style: none; }
-      html::-webkit-scrollbar { display: none; width: 0; height: 0; }
-      .tooltip-records { scrollbar-width: none; }
-      .tooltip-records::-webkit-scrollbar { display: none; width: 0; }
+      html,
+      .sidebar-panel,
+      .tag-modal-body,
+      .badge-modal,
+      .custom-scrollable,
+      .reminder-modal-body,
+      .reminder-list,
+      .meal-records,
+      .today-records-list,
+      #periodCycleTable,
+      .tooltip-records {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      html::-webkit-scrollbar,
+      .sidebar-panel::-webkit-scrollbar,
+      .tag-modal-body::-webkit-scrollbar,
+      .badge-modal::-webkit-scrollbar,
+      .custom-scrollable::-webkit-scrollbar,
+      .reminder-modal-body::-webkit-scrollbar,
+      .reminder-list::-webkit-scrollbar,
+      .meal-records::-webkit-scrollbar,
+      .today-records-list::-webkit-scrollbar,
+      #periodCycleTable::-webkit-scrollbar,
+      .tooltip-records::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
       /* toast */
       .toast {

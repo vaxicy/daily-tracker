@@ -352,12 +352,14 @@ function openMealDefaultSettingsModal() {
   });
   
   modal.classList.add("active");
+  requestAnimationFrame(() => { if (window.updateCustomScrollbar) window.updateCustomScrollbar(); });
 }
 
 // 关闭默认时间设置弹窗
 function closeMealDefaultSettingsModal() {
   const modal = document.getElementById("mealDefaultTimeModal");
   if (modal) modal.classList.remove("active");
+  if (window.updateCustomScrollbar) window.updateCustomScrollbar();
 }
 
 // 保存默认时间设置
@@ -4442,12 +4444,35 @@ function initCustomScrollbar() {
 
   let active = null; // { el, type: "viewport" | "bounded" }
 
+  // 所有需要自定义滚动条接管的有界滚动容器（页面内列表 + 弹窗 body）
+  const BOUNDED_SCROLLABLE_IDS = [
+    "reminderModalBody",
+    "reminderList",
+    "mealRecords",
+    "poopRecordsList",
+    "peeRecordsList",
+    "periodCycleTable"
+  ];
+
+  let activeBounded = null; // 最近被滚动过的有界容器（用于页面内的记录列表等）
+
+  function isBoundedScrollable(el) {
+    if (!el) return false;
+    if (el.id === "sidebarPanel" || el.classList.contains("tag-modal-body") || el.classList.contains("badge-modal")) return true;
+    return BOUNDED_SCROLLABLE_IDS.includes(el.id);
+  }
+
   // 判定当前活动滚动容器
-  // 有界容器（sidebar / 弹窗）优先；否则主 popup 视为"视口型"（浏览器 frame 滚动）
+  // 有界容器（sidebar / 弹窗 / 页面内列表）优先；否则主 popup 视为"视口型"
   function getActiveContainer() {
     const tagModal = document.getElementById("tagModal");
     if (tagModal && tagModal.classList.contains("active")) {
       const body = tagModal.querySelector(".tag-modal-body");
+      if (body && body.scrollHeight > body.clientHeight) return { el: body, type: "bounded" };
+    }
+    const mealDefaultModal = document.getElementById("mealDefaultTimeModal");
+    if (mealDefaultModal && mealDefaultModal.classList.contains("active")) {
+      const body = mealDefaultModal.querySelector(".tag-modal-body");
       if (body && body.scrollHeight > body.clientHeight) return { el: body, type: "bounded" };
     }
     const badgeModal = document.getElementById("badgeModalOverlay");
@@ -4455,12 +4480,24 @@ function initCustomScrollbar() {
       const body = badgeModal.querySelector(".badge-modal");
       if (body && body.scrollHeight > body.clientHeight) return { el: body, type: "bounded" };
     }
+    const reminderModal = document.getElementById("reminderModal");
+    if (reminderModal && reminderModal.classList.contains("show")) {
+      const body = reminderModal.querySelector(".reminder-modal-body");
+      if (body && body.scrollHeight > body.clientHeight) return { el: body, type: "bounded" };
+    }
     const sidebar = document.getElementById("sidebarPanel");
     if (sidebar && sidebar.classList.contains("open")) {
       if (sidebar.scrollHeight > sidebar.clientHeight) return { el: sidebar, type: "bounded" };
     }
+
+    // 页面内滚动容器：最近被滚动过的优先
+    if (activeBounded && activeBounded.isConnected && activeBounded.offsetParent !== null) {
+      if (activeBounded.scrollHeight > activeBounded.clientHeight + 1) {
+        return { el: activeBounded, type: "bounded" };
+      }
+    }
+
     // 主 popup：Chrome 扩展弹窗无 body 固定高度时，实际由浏览器 frame 滚动
-    // 用视口型指标（window.innerHeight / documentElement.scrollHeight / window.scrollY）
     return { el: document.documentElement, type: "viewport" };
   }
 
@@ -4530,9 +4567,17 @@ function initCustomScrollbar() {
     thumb.style.transform = "translateY(" + (scrollRatio * maxThumbTop) + "px)";
   }
 
+  // 捕获阶段：先识别当前被滚动的有界容器
+  document.addEventListener("scroll", (e) => {
+    if (isBoundedScrollable(e.target)) activeBounded = e.target;
+  }, true);
+
   // 全局捕获滚动（容器会动态切换；capture 兼容内部容器，window 兼容主 popup frame 滚动）
   document.addEventListener("scroll", update, true);
-  window.addEventListener("scroll", update);
+  window.addEventListener("scroll", () => {
+    activeBounded = null; // 视口滚动时回到视口型
+    update();
+  });
   window.addEventListener("resize", update);
   window.addEventListener("load", update);
   // 初始渲染可能未完成，延迟刷新几次
@@ -4590,8 +4635,14 @@ function initCustomScrollbar() {
     ro.observe(document.body);
     const sidebar = document.getElementById("sidebarPanel");
     const tagModal = document.getElementById("tagModal");
+    const reminderModal = document.getElementById("reminderModal");
     if (sidebar) ro.observe(sidebar);
     if (tagModal) ro.observe(tagModal);
+    if (reminderModal) ro.observe(reminderModal);
+    BOUNDED_SCROLLABLE_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) ro.observe(el);
+    });
   } else {
     const mo = new MutationObserver(scheduleUpdate);
     mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
@@ -4600,8 +4651,10 @@ function initCustomScrollbar() {
   // 侧边栏/弹窗打开动画结束后再刷新一次
   const sidebar = document.getElementById("sidebarPanel");
   const tagModal = document.getElementById("tagModal");
+  const reminderModal = document.getElementById("reminderModal");
   if (sidebar) sidebar.addEventListener("transitionend", update);
   if (tagModal) tagModal.addEventListener("transitionend", update);
+  if (reminderModal) reminderModal.addEventListener("transitionend", update);
 
   // 暴露给主题切换等外部调用
   window.updateCustomScrollbar = update;
@@ -5133,6 +5186,7 @@ function openReminderModal(reminder) {
 
   renderReminderTimes(reminder ? (reminder.times || []) : ["08:00"]);
   modal.classList.add("show");
+  requestAnimationFrame(() => { if (window.updateCustomScrollbar) window.updateCustomScrollbar(); });
 }
 
 function renderReminderTimes(times) {
@@ -5154,6 +5208,7 @@ function renderReminderTimes(times) {
 function closeReminderModal() {
   document.getElementById("reminderModal").classList.remove("show");
   editingReminderId = null;
+  if (window.updateCustomScrollbar) window.updateCustomScrollbar();
 }
 
 function saveReminder() {
