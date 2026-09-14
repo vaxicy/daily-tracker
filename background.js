@@ -235,39 +235,25 @@ chrome.storage.onChanged.addListener((changes, area) => {
       const t = changes.selectedTheme.newValue || 'default';
       applyBadgeColor(t, THEME_BADGE_COLOR[t] || '#0b6bff');
     }
-    updateBadge();
+    debouncedUpdateBadge();
   }
 });
 
-// ==================== 核心问题修复：保持 Service Worker 活跃 ====================
-// Chrome MV3 中，Service Worker 空闲 30 秒后会自动终止
-// 我们需要定期唤醒它以确保 alarm 监听器正常工作
-let keepAliveTimer;
-function startKeepAlive() {
-  if (keepAliveTimer) clearInterval(keepAliveTimer);
-  // 每 20 秒记录一次日志，防止 SW 被完全休眠
-  keepAliveTimer = setInterval(() => {
-    logInfo("[心跳] Service Worker 保持活跃");
-  }, 20000);
+// ==================== 角标刷新防抖 ====================
+function debounce(fn, wait) {
+  let timer = null;
+  return function (...args) {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), wait);
+  };
 }
-startKeepAlive();
+const debouncedUpdateBadge = debounce(updateBadge, 300);
 
-// 定期检查闹钟状态（调试用）
-setInterval(() => {
-  chrome.alarms.getAll((alarms) => {
-    if (alarms.length === 0) {
-      logInfo("[检查] 无活跃闹钟");
-      // 尝试恢复闹钟
-      restoreAlarm();
-      return;
-    }
+// ==================== Service Worker 生命周期说明 ====================
+// Chrome MV3 中 Service Worker 会在空闲后自动终止；chrome.alarms
+// 会在触发时自动重新唤醒 SW，因此不需要通过 setInterval 强行保活。
+// 移除 20s 心跳与 30s 闹钟轮询，减少 CPU/电量消耗。
 
-    alarms.forEach(a => {
-      const remaining = Math.max(0, (a.scheduledTime - Date.now()) / 1000);
-      logInfo("[检查] 闹钟状态", { name: a.name, 剩余秒: remaining.toFixed(1), 周期分钟: a.periodInMinutes });
-    });
-  });
-}, 30000);
 
 // ==================== 恢复闹钟 ====================
 function restoreAlarm() {
@@ -769,17 +755,17 @@ createBadgeRefreshAlarm();
 
 // 切标签 / 标签加载完成 / 窗口获得焦点时刷新角标色，
 // 兜底 SW 休眠或系统待机后角标色回退默认蓝（无需新增 tabs 权限）。
-chrome.tabs.onActivated.addListener(() => updateBadge());
+chrome.tabs.onActivated.addListener(() => debouncedUpdateBadge());
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (changeInfo.status === 'complete') updateBadge();
+  if (changeInfo.status === 'complete') debouncedUpdateBadge();
 });
-chrome.tabs.onHighlighted.addListener(() => updateBadge());
-chrome.tabs.onCreated.addListener(() => updateBadge());
-chrome.tabs.onRemoved.addListener(() => updateBadge());
-chrome.windows.onFocusChanged.addListener(() => updateBadge());
-chrome.windows.onCreated.addListener(() => updateBadge());
-chrome.windows.onRemoved.addListener(() => updateBadge());
-chrome.runtime.onConnect.addListener(() => updateBadge());
+chrome.tabs.onHighlighted.addListener(() => debouncedUpdateBadge());
+chrome.tabs.onCreated.addListener(() => debouncedUpdateBadge());
+chrome.tabs.onRemoved.addListener(() => debouncedUpdateBadge());
+chrome.windows.onFocusChanged.addListener(() => debouncedUpdateBadge());
+chrome.windows.onCreated.addListener(() => debouncedUpdateBadge());
+chrome.windows.onRemoved.addListener(() => debouncedUpdateBadge());
+chrome.runtime.onConnect.addListener(() => debouncedUpdateBadge());
 
 // SW 每次唤醒（首次安装/浏览器启动/alarm 或 storage 唤醒）顶层代码重新执行，
 // 主动重写角标色，修复"过一段时间角标自己变蓝回退默认色"的问题。

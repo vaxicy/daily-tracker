@@ -180,6 +180,47 @@ function formatDateDisplay(dateStr) {
   return t("dateDisplay", { y, m: parseInt(m), d: parseInt(d) });
 }
 
+// ==================== 趋势 mini 图（sparkline）====================
+function getDailyCounts(records, start, end) {
+  const counts = [];
+  const cur = new Date(start);
+  const stop = new Date(end);
+  while (cur <= stop) {
+    const ds = formatDate(cur);
+    counts.push((records[ds] || []).length);
+    cur.setDate(cur.getDate() + 1);
+  }
+  return counts;
+}
+
+function renderSparkline(canvasId, dailyCounts, colorVar) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !canvas.getContext) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const cssW = rect.width || 300;
+  const cssH = rect.height || 48;
+  canvas.width = Math.max(1, Math.floor(cssW * dpr));
+  canvas.height = Math.max(1, Math.floor(cssH * dpr));
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const len = dailyCounts.length;
+  if (len === 0) return;
+  const max = Math.max(...dailyCounts, 1);
+  const gap = 2;
+  const barW = Math.max(3, (cssW - (len - 1) * gap) / len);
+  const color = colorVar || getComputedStyle(document.body).getPropertyValue('--primary').trim() || '#0b6bff';
+  dailyCounts.forEach((c, i) => {
+    const barH = (c / max) * (cssH - 8);
+    const x = i * (barW + gap);
+    const y = cssH - barH - 4;
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, barW, Math.max(2, barH));
+  });
+}
+
 function escapeHtml(str) {
   if (!str) return "";
   return String(str)
@@ -859,9 +900,10 @@ function renderEatStats() {
     let ratingCount = 0;
     const typeDist = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
     let streak = 0;
+    let range;
 
     if (eatStatsMode === "week") {
-      const range = getWeekRange();
+      range = getWeekRange();
       const cur = new Date(range.start);
       const end = new Date(range.end);
       while (cur <= end) {
@@ -876,7 +918,7 @@ function renderEatStats() {
       }
       document.getElementById("eatStatsLabel").textContent = t('eatWeek');
     } else {
-      const range = getMonthRange();
+      range = getMonthRange();
       const cur = new Date(range.start);
       const end = new Date(range.end);
       while (cur <= end) {
@@ -926,6 +968,7 @@ function renderEatStats() {
       }
       detailEl.innerHTML = (row1 ? `<div class="eat-stats-row">${row1}</div>` : "") + (row2 ? `<div class="eat-stats-row">${row2}</div>` : "");
     }
+    renderSparkline("eatTrendCanvas", getDailyCounts(records, range.start, range.end), getComputedStyle(document.body).getPropertyValue('--eat').trim());
   });
 }
 
@@ -1854,6 +1897,8 @@ function updateDrinkStats() {
     if (todayEl) {
       todayEl.addEventListener("click", openDrinkCounter);
     }
+
+    renderSparkline("drinkTrendCanvas", getDailyCounts(records, mRange.start, mRange.end), getComputedStyle(document.body).getPropertyValue('--primary').trim());
   });
 }
 
@@ -3237,9 +3282,10 @@ function updatePoopStats() {
     let softCount = 0;
     let totalWithBristol = 0;
     const today = getToday();
+    let range;
 
     if (poopStatsMode === "week") {
-      const range = getWeekRange();
+      range = getWeekRange();
       const cur = new Date(range.start);
       const end = new Date(range.end);
       while (cur <= end) {
@@ -3262,7 +3308,7 @@ function updatePoopStats() {
       }
       poopStatsLabel.textContent = t('weekTotal');
     } else {
-      const range = getMonthRange();
+      range = getMonthRange();
       const cur = new Date(range.start);
       const end = new Date(range.end);
       while (cur <= end) {
@@ -3319,6 +3365,7 @@ function updatePoopStats() {
         html += `<span class="stats-detail-item">${t('consecutiveIdeal', { n: streak }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
       }
       detailEl.innerHTML = html;
+      renderSparkline("poopTrendCanvas", getDailyCounts(records, range.start, range.end), getComputedStyle(document.body).getPropertyValue('--poop').trim());
     }
   });
 }
@@ -4014,9 +4061,10 @@ function updatePeeStats() {
     let count = 0;
     let dayCount = 0;
     const allTimestamps = [];
+    let range;
 
     if (peeStatsMode === "week") {
-      const range = getWeekRange();
+      range = getWeekRange();
       const cur = new Date(range.start);
       const end = new Date(range.end);
       while (cur <= end) {
@@ -4031,7 +4079,7 @@ function updatePeeStats() {
       }
       peeStatsLabel.textContent = t('weekTotal');
     } else {
-      const range = getMonthRange();
+      range = getMonthRange();
       const cur = new Date(range.start);
       const end = new Date(range.end);
       while (cur <= end) {
@@ -4068,6 +4116,7 @@ function updatePeeStats() {
     const minEl = document.getElementById("peeMinInterval");
     if (maxEl) maxEl.textContent = maxInterval;
     if (minEl) minEl.textContent = minInterval;
+    renderSparkline("peeTrendCanvas", getDailyCounts(records, range.start, range.end), getComputedStyle(document.body).getPropertyValue('--pee').trim());
   });
 }
 
@@ -4793,6 +4842,14 @@ function closeSidebar() {
 sidebarToggleBtn.addEventListener("click", openSidebar);
 sidebarCloseBtn.addEventListener("click", closeSidebar);
 sidebarOverlay.addEventListener("click", closeSidebar);
+
+// 从 popup 打开完整设置页（options_page）
+const openOptionsBtn = document.getElementById("openOptionsBtn");
+if (openOptionsBtn && chrome.runtime.openOptionsPage) {
+  openOptionsBtn.addEventListener("click", () => {
+    chrome.runtime.openOptionsPage();
+  });
+}
 
 // 功能模块映射
 const moduleMap = {
@@ -6424,6 +6481,10 @@ function renderPeriodBarChart() {
   });
 
   container.innerHTML = html;
+
+  // 周期持续天数趋势 mini 图（最近 6 个已完成周期）
+  const periodValues = sorted.map(d => d.duration);
+  renderSparkline("periodTrendCanvas", periodValues, getComputedStyle(document.body).getPropertyValue('--period').trim());
 }
 
 // 渲染周期记录时间轴

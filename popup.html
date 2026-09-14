@@ -5070,6 +5070,11 @@
         background: linear-gradient(135deg, var(--primary, #3b82f6), var(--primary2, #06b6d4));
       }
 
+      /* ============ 趋势 mini 图 ============ */
+      .trend-wrap { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--card-border); }
+      .trend-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+      .trend-canvas { width: 100%; height: 48px; display: block; }
+
       /* ============ 微动画 ============ */
       @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(6px); }
@@ -6291,6 +6296,10 @@
           <div class="stats-label" id="eatStatsLabel" data-i18n="itemCount">条</div>
         </div>
         <div class="eat-stats-detail" id="eatStatsDetail"></div>
+        <div class="trend-wrap">
+          <div class="trend-label">📈 <span data-i18n="week">本周</span>/<span data-i18n="month">本月</span> <span data-i18n="statsTitle">趋势</span></div>
+          <canvas class="trend-canvas" id="eatTrendCanvas" width="300" height="48"></canvas>
+        </div>
       </div>
     </div>
 
@@ -6389,6 +6398,10 @@
       <!-- 喝水统计 -->
       <div class="stats-card drink-stats">
         <div class="drink-stats-row" id="drinkStatsRow"></div>
+        <div class="trend-wrap">
+          <div class="trend-label">📈 <span data-i18n="week">本周</span>/<span data-i18n="month">本月</span> <span data-i18n="statsTitle">趋势</span></div>
+          <canvas class="trend-canvas" id="drinkTrendCanvas" width="300" height="48"></canvas>
+        </div>
       </div>
 
       <div class="calendar-grid">
@@ -6489,6 +6502,10 @@
           <div class="stats-label" id="poopStatsLabel" data-i18n="times">次</div>
         </div>
         <div class="stats-detail" id="poopStatsDetail"></div>
+        <div class="trend-wrap">
+          <div class="trend-label">📈 <span data-i18n="week">本周</span>/<span data-i18n="month">本月</span> <span data-i18n="statsTitle">趋势</span></div>
+          <canvas class="trend-canvas" id="poopTrendCanvas" width="300" height="48"></canvas>
+        </div>
       </div>
     </div>
 
@@ -6566,6 +6583,10 @@
           <div><span data-i18n="dailyAvg">日均</span>: <strong id="peeDailyAvg" style="color:var(--pee);">0</strong> <span data-i18n="times">次</span></div>
           <div><span data-i18n="maxInterval">最大间隔</span>: <strong id="peeMaxInterval" style="color:var(--pee);">--</strong></div>
           <div><span data-i18n="minInterval">最小间隔</span>: <strong id="peeMinInterval" style="color:var(--pee);">--</strong></div>
+        </div>
+        <div class="trend-wrap">
+          <div class="trend-label">📈 <span data-i18n="week">本周</span>/<span data-i18n="month">本月</span> <span data-i18n="statsTitle">趋势</span></div>
+          <canvas class="trend-canvas" id="peeTrendCanvas" width="300" height="48"></canvas>
         </div>
       </div>
     </div>
@@ -6696,6 +6717,12 @@
             <div class="period-stat-value" id="periodAbnormalCount">--</div>
             <div class="period-stat-sub" id="periodAbnormalBreakdown"></div>
           </div>
+        </div>
+
+        <!-- 周期趋势 mini 图 -->
+        <div class="trend-wrap" style="margin-top:10px;">
+          <div class="trend-label">📈 <span data-i18n="periodBarChartTitle">周期趋势</span></div>
+          <canvas class="trend-canvas" id="periodTrendCanvas" width="300" height="48"></canvas>
         </div>
 
         <!-- 周期趋势条形图 -->
@@ -6894,6 +6921,11 @@
           </div>
           <button class="csv-chooser-close" id="csvChooserClose">✕</button>
         </div>
+      </div>
+
+      <!-- 打开完整设置 -->
+      <div style="margin-top:12px;padding:10px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;text-align:center;">
+        <button id="openOptionsBtn" style="width:100%;padding:8px 0;border:none;background:transparent;color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;" data-i18n="openOptions">⚙ 打开完整设置</button>
       </div>
 
       <!-- 支持开发者 & 反馈（合并卡片） -->
