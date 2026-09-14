@@ -227,7 +227,6 @@ const I18N = {
     periodNotSelected: "未选择",
 
     // 设置页
-    openOptions: "⚙ 打开完整设置",
     funcSettings: "功能设置",
     badgeSettings: "🔢 角标设置",
     badgeToggle: "显示",
@@ -630,7 +629,6 @@ const I18N = {
     periodNotSelected: "Not selected",
 
     // Settings
-    openOptions: "⚙ Open full settings",
     funcSettings: "Feature Settings",
     badgeSettings: "🔢 Badge Settings",
     badgeToggle: "🔢 Badge Display",
@@ -1053,7 +1051,6 @@ const I18N = {
     periodDateInCycle: "Día del ciclo",
     periodBackdateHint: "Toca para registrar el primer día",
     periodNotSelected: "Período no seleccionado",
-    openOptions: "⚙ Abrir ajustes completos",
     funcSettings: "Ajustes de función",
     badgeSettings: "Ajustes de insignia",
     badgeToggle: "Mostrar insignia",
@@ -1503,7 +1500,6 @@ const I18N = {
     periodDateInCycle: "その日付は既に某周期に含まれています",
     periodBackdateHint: "クリックで生理初日としてチェックイン",
     periodNotSelected: "未選択",
-    openOptions: "⚙ 設定を開く",
     funcSettings: "機能設定",
     badgeSettings: "🔢 バッジ設定",
     badgeToggle: "表示",
@@ -1920,7 +1916,6 @@ const I18N = {
     periodDateInCycle: "해당 날짜는 이미 어떤 주기에 포함되어 있습니다",
     periodBackdateHint: "클릭하여 생리 첫날로 체크인",
     periodNotSelected: "미선택",
-    openOptions: "⚙ 전체 설정 열기",
     funcSettings: "기능 설정",
     badgeSettings: "🔢 배지 설정",
     badgeToggle: "표시",
@@ -2319,7 +2314,6 @@ const I18N = {
     periodNotSelected: "Non sélectionné",
 
     // Settings
-    openOptions: "⚙ Ouvrir les paramètres complets",
     funcSettings: "Fonctionnalités",
     badgeSettings: "🔢 Badge",
     badgeToggle: "🔢 Affichage du badge",

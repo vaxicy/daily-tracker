@@ -4843,14 +4843,6 @@ sidebarToggleBtn.addEventListener("click", openSidebar);
 sidebarCloseBtn.addEventListener("click", closeSidebar);
 sidebarOverlay.addEventListener("click", closeSidebar);
 
-// 从 popup 打开完整设置页（options_page）
-const openOptionsBtn = document.getElementById("openOptionsBtn");
-if (openOptionsBtn && chrome.runtime.openOptionsPage) {
-  openOptionsBtn.addEventListener("click", () => {
-    chrome.runtime.openOptionsPage();
-  });
-}
-
 // 功能模块映射
 const moduleMap = {
   eat:   { page: "pageEat", nav: "navEat", switch: "sbEat" },

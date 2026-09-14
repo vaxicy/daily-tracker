@@ -1027,6 +1027,8 @@
       }
       .drink-stats {
         display: flex;
+        flex-direction: column;
+        align-items: stretch;
         gap: 10px;
         margin-top: 16px;
       }
@@ -6921,11 +6923,6 @@
           </div>
           <button class="csv-chooser-close" id="csvChooserClose">✕</button>
         </div>
-      </div>
-
-      <!-- 打开完整设置 -->
-      <div style="margin-top:12px;padding:10px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;text-align:center;">
-        <button id="openOptionsBtn" style="width:100%;padding:8px 0;border:none;background:transparent;color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;" data-i18n="openOptions">⚙ 打开完整设置</button>
       </div>
 
       <!-- 支持开发者 & 反馈（合并卡片） -->
