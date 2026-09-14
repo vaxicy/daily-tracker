@@ -5075,10 +5075,11 @@
       /* ============ 趋势 mini 图 ============ */
       .trend-wrap { margin: 2px 0 10px; }
       .trend-canvas { width: 100%; height: 64px; display: block; cursor: crosshair; }
-      .stats-card.drink-stats .trend-wrap {
-        background: color-mix(in srgb, var(--card-bg) 75%, transparent);
-        border-radius: 12px;
-        padding: 4px 8px 0;
+      /* 喝水页趋势图在日历下方，用一条细分隔线与日历区分 */
+      .drink-calendar-card .trend-wrap {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid var(--card-border);
       }
       /* ============ 微动画 ============ */
       @keyframes fadeInUp {
@@ -6398,9 +6399,6 @@
 
       <!-- 喝水统计 -->
       <div class="stats-card drink-stats">
-        <div class="trend-wrap">
-          <canvas class="trend-canvas" id="drinkTrendCanvas" width="300" height="64"></canvas>
-        </div>
         <div class="drink-stats-row" id="drinkStatsRow"></div>
       </div>
 
@@ -6415,6 +6413,11 @@
           <div class="weekday drink-wd" data-i18n="wdSat">六</div>
         </div>
         <div class="calendar-days" id="drinkCalendarDays"></div>
+      </div>
+
+      <!-- 本月每日喝水趋势（与上方日历同一口径） -->
+      <div class="trend-wrap">
+        <canvas class="trend-canvas" id="drinkTrendCanvas" width="300" height="64"></canvas>
       </div>
     </div>
     </div>
