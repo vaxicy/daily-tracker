@@ -63,8 +63,8 @@
         min-height: 340px;
         position: relative;
         z-index: 1;
-        /* 浮动导航点(高约22px)固定在底部，给内容留出空间避免滚动到底时重叠 */
-        padding-bottom: 44px;
+        /* 底部留白与顶部 body padding 一致，导航点区域由 body padding-bottom 预留 */
+        padding-bottom: 16px;
       }
       .page.active { display: block; }
 
@@ -2738,6 +2738,12 @@
         font-weight: 700;
         color: var(--period);
       }
+      .period-stat-sub {
+        font-size: 9px;
+        color: var(--muted);
+        margin-top: 3px;
+        line-height: 1.3;
+      }
 
       /* 周期趋势条形图 */
       #periodBarChart {
@@ -2977,11 +2983,11 @@
       .day-cell.period-date {
         cursor: pointer;
       }
-      .day-cell.selected-period-day:not(.today) {
+      .day-cell.selected-period-day {
         box-shadow: 0 0 0 2px var(--period);
         border-radius: 8px;
       }
-      /* today 已用放大+加粗+浅亮底区分，不再叠加选中描边，避免 20 号等 today 出现多余描边 */
+      /* 选中日期统一加经期色描边，含今天 */
       /* 日期单元格删除按钮（右上角，悬停显示） */
       .period-cell-delete-btn {
         position: absolute;
@@ -4284,6 +4290,11 @@
 
       /* 青梅绿：记录饮食按钮浅绿底，白字看不清，改为主题深色字 var(--text) */
       body[data-theme="greenplum"] .btn-eat {
+        color: var(--text);
+      }
+
+      /* 紫岚青：记录饮食按钮鼠尾草浅绿底，白字看不清，改为主题深色字 var(--text) */
+      body[data-theme="moorland"] .btn-eat {
         color: var(--text);
       }
 
@@ -6683,6 +6694,7 @@
           <div class="period-stat-item">
             <div class="period-stat-label" data-i18n="periodAbnormalCount">异常次数</div>
             <div class="period-stat-value" id="periodAbnormalCount">--</div>
+            <div class="period-stat-sub" id="periodAbnormalBreakdown"></div>
           </div>
         </div>
 

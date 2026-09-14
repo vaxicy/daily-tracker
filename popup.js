@@ -4457,7 +4457,7 @@ function initCustomScrollbar() {
   let activeBounded = null; // 最近被滚动过的有界容器（用于页面内的记录列表等）
 
   function isBoundedScrollable(el) {
-    if (!el) return false;
+    if (!el || !el.classList) return false;
     if (el.id === "sidebarPanel" || el.classList.contains("tag-modal-body") || el.classList.contains("badge-modal")) return true;
     return BOUNDED_SCROLLABLE_IDS.includes(el.id);
   }
@@ -5424,6 +5424,59 @@ function getActivePeriod() {
   return periodCycles.find(c => c.endDate === null);
 }
 
+// 按开始日期升序排列周期（不改变原数组）
+function sortPeriodCyclesByStart(cycles = periodCycles) {
+  return [...cycles].sort((a, b) => a.startDate.localeCompare(b.startDate));
+}
+
+// 计算标准月经周期长度：相邻两次月经第一天的间隔天数
+// 医学常见范围 21-35 天，可接受统计范围 10-90 天（过滤明显异常或漏记数据）
+function computePeriodCycleLengths(cycles = periodCycles, minDays = 10, maxDays = 90) {
+  const sorted = sortPeriodCyclesByStart(cycles);
+  const lens = [];
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const start = new Date(sorted[i].startDate + "T00:00:00");
+    const nextStart = new Date(sorted[i + 1].startDate + "T00:00:00");
+    const len = Math.round((nextStart - start) / 86400000);
+    if (len >= minDays && len <= maxDays) lens.push(len);
+  }
+  return lens;
+}
+
+// 为每个周期附加持续天数和到下一个周期的长度
+function getPeriodCyclesWithStats(cycles = periodCycles) {
+  const sorted = sortPeriodCyclesByStart(cycles);
+  return sorted.map((cycle, i) => {
+    const start = new Date(cycle.startDate + "T00:00:00");
+    const duration = cycle.endDate
+      ? Math.max(1, Math.round((new Date(cycle.endDate + "T00:00:00") - start) / 86400000) + 1)
+      : null;
+    let cycleLen = null;
+    if (i < sorted.length - 1) {
+      const nextStart = new Date(sorted[i + 1].startDate + "T00:00:00");
+      const len = Math.round((nextStart - start) / 86400000);
+      if (len >= 10 && len <= 90) cycleLen = len;
+    }
+    return { cycle, start, duration, cycleLen };
+  });
+}
+
+// 医学标准阈值：周期长度 21-35 天，经期天数 2-8 天
+const PERIOD_CYCLE_MIN_DAYS = 21;
+const PERIOD_CYCLE_MAX_DAYS = 35;
+const PERIOD_DURATION_MIN_DAYS = 2;
+const PERIOD_DURATION_MAX_DAYS = 8;
+
+// 周期长度是否异常（<21 天频发 / >35 天稀发）
+function isCycleLenAbnormal(len) {
+  return len < PERIOD_CYCLE_MIN_DAYS || len > PERIOD_CYCLE_MAX_DAYS;
+}
+
+// 经期天数是否异常（<2 天或 >8 天）
+function isDurationAbnormal(dur) {
+  return dur < PERIOD_DURATION_MIN_DAYS || dur > PERIOD_DURATION_MAX_DAYS;
+}
+
 // 格式化日期为 YYYY-MM-DD
 function formatDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -5490,14 +5543,7 @@ function renderPeriodCalendar() {
   // 预测下次经期：基于历史周期长度均值推算
   let predictedStart = null, predictedEnd = null;
   if (periodCycles.length >= 2 && !getActivePeriod()) {
-    const sorted = [...periodCycles].sort((a, b) => a.startDate.localeCompare(b.startDate));
-    const gaps = [];
-    for (let i = 1; i < sorted.length; i++) {
-      const prev = new Date(sorted[i - 1].startDate + "T00:00:00");
-      const curr = new Date(sorted[i].startDate + "T00:00:00");
-      const len = Math.round((curr - prev) / 86400000);
-      if (len > 20 && len < 45) gaps.push(len);
-    }
+    const gaps = computePeriodCycleLengths(periodCycles, 10, 90);
     if (gaps.length > 0) {
       const avgCycle = Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length);
       const completed = periodCycles.filter(c => c.endDate);
@@ -5508,6 +5554,7 @@ function renderPeriodCalendar() {
         );
         avgDur = Math.round(durs.reduce((a, b) => a + b, 0) / durs.length);
       }
+      const sorted = sortPeriodCyclesByStart(periodCycles);
       const lastStart = sorted[sorted.length - 1].startDate;
       const ps = new Date(lastStart + "T00:00:00");
       ps.setDate(ps.getDate() + avgCycle);
@@ -5636,41 +5683,17 @@ function renderPeriodCalendar() {
         day.classList.add("selected-period-day");
       }
     } else {
-      // 非经期日期：点击可签到（作为经期第一天）
+      // 非经期日期：点击仅选中该日期（不直接创建周期，由 Toggle 控制开始/结束）
       day.style.cursor = "pointer";
-      day.setAttribute("data-tooltip", "periodBackdateHint");
       day.addEventListener("click", () => {
         if (periodUnsaved) {
           showConfirm(t("periodUnsavedConfirm"), () => {
             clearPeriodUnsaved();
-            backdateProceed();
+            selectPeriodDate(dateStr);
           });
           return;
         }
-        backdateProceed();
-        function backdateProceed() {
-          // 检查是否已在某个周期内（防御性检查）
-          if (getCycleByDate(dateStr)) {
-            showToast(t("periodDateInCycle"));
-            return;
-          }
-          // 检查是否已有进行中的经期（未结束）
-          const active = getActivePeriod();
-          if (active) {
-            showToast(t("periodPleaseSaveFirst"));
-            return;
-          }
-          // 确认签到
-          const dateDisplay = formatDateDisplay(dateStr);
-          showConfirm(t("periodBackdateConfirm", { date: dateDisplay }), () => {
-            // 创建新周期
-            periodCycles.push({ startDate: dateStr, endDate: null, days: {} });
-            savePeriodCycles();
-            selectPeriodDate(dateStr);
-            updatePeriodToggleBtn();
-            showToast(t("toastPeriodRecorded"));
-          });
-        }
+        selectPeriodDate(dateStr);
       });
     }
 
@@ -5700,16 +5723,11 @@ function renderPeriodCalendar() {
     }
   }
 
-  // 如果没有选中任何经期日期，默认选中今天或最近经期日期
-  if (!selectedPeriodDate || !getCycleByDate(selectedPeriodDate)) {
-    const active = getActivePeriod();
-    if (active) {
-      selectPeriodDate(getToday());
-    } else if (periodCycles.length > 0) {
-      const last = periodCycles[periodCycles.length - 1];
-      if (last.endDate) selectPeriodDate(last.endDate);
-    }
+  // 默认聚焦今天；若用户已手动选中日期（仍有效）则保留
+  if (!selectedPeriodDate) {
+    selectedPeriodDate = getToday();
   }
+  selectPeriodDate(selectedPeriodDate);
 }
 
 // 根据日期找到所属周期
@@ -5720,10 +5738,8 @@ function getCycleByDate(dateStr) {
   });
 }
 
-// 选中某个经期日期，加载该天的心情/症状/备注
+// 选中某个日期（经期日或非经期日均可），加载/清空该天的心情/症状/备注
 function selectPeriodDate(dateStr) {
-  const cycle = getCycleByDate(dateStr);
-  if (!cycle) return;
   selectedPeriodDate = dateStr;
 
   // 更新日历高亮
@@ -5731,22 +5747,40 @@ function selectPeriodDate(dateStr) {
     el.classList.toggle("selected-period-day", el.dataset.date === dateStr);
   });
 
-  // 加载该天数据
-  const dayData = (cycle.days || {})[dateStr] || {};
-  selectMood(dayData.mood !== undefined ? dayData.mood : -1);
-  setPainSlider(dayData.pain !== undefined && dayData.pain >= 0 ? dayData.pain : 0);
-  selectSymptoms(dayData.symptoms || []);
-  setFlowSlider(dayData.flow !== undefined && dayData.flow >= 0 ? dayData.flow : 0);
-  selectBloodColor(dayData.bloodColor !== undefined ? dayData.bloodColor : -1);
+  const cycle = getCycleByDate(dateStr);
 
-  const remarkInput = document.getElementById("periodRemarkInput");
-  if (remarkInput) remarkInput.value = dayData.remark || "";
+  if (cycle) {
+    // 加载该天数据
+    const dayData = (cycle.days || {})[dateStr] || {};
+    selectMood(dayData.mood !== undefined ? dayData.mood : -1);
+    setPainSlider(dayData.pain !== undefined && dayData.pain >= 0 ? dayData.pain : 0);
+    selectSymptoms(dayData.symptoms || []);
+    setFlowSlider(dayData.flow !== undefined && dayData.flow >= 0 ? dayData.flow : 0);
+    selectBloodColor(dayData.bloodColor !== undefined ? dayData.bloodColor : -1);
 
-  // 显示详情内容区域（选中日期时展开，方便编辑）
-  const detailContent = document.getElementById("periodDetailContent");
-  if (detailContent) detailContent.classList.add("show");
-  const divider = document.getElementById("periodStatusDivider");
-  if (divider && !divider.classList.contains("show")) divider.classList.add("show");
+    const remarkInput = document.getElementById("periodRemarkInput");
+    if (remarkInput) remarkInput.value = dayData.remark || "";
+
+    // 展开详情内容区域（选中日期时展开，方便编辑）
+    const detailContent = document.getElementById("periodDetailContent");
+    if (detailContent) detailContent.classList.add("show");
+    const divider = document.getElementById("periodStatusDivider");
+    if (divider && !divider.classList.contains("show")) divider.classList.add("show");
+  } else {
+    // 非经期日：清空并折叠详情
+    selectMood(-1);
+    setPainSlider(0);
+    selectSymptoms([]);
+    setFlowSlider(0);
+    selectBloodColor(-1);
+    const remarkInput = document.getElementById("periodRemarkInput");
+    if (remarkInput) remarkInput.value = "";
+    const detailContent = document.getElementById("periodDetailContent");
+    if (detailContent) detailContent.classList.remove("show");
+    const divider = document.getElementById("periodStatusDivider");
+    if (divider) divider.classList.remove("show");
+  }
+
   clearPeriodUnsaved();
   // 更新状态文字（天数跟随选中日期）
   updatePeriodToggleBtn();
@@ -6275,19 +6309,13 @@ function updatePeriodStats() {
     document.getElementById("periodAvgCycle").textContent = "--";
     document.getElementById("periodAvgDuration").textContent = "--";
     document.getElementById("periodAbnormalCount").textContent = "--";
+    const breakdownEl = document.getElementById("periodAbnormalBreakdown");
+    if (breakdownEl) breakdownEl.textContent = "";
     return;
   }
 
-  // 计算周期长度（相邻周期起始日间隔）
-  const cycleLengths = [];
-  for (let i = 1; i < periodCycles.length; i++) {
-    if (periodCycles[i].endDate !== null && periodCycles[i - 1].endDate !== null) {
-      const prevStart = new Date(periodCycles[i - 1].startDate + "T00:00:00");
-      const currStart = new Date(periodCycles[i].startDate + "T00:00:00");
-      const len = Math.round((currStart - prevStart) / 86400000);
-      if (len > 20 && len < 45) cycleLengths.push(len);
-    }
-  }
+  // 计算周期长度（按开始日升序后相邻周期起始日间隔）
+  const cycleLengths = computePeriodCycleLengths(periodCycles, 10, 90);
 
   const avgCycle = cycleLengths.length > 0
     ? Math.round(cycleLengths.reduce((a, b) => a + b, 0) / cycleLengths.length)
@@ -6306,13 +6334,15 @@ function updatePeriodStats() {
     : 5;
   document.getElementById("periodAvgDuration").textContent = avgDuration + " " + t("periodBarChartDay");
 
-  // 合并异常次数（周期长度异常 + 经期天数异常）
-  let cycleAbnormal = 0;
-  cycleLengths.forEach(len => { if (Math.abs(len - avgCycle) > 3) cycleAbnormal++; });
-  let durationAbnormal = 0;
-  durations.forEach(d => { if (Math.abs(d - avgDuration) > 1) durationAbnormal++; });
+  // 异常判定：按医学标准（周期 21-35 天，经期 2-8 天）
+  const cycleAbnormal = cycleLengths.filter(isCycleLenAbnormal).length;
+  const durationAbnormal = durations.filter(isDurationAbnormal).length;
   const totalAbnormal = cycleAbnormal + durationAbnormal;
-  document.getElementById("periodAbnormalCount").textContent = totalAbnormal + " " + t("periodBarChartDay");
+  document.getElementById("periodAbnormalCount").textContent = totalAbnormal + " " + t("periodTimes");
+  const breakdownEl = document.getElementById("periodAbnormalBreakdown");
+  if (breakdownEl) {
+    breakdownEl.textContent = `${t("periodCycleAbnormal")} ${cycleAbnormal} · ${t("periodDurationAbnormal")} ${durationAbnormal}`;
+  }
 }
 
 // 渲染周期趋势条形图（圆角胶囊形，左右双条 + 均值参考线）
@@ -6321,29 +6351,19 @@ function renderPeriodBarChart() {
   if (!container) return;
 
   // 获取最近6个已完成周期（按时间倒序）
-  const completed = periodCycles.filter(c => c.endDate !== null);
-  if (completed.length === 0) {
+  const stats = getPeriodCyclesWithStats(periodCycles);
+  const completedStats = stats.filter(s => s.cycle.endDate !== null);
+  if (completedStats.length === 0) {
     container.innerHTML = `<div style="color:var(--muted);text-align:center;padding:8px 0;font-size:11px;">${t("periodNoRecord")}</div>`;
     return;
   }
 
-  const recent = completed.slice(-6); // 最近6个
+  const recent = completedStats.slice(-6); // 最近6个
   const sorted = [...recent].reverse(); // 倒序显示（最新的在上方）
 
   // 计算每条周期的周期长度和持续天数（统一用本地时间，避免UTC偏差）
-  const chartData = sorted.map((cycle) => {
-    const start = new Date(cycle.startDate + "T00:00:00");
-    const end = new Date(cycle.endDate + "T00:00:00");
-    const duration = Math.max(1, Math.round((end - start) / 86400000) + 1);
-    let cycleLen = null;
-    const ci = periodCycles.indexOf(cycle);
-    if (ci > 0 && periodCycles[ci - 1].endDate) {
-      const prev = new Date(periodCycles[ci - 1].startDate + "T00:00:00");
-      const curr = new Date(cycle.startDate + "T00:00:00");
-      cycleLen = Math.round((curr - prev) / 86400000);
-      if (cycleLen <= 20 || cycleLen >= 45) cycleLen = null;
-    }
-    return { cycle, duration, cycleLen };
+  const chartData = sorted.map((s) => {
+    return { cycle: s.cycle, duration: s.duration, cycleLen: s.cycleLen };
   });
 
   // 计算参考基准和异常阈值
@@ -6363,16 +6383,16 @@ function renderPeriodBarChart() {
   const avgDurationPct = (avgDuration / maxDuration) * 100;
 
   let html = "";
-  chartData.forEach((d) => {
-    const seq = completed.length - periodCycles.indexOf(d.cycle);
+  chartData.forEach((d, i) => {
+    const seq = i + 1;
 
     // 周期长度：缺失时以 28 天估算（虚线占位），确保两条数据同时出现
     const cycleVal = d.cycleLen !== null ? d.cycleLen : 28;
     const cycleWidth = Math.max(6, (cycleVal / maxCycleLen) * 100);
     const durationWidth = (d.duration / maxDuration) * 100;
 
-    const cycleAbnormal = d.cycleLen ? Math.abs(d.cycleLen - avgCycle) > 3 : false;
-    const durationAbnormal = Math.abs(d.duration - avgDuration) > 1;
+    const cycleAbnormal = d.cycleLen !== null && isCycleLenAbnormal(d.cycleLen);
+    const durationAbnormal = isDurationAbnormal(d.duration);
 
     const cycleValueText = d.cycleLen !== null ? d.cycleLen : "≈" + 28;
     const cycleEstimateCls = d.cycleLen === null ? " bar-estimate" : "";
@@ -6416,50 +6436,39 @@ function renderPeriodCycleTable() {
   }
 
   const active = getActivePeriod();
+  const stats = getPeriodCyclesWithStats(periodCycles);
   const avgDuration = (() => {
-    const completed = periodCycles.filter(c => c.endDate !== null);
-    if (completed.length === 0) return 5;
-    const durs = completed.map(c => {
-      const s = new Date(c.startDate + "T00:00:00");
-      const e = new Date(c.endDate + "T00:00:00");
-      return Math.max(1, Math.round((e - s) / 86400000) + 1);
-    });
+    const completedStats = stats.filter(s => s.cycle.endDate !== null);
+    if (completedStats.length === 0) return 5;
+    const durs = completedStats.map(s => s.duration);
     return Math.round(durs.reduce((a, b) => a + b, 0) / durs.length);
   })();
 
   // 所有周期倒序显示（最新的在上方）
-  const sorted = [...periodCycles].reverse();
+  const sorted = [...stats].reverse();
 
   let html = `<div class="tl-list"><div class="tl-line"></div>`;
 
-  sorted.forEach((cycle) => {
+  sorted.forEach((item) => {
+    const cycle = item.cycle;
     const isActive = active && active.startDate === cycle.startDate;
-    const ci = periodCycles.indexOf(cycle);
 
     // 计算持续天数（统一归零时间，避免时分秒误差；防御负数）
-    let duration = null;
+    let duration = item.duration;
     let rangeStr = "";
-    const cycleStart = new Date(cycle.startDate + "T00:00:00");
     if (cycle.endDate) {
-      const endDate = new Date(cycle.endDate + "T00:00:00");
-      duration = Math.max(1, Math.round((endDate - cycleStart) / 86400000) + 1);
       const endFmt = cycle.endDate.slice(5); // MM-DD
       rangeStr = `${cycle.startDate.slice(5)} ~ ${endFmt}`;
     } else if (isActive) {
-      const todayStr = getToday();
-      const today = new Date(todayStr + "T00:00:00");
-      duration = Math.max(1, Math.round((today - cycleStart) / 86400000) + 1);
+      const today = new Date(getToday() + "T00:00:00");
+      duration = Math.max(1, Math.round((today - item.start) / 86400000) + 1);
       rangeStr = t("periodActiveShort");
     }
 
-    // 计算周期长度（与上一个周期间隔）
-    let cycleLenStr = "--";
-    if (ci > 0 && periodCycles[ci - 1].endDate) {
-      const prev = new Date(periodCycles[ci - 1].startDate + "T00:00:00");
-      const curr = new Date(cycle.startDate + "T00:00:00");
-      const len = Math.round((curr - prev) / 86400000);
-      if (len > 20 && len < 45) cycleLenStr = len + " " + t("periodBarChartDay");
-    }
+    // 计算周期长度（与下一个周期间隔；最新周期没有下一周期则显示 --）
+    const cycleLenStr = item.cycleLen !== null
+      ? item.cycleLen + " " + t("periodBarChartDay")
+      : "--";
 
     // 进度百分比（仅进行中）
     let progressPct = 0;
@@ -6760,18 +6769,11 @@ function exportCsv(module) {
       });
     } else if (module === "period") {
       headers = ["开始日期", "结束日期", "持续天数", "周期长度"];
-      const cycles = rec || [];
-      cycles.forEach((c, i) => {
-        let dur = "", cyc = "";
-        if (c.endDate) {
-          const s = new Date(c.startDate + "T00:00:00"), e = new Date(c.endDate + "T00:00:00");
-          dur = Math.round((e - s) / 86400000) + 1;
-        }
-        if (i > 0 && cycles[i - 1].endDate) {
-          const len = Math.round((new Date(c.startDate + "T00:00:00") - new Date(cycles[i - 1].startDate + "T00:00:00")) / 86400000);
-          if (len > 20 && len < 45) cyc = len;
-        }
-        rows.push([c.startDate, c.endDate || "", dur, cyc]);
+      const exportStats = getPeriodCyclesWithStats(rec || []);
+      exportStats.forEach((s) => {
+        const dur = s.duration !== null ? s.duration : "";
+        const cyc = s.cycleLen !== null ? s.cycleLen : "";
+        rows.push([s.cycle.startDate, s.cycle.endDate || "", dur, cyc]);
       });
     }
 

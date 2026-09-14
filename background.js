@@ -7,77 +7,104 @@ const THEME_BADGE_COLOR = Object.fromEntries(
   Object.entries(THEME_PRESETS).map(([k, p]) => [k, (p.vars && (p.vars["--badge"] || p.vars["--primary"])) || '#0b6bff'])
 );
 
-function updateBadge() {
-  chrome.storage.local.get(
-    ['drinkRecords', 'poopRecords', 'peeRecords', 'mealRecords', 'selectedTheme', 'badgeEnabled', 'badgeContentType'],
-    (data) => {
+// ==================== Promise 包装：保证角标写入完成前 SW 不被终止 ====================
+function storageGet(keys) {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(keys, (data) => {
       if (chrome.runtime.lastError) {
         logError('读取角标配置失败', { error: chrome.runtime.lastError.message });
-        return;
+        resolve({});
+      } else {
+        resolve(data || {});
       }
-      const enabled = data.badgeEnabled !== false;
-      if (!enabled) {
-        chrome.action.setIcon({ path: { '16': 'icon16.png', '48': 'icon48.png', '128': 'icon128.png' } });
-        chrome.action.setBadgeText({ text: '' });
-        return;
-      }
-      const badgeType = data.badgeContentType || 'drink_today';
-      const theme = data.selectedTheme || 'default';
-      // 派生表已覆盖 themes.js 所有主题；themeColor 永不 undefined
-      const themeColor = THEME_BADGE_COLOR[theme] || '#0b6bff';
-      logInfo('[角标] updateBadge 计算结果', { theme, themeColor, badgeType });
-      chrome.action.setIcon({ path: { '16': 'icon16.png', '48': 'icon48.png', '128': 'icon128.png' } });
+    });
+  });
+}
+function actionSetIcon(path) {
+  return new Promise((resolve) => { chrome.action.setIcon({ path }, () => resolve()); });
+}
+function actionSetBadgeText(text) {
+  return new Promise((resolve) => { chrome.action.setBadgeText({ text }, () => resolve()); });
+}
+function actionSetBadgeBackgroundColor(color) {
+  return new Promise((resolve) => { chrome.action.setBadgeBackgroundColor({ color }, () => resolve()); });
+}
+function actionSetBadgeTextColor(color) {
+  return new Promise((resolve) => {
+    if (chrome.action.setBadgeTextColor) chrome.action.setBadgeTextColor({ color }, () => resolve());
+    else resolve();
+  });
+}
 
-      // 解析 badgeType: "drink_today" -> ["drink", "today"]
-      const parts = badgeType.split('_');
-      const recordType = parts[0];   // drink / poop / pee / meal
-      const timeRange = parts[1];     // today / week / month
+// 1s 内去重，避免 onUpdated 等高频事件反复触发 storage 读 + 角标写
+let lastBadgeRun = 0;
+async function updateBadge() {
+  const now = Date.now();
+  if (now - lastBadgeRun < 1000) return;
+  lastBadgeRun = now;
 
-      // 选取对应记录
-      let records = {};
-      if (recordType === 'drink') records = data.drinkRecords || {};
-      else if (recordType === 'poop') records = data.poopRecords || {};
-      else if (recordType === 'pee') records = data.peeRecords || {};
-      else if (recordType === 'meal') records = data.mealRecords || {};
-
-      let count = 0;
-      if (timeRange === 'today') {
-        const today = getLocalDateStr();
-        count = (records[today] || []).length;
-      } else if (timeRange === 'week') {
-        // 本周一 00:00 到今天
-        const now = new Date();
-        const dayOfWeek = now.getDay();
-        const monday = new Date(now);
-        monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-        monday.setHours(0, 0, 0, 0);
-        const cur = new Date(monday);
-        while (cur <= now) {
-          const ds = formatDateStr(cur);
-          count += (records[ds] || []).length;
-          cur.setDate(cur.getDate() + 1);
-        }
-      } else if (timeRange === 'month') {
-        // 本月1日 到今天
-        const now = new Date();
-        const first = new Date(now.getFullYear(), now.getMonth(), 1);
-        const cur = new Date(first);
-        while (cur <= now) {
-          const ds = formatDateStr(cur);
-          count += (records[ds] || []).length;
-          cur.setDate(cur.getDate() + 1);
-        }
-      }
-
-      const txt = count > 99 ? '99+' : String(count);
-      chrome.action.setBadgeText({ text: txt });
-      chrome.action.setBadgeBackgroundColor({ color: themeColor });
-      if (chrome.action.setBadgeTextColor) {
-        const badgeTextColor = theme === 'greenplum' ? '#450C3F' : '#ffffff';
-        chrome.action.setBadgeTextColor({ color: badgeTextColor });
-      }
-    }
+  const data = await storageGet(
+    ['drinkRecords', 'poopRecords', 'peeRecords', 'mealRecords', 'selectedTheme', 'badgeEnabled', 'badgeContentType']
   );
+  const enabled = data.badgeEnabled !== false;
+  if (!enabled) {
+    await actionSetIcon({ '16': 'icon16.png', '48': 'icon48.png', '128': 'icon128.png' });
+    await actionSetBadgeText('');
+    return;
+  }
+  const badgeType = data.badgeContentType || 'drink_today';
+  const theme = data.selectedTheme || 'default';
+  // 派生表已覆盖 themes.js 所有主题；themeColor 永不 undefined
+  const themeColor = THEME_BADGE_COLOR[theme] || '#0b6bff';
+  logInfo('[角标] updateBadge 计算结果', { theme, themeColor, badgeType });
+  await actionSetIcon({ '16': 'icon16.png', '48': 'icon48.png', '128': 'icon128.png' });
+
+  // 解析 badgeType: "drink_today" -> ["drink", "today"]
+  const parts = badgeType.split('_');
+  const recordType = parts[0];   // drink / poop / pee / meal
+  const timeRange = parts[1];     // today / week / month
+
+  // 选取对应记录
+  let records = {};
+  if (recordType === 'drink') records = data.drinkRecords || {};
+  else if (recordType === 'poop') records = data.poopRecords || {};
+  else if (recordType === 'pee') records = data.peeRecords || {};
+  else if (recordType === 'meal') records = data.mealRecords || {};
+
+  let count = 0;
+  if (timeRange === 'today') {
+    const today = getLocalDateStr();
+    count = (records[today] || []).length;
+  } else if (timeRange === 'week') {
+    // 本周一 00:00 到今天
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+    monday.setHours(0, 0, 0, 0);
+    const cur = new Date(monday);
+    while (cur <= now) {
+      const ds = formatDateStr(cur);
+      count += (records[ds] || []).length;
+      cur.setDate(cur.getDate() + 1);
+    }
+  } else if (timeRange === 'month') {
+    // 本月1日 到今天
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    const cur = new Date(first);
+    while (cur <= now) {
+      const ds = formatDateStr(cur);
+      count += (records[ds] || []).length;
+      cur.setDate(cur.getDate() + 1);
+    }
+  }
+
+  const txt = count > 99 ? '99+' : String(count);
+  const badgeTextColor = theme === 'greenplum' ? '#450C3F' : '#ffffff';
+  await actionSetBadgeText(txt);
+  await actionSetBadgeBackgroundColor(themeColor);
+  await actionSetBadgeTextColor(badgeTextColor);
 }
 
 // 辅助：Date -> "YYYY-MM-DD"
@@ -163,17 +190,17 @@ logInfo("后台脚本已加载", {
 });
 
 // ==================== 生命周期事件 ====================
-chrome.runtime.onStartup.addListener(() => {
+chrome.runtime.onStartup.addListener(async () => {
   logInfo("浏览器启动");
   restoreAlarm();
   createBadgeRefreshAlarm();
-  updateBadge();
+  await updateBadge();
 });
 
-chrome.runtime.onInstalled.addListener((details) => {
+chrome.runtime.onInstalled.addListener(async (details) => {
   logInfo(`扩展安装/更新: ${details.reason}`);
   createBadgeRefreshAlarm();
-  updateBadge();
+  await updateBadge();
 });
 
 // 主题/角标配置变化时主动刷新角标色（修复主题与角标色不同步的问题）
@@ -395,7 +422,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 
 // ==================== 闹钟触发（核心）====================
-chrome.alarms.onAlarm.addListener((alarm) => {
+chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === "notificationKeepAlive") {
     // 检查是否还有待处理的喝水通知
     if (activeNotificationIds.size > 0) {
@@ -409,13 +436,13 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
   if (alarm.name === "badgeRefresh") {
     logInfo("[角标] 周期刷新");
-    updateBadge();
+    await updateBadge();
     return;
   }
 
   if (alarm.name === "dailyBadgeReset") {
     logInfo("[角标] 跨日清零");
-    updateBadge();
+    await updateBadge();
     return;
   }
 
@@ -716,6 +743,14 @@ function createBadgeRefreshAlarm() {
 
 scheduleDailyBadgeReset();
 createBadgeRefreshAlarm();
+
+// 切标签 / 标签加载完成 / 窗口获得焦点时刷新角标色，
+// 兜底 SW 休眠或系统待机后角标色回退默认蓝（无需新增 tabs 权限）。
+chrome.tabs.onActivated.addListener(() => updateBadge());
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status === 'complete') updateBadge();
+});
+chrome.windows.onFocusChanged.addListener(() => updateBadge());
 
 // SW 每次唤醒（首次安装/浏览器启动/alarm 或 storage 唤醒）顶层代码重新执行，
 // 主动重写角标色，修复"过一段时间角标自己变蓝回退默认色"的问题。
