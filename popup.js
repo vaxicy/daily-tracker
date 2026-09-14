@@ -264,25 +264,31 @@ function renderTrend(canvasId, items, opts) {
   const avg = total / data.length;
   const baseY = padTop + plotH;
 
-  // 均值虚线
+  // 均值虚线（数据点太少时均值无意义，不画）
+  const showAvg = data.length >= 3;
   const avgY = baseY - (avg / max) * plotH;
-  ctx.save();
-  ctx.setLineDash([3, 3]);
-  ctx.strokeStyle = muted;
-  ctx.globalAlpha = 0.55;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(padL, avgY + 0.5);
-  ctx.lineTo(padL + plotW, avgY + 0.5);
-  ctx.stroke();
-  ctx.restore();
+  if (showAvg) {
+    ctx.save();
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = muted;
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padL, avgY + 0.5);
+    ctx.lineTo(padL + plotW, avgY + 0.5);
+    ctx.stroke();
+    ctx.restore();
+  }
 
   // 柱子：今日实色，其余半透明；0 值画小圆点
+  // 柱宽设上限并整体居中，避免数据点很少时（如月初）一根柱子撑满整行
   const n = data.length;
   const gap = n > 14 ? 1 : 2;
-  const barW = Math.max(2, (plotW - (n - 1) * gap) / n);
+  const barW = Math.min(18, Math.max(2, (plotW - (n - 1) * gap) / n));
+  const groupW = n * barW + (n - 1) * gap;
+  const offset = Math.max(0, (plotW - groupW) / 2);
   data.forEach((d, i) => {
-    const x = padL + i * (barW + gap);
+    const x = padL + offset + i * (barW + gap);
     const isToday = i === n - 1;
     if (d.count === 0) {
       ctx.save();
@@ -310,7 +316,8 @@ function renderTrend(canvasId, items, opts) {
   ctx.textAlign = "left";
   ctx.fillText(opts.rangeLabel || "", padL, 1);
   ctx.textAlign = "right";
-  ctx.fillText(t("trendAvg") + " " + avg.toFixed(1) + "  ·  " + t("trendPeak") + " " + max, cssW - padR, 1);
+  const metaText = (showAvg ? t("trendAvg") + " " + avg.toFixed(1) + "  ·  " : "") + t("trendPeak") + " " + max;
+  ctx.fillText(metaText, cssW - padR, 1);
   ctx.textBaseline = "bottom";
   ctx.textAlign = "left";
   ctx.fillText(formatMonthDay(data[0].date), padL, cssH);
@@ -318,7 +325,7 @@ function renderTrend(canvasId, items, opts) {
   ctx.fillText(formatMonthDay(data[n - 1].date), cssW - padR, cssH);
 
   canvas._trendItems = data;
-  canvas._trendGeom = { padL: padL, barW: barW, gap: gap, n: n };
+  canvas._trendGeom = { padL: padL, barW: barW, gap: gap, n: n, offset: offset };
 }
 
 function showTrendTooltip(clientX, clientY, text) {
@@ -346,7 +353,7 @@ function bindTrendTooltips() {
       if (!items || !geom) return;
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
-      let idx = Math.floor((x - geom.padL) / (geom.barW + geom.gap));
+      let idx = Math.floor((x - geom.padL - geom.offset) / (geom.barW + geom.gap));
       idx = Math.max(0, Math.min(items.length - 1, idx));
       const d = items[idx];
       showTrendTooltip(e.clientX, e.clientY, formatDateDisplay(d.date) + " · " + d.count + " " + t("times"));
@@ -362,10 +369,7 @@ let _lastTrendLang = null;
 document.addEventListener("i18nApplied", () => {
   if (_lastTrendLang === currentLang) return;
   _lastTrendLang = currentLang;
-  renderEatStats();
   updateDrinkStats();
-  updatePoopStats();
-  updatePeeStats();
 });
 
 function escapeHtml(str) {
@@ -403,10 +407,7 @@ let isSwitching = false;
 
 // 页面可见后重绘该页趋势图（隐藏页量到的宽度为 0，会导致图表缩放失真）
 function refreshTabTrend(tab) {
-  if (tab === "eat") renderEatStats();
-  else if (tab === "drink") updateDrinkStats();
-  else if (tab === "poop") updatePoopStats();
-  else if (tab === "pee") updatePeeStats();
+  if (tab === "drink") updateDrinkStats();
 }
 
 function switchTab(tab, force = false) {
@@ -1057,10 +1058,9 @@ function renderEatStats() {
     let ratingCount = 0;
     const typeDist = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
     let streak = 0;
-    let range;
 
     if (eatStatsMode === "week") {
-      range = getWeekRange();
+      const range = getWeekRange();
       const cur = new Date(range.start);
       const end = new Date(range.end);
       while (cur <= end) {
@@ -1075,7 +1075,7 @@ function renderEatStats() {
       }
       document.getElementById("eatStatsLabel").textContent = t('eatWeek');
     } else {
-      range = getMonthRange();
+      const range = getMonthRange();
       const cur = new Date(range.start);
       const end = new Date(range.end);
       while (cur <= end) {
@@ -1125,10 +1125,6 @@ function renderEatStats() {
       }
       detailEl.innerHTML = (row1 ? `<div class="eat-stats-row">${row1}</div>` : "") + (row2 ? `<div class="eat-stats-row">${row2}</div>` : "");
     }
-    // 范围由卡片上方的「本周/本月」切换表达，图内不再重复标注
-    renderTrend("eatTrendCanvas", buildTrendData(records, range.start, range.end), {
-      color: getComputedStyle(document.body).getPropertyValue('--eat').trim(),
-    });
   });
 }
 
@@ -3446,10 +3442,9 @@ function updatePoopStats() {
     let softCount = 0;
     let totalWithBristol = 0;
     const today = getToday();
-    let range;
 
     if (poopStatsMode === "week") {
-      range = getWeekRange();
+      const range = getWeekRange();
       const cur = new Date(range.start);
       const end = new Date(range.end);
       while (cur <= end) {
@@ -3472,7 +3467,7 @@ function updatePoopStats() {
       }
       poopStatsLabel.textContent = t('weekTotal');
     } else {
-      range = getMonthRange();
+      const range = getMonthRange();
       const cur = new Date(range.start);
       const end = new Date(range.end);
       while (cur <= end) {
@@ -3529,9 +3524,6 @@ function updatePoopStats() {
         html += `<span class="stats-detail-item">${t('consecutiveIdeal', { n: streak }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
       }
       detailEl.innerHTML = html;
-      renderTrend("poopTrendCanvas", buildTrendData(records, range.start, range.end), {
-        color: getComputedStyle(document.body).getPropertyValue('--poop').trim(),
-      });
     }
   });
 }
@@ -4227,10 +4219,9 @@ function updatePeeStats() {
     let count = 0;
     let dayCount = 0;
     const allTimestamps = [];
-    let range;
 
     if (peeStatsMode === "week") {
-      range = getWeekRange();
+      const range = getWeekRange();
       const cur = new Date(range.start);
       const end = new Date(range.end);
       while (cur <= end) {
@@ -4245,7 +4236,7 @@ function updatePeeStats() {
       }
       peeStatsLabel.textContent = t('weekTotal');
     } else {
-      range = getMonthRange();
+      const range = getMonthRange();
       const cur = new Date(range.start);
       const end = new Date(range.end);
       while (cur <= end) {
@@ -4282,9 +4273,6 @@ function updatePeeStats() {
     const minEl = document.getElementById("peeMinInterval");
     if (maxEl) maxEl.textContent = maxInterval;
     if (minEl) minEl.textContent = minInterval;
-    renderTrend("peeTrendCanvas", buildTrendData(records, range.start, range.end), {
-      color: getComputedStyle(document.body).getPropertyValue('--pee').trim(),
-    });
   });
 }
 
