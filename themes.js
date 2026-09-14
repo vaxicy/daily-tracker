@@ -1244,7 +1244,7 @@ export const THEME_PRESETS = {
       "--scrollbar-color": "#6EADBC",
       "--scrollbar-hover": "#9FCBAD",
       "--bg": "#F6FAE8",
-      "--badge": "#4A4466",
+      "--badge": "#3E7C8B",
       "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
       "--toast-text": "#ffffff"
     },

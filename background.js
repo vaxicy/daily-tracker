@@ -36,13 +36,29 @@ function actionSetBadgeTextColor(color) {
   });
 }
 
-// 1s 内去重，避免 onUpdated 等高频事件反复触发 storage 读 + 角标写
-let lastBadgeRun = 0;
-async function updateBadge() {
-  const now = Date.now();
-  if (now - lastBadgeRun < 1000) return;
-  lastBadgeRun = now;
+// ==================== 角标底色：缓存 + 立即上色 ====================
+// chrome.action 的外观修改会在浏览器重启后被清空，且异步读取期间存在空窗，
+// 因此把主题派生的角标色缓存进 storage，SW 每次唤醒先立即上色。
+const BADGE_COLOR_CACHE_KEY = 'badgeColorCache';
+function badgeTextColorFor(theme) {
+  return theme === 'greenplum' ? '#450C3F' : '#ffffff';
+}
+function applyBadgeColor(theme, color) {
+  if (!color) return;
+  chrome.action.setBadgeBackgroundColor({ color });
+  if (chrome.action.setBadgeTextColor) {
+    chrome.action.setBadgeTextColor({ color: badgeTextColorFor(theme || 'default') });
+  }
+}
 
+// SW 唤醒：先读缓存立即上色（早于统计逻辑，避免闪现默认色）
+chrome.storage.local.get([BADGE_COLOR_CACHE_KEY, 'selectedTheme'], (data) => {
+  const c = data && data[BADGE_COLOR_CACHE_KEY];
+  const theme = (data && data.selectedTheme) || 'default';
+  applyBadgeColor(theme, (c && c.color) || THEME_BADGE_COLOR[theme] || '#0b6bff');
+});
+
+async function updateBadge() {
   const data = await storageGet(
     ['drinkRecords', 'poopRecords', 'peeRecords', 'mealRecords', 'selectedTheme', 'badgeEnabled', 'badgeContentType']
   );
@@ -57,6 +73,8 @@ async function updateBadge() {
   // 派生表已覆盖 themes.js 所有主题；themeColor 永不 undefined
   const themeColor = THEME_BADGE_COLOR[theme] || '#0b6bff';
   logInfo('[角标] updateBadge 计算结果', { theme, themeColor, badgeType });
+  // 缓存当前主题角标色，供 SW 冷启动/浏览器重启后立即恢复
+  chrome.storage.local.set({ [BADGE_COLOR_CACHE_KEY]: { theme, color: themeColor } });
   await actionSetIcon({ '16': 'icon16.png', '48': 'icon48.png', '128': 'icon128.png' });
 
   // 解析 badgeType: "drink_today" -> ["drink", "today"]
@@ -101,7 +119,7 @@ async function updateBadge() {
   }
 
   const txt = count > 99 ? '99+' : String(count);
-  const badgeTextColor = theme === 'greenplum' ? '#450C3F' : '#ffffff';
+  const badgeTextColor = badgeTextColorFor(theme);
   await actionSetBadgeText(txt);
   await actionSetBadgeBackgroundColor(themeColor);
   await actionSetBadgeTextColor(badgeTextColor);
@@ -212,6 +230,11 @@ chrome.storage.onChanged.addListener((changes, area) => {
     if (changes.badgeEnabled) which.push(`badgeEnabled=${changes.badgeEnabled.newValue}`);
     if (changes.badgeContentType) which.push(`badgeContentType=${changes.badgeContentType.newValue}`);
     logInfo("[角标] 配置变更，刷新角标", { which: which.join(",") });
+    // 主题一变先同步上色，不等异步读取，避免回退默认色
+    if (changes.selectedTheme) {
+      const t = changes.selectedTheme.newValue || 'default';
+      applyBadgeColor(t, THEME_BADGE_COLOR[t] || '#0b6bff');
+    }
     updateBadge();
   }
 });
@@ -750,7 +773,13 @@ chrome.tabs.onActivated.addListener(() => updateBadge());
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status === 'complete') updateBadge();
 });
+chrome.tabs.onHighlighted.addListener(() => updateBadge());
+chrome.tabs.onCreated.addListener(() => updateBadge());
+chrome.tabs.onRemoved.addListener(() => updateBadge());
 chrome.windows.onFocusChanged.addListener(() => updateBadge());
+chrome.windows.onCreated.addListener(() => updateBadge());
+chrome.windows.onRemoved.addListener(() => updateBadge());
+chrome.runtime.onConnect.addListener(() => updateBadge());
 
 // SW 每次唤醒（首次安装/浏览器启动/alarm 或 storage 唤醒）顶层代码重新执行，
 // 主动重写角标色，修复"过一段时间角标自己变蓝回退默认色"的问题。

@@ -2290,11 +2290,14 @@ function updateBadge() {
       }
 
       var txt = count > 99 ? "99+" : String(count);
+      var badgeTextColor = (theme === "greenplum") ? "#450C3F" : "#ffffff";
       chrome.action.setBadgeText({ text: txt });
       chrome.action.setBadgeBackgroundColor({ color: themeColor });
       if (chrome.action.setBadgeTextColor) {
-        chrome.action.setBadgeTextColor({ color: "#ffffff" });
+        chrome.action.setBadgeTextColor({ color: badgeTextColor });
       }
+      // 缓存当前主题角标色，供后台 SW 冷启动/浏览器重启后立即恢复
+      chrome.storage.local.set({ badgeColorCache: { theme: theme, color: themeColor } });
     }
   );
 }
