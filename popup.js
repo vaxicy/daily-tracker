@@ -180,46 +180,193 @@ function formatDateDisplay(dateStr) {
   return t("dateDisplay", { y, m: parseInt(m), d: parseInt(d) });
 }
 
-// ==================== 趋势 mini 图（sparkline）====================
-function getDailyCounts(records, start, end) {
-  const counts = [];
+// ==================== 趋势 mini 图（trend chart）====================
+// 构建「start → 今天」的每日计数；未来日期不参与绘制，避免出现 0 值假尾巴
+function buildTrendData(records, start, end) {
+  const items = [];
+  const todayStr = getToday();
   const cur = new Date(start);
   const stop = new Date(end);
   while (cur <= stop) {
     const ds = formatDate(cur);
-    counts.push((records[ds] || []).length);
+    items.push({ date: ds, count: (records[ds] || []).length });
+    if (ds >= todayStr) break;
     cur.setDate(cur.getDate() + 1);
   }
-  return counts;
+  return items;
 }
 
-function renderSparkline(canvasId, dailyCounts, colorVar) {
+function roundRectPath(ctx, x, y, w, h, r) {
+  const radius = Math.max(0, Math.min(r, w / 2, h / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function formatMonthDay(dateStr) {
+  const parts = String(dateStr).split("-");
+  if (parts.length < 3) return dateStr;
+  return parseInt(parts[1], 10) + "/" + parseInt(parts[2], 10);
+}
+
+const TREND_FONT = '10px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+
+// items: [{ date: "YYYY-MM-DD", count: Number }]
+// opts:  { color, rangeLabel }
+function renderTrend(canvasId, items, opts) {
+  opts = opts || {};
   const canvas = document.getElementById(canvasId);
   if (!canvas || !canvas.getContext) return;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
-  const cssW = rect.width || 300;
-  const cssH = rect.height || 48;
-  canvas.width = Math.max(1, Math.floor(cssW * dpr));
-  canvas.height = Math.max(1, Math.floor(cssH * dpr));
-  ctx.scale(dpr, dpr);
+  const cssW = Math.max(80, Math.round(rect.width) || 300);
+  const cssH = Math.max(48, Math.round(rect.height) || 64);
+  canvas.width = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, cssH);
 
-  const len = dailyCounts.length;
-  if (len === 0) return;
-  const max = Math.max(...dailyCounts, 1);
-  const gap = 2;
-  const barW = Math.max(3, (cssW - (len - 1) * gap) / len);
-  const color = colorVar || getComputedStyle(document.body).getPropertyValue('--primary').trim() || '#0b6bff';
-  dailyCounts.forEach((c, i) => {
-    const barH = (c / max) * (cssH - 8);
-    const x = i * (barW + gap);
-    const y = cssH - barH - 4;
+  const styles = getComputedStyle(document.body);
+  const color = (opts.color || styles.getPropertyValue("--primary")).trim() || "#0b6bff";
+  const muted = styles.getPropertyValue("--muted").trim() || "#9aa4b2";
+
+  const data = Array.isArray(items) ? items : [];
+  const total = data.reduce((a, b) => a + b.count, 0);
+
+  // 空数据占位
+  if (data.length === 0 || total === 0) {
+    ctx.fillStyle = muted;
+    ctx.font = TREND_FONT;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(t("trendNoData"), cssW / 2, cssH / 2 + 4);
+    canvas._trendItems = null;
+    canvas._trendGeom = null;
+    return;
+  }
+
+  const padL = 2;
+  const padR = 2;
+  const padTop = 14;
+  const padBottom = 12;
+  const plotW = Math.max(10, cssW - padL - padR);
+  const plotH = Math.max(10, cssH - padTop - padBottom);
+  const max = Math.max(...data.map(d => d.count));
+  const avg = total / data.length;
+  const baseY = padTop + plotH;
+
+  // 均值虚线
+  const avgY = baseY - (avg / max) * plotH;
+  ctx.save();
+  ctx.setLineDash([3, 3]);
+  ctx.strokeStyle = muted;
+  ctx.globalAlpha = 0.55;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, avgY + 0.5);
+  ctx.lineTo(padL + plotW, avgY + 0.5);
+  ctx.stroke();
+  ctx.restore();
+
+  // 柱子：今日实色，其余半透明；0 值画小圆点
+  const n = data.length;
+  const gap = n > 14 ? 1 : 2;
+  const barW = Math.max(2, (plotW - (n - 1) * gap) / n);
+  data.forEach((d, i) => {
+    const x = padL + i * (barW + gap);
+    const isToday = i === n - 1;
+    if (d.count === 0) {
+      ctx.save();
+      ctx.globalAlpha = 0.4;
+      ctx.fillStyle = muted;
+      ctx.beginPath();
+      ctx.arc(x + barW / 2, baseY - 1.5, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
+    const h = Math.max(2, (d.count / max) * plotH);
+    ctx.save();
+    ctx.globalAlpha = isToday ? 1 : 0.5;
     ctx.fillStyle = color;
-    ctx.fillRect(x, y, barW, Math.max(2, barH));
+    roundRectPath(ctx, x, baseY - h, barW, h, 3);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // 标注：左上范围、右上 均/峰、底部首尾日期
+  ctx.font = TREND_FONT;
+  ctx.fillStyle = muted;
+  ctx.textBaseline = "top";
+  ctx.textAlign = "left";
+  ctx.fillText(opts.rangeLabel || "", padL, 1);
+  ctx.textAlign = "right";
+  ctx.fillText(t("trendAvg") + " " + avg.toFixed(1) + "  ·  " + t("trendPeak") + " " + max, cssW - padR, 1);
+  ctx.textBaseline = "bottom";
+  ctx.textAlign = "left";
+  ctx.fillText(formatMonthDay(data[0].date), padL, cssH);
+  ctx.textAlign = "right";
+  ctx.fillText(formatMonthDay(data[n - 1].date), cssW - padR, cssH);
+
+  canvas._trendItems = data;
+  canvas._trendGeom = { padL: padL, barW: barW, gap: gap, n: n };
+}
+
+function showTrendTooltip(clientX, clientY, text) {
+  const tip = getCustomTooltip();
+  if (!tip) return;
+  clearTimeout(customTooltipTimer);
+  tip.textContent = text;
+  tip.classList.add("show");
+  tip.style.visibility = "hidden";
+  const rect = tip.getBoundingClientRect();
+  let left = clientX - rect.width / 2;
+  let top = clientY - rect.height - 10;
+  left = Math.max(8, Math.min(left, window.innerWidth - rect.width - 8));
+  if (top < 8) top = clientY + 14;
+  tip.style.left = left + "px";
+  tip.style.top = top + "px";
+  tip.style.visibility = "";
+}
+
+function bindTrendTooltips() {
+  document.querySelectorAll(".trend-canvas").forEach((canvas) => {
+    canvas.addEventListener("mousemove", (e) => {
+      const items = canvas._trendItems;
+      const geom = canvas._trendGeom;
+      if (!items || !geom) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      let idx = Math.floor((x - geom.padL) / (geom.barW + geom.gap));
+      idx = Math.max(0, Math.min(items.length - 1, idx));
+      const d = items[idx];
+      showTrendTooltip(e.clientX, e.clientY, formatDateDisplay(d.date) + " · " + d.count + " " + t("times"));
+    });
+    canvas.addEventListener("mouseleave", hideCustomTooltip);
   });
 }
+
+bindTrendTooltips();
+
+// 语言变化后用新语言重绘图表标注（只在语言真正变化时执行一次）
+let _lastTrendLang = null;
+document.addEventListener("i18nApplied", () => {
+  if (_lastTrendLang === currentLang) return;
+  _lastTrendLang = currentLang;
+  renderEatStats();
+  updateDrinkStats();
+  updatePoopStats();
+  updatePeeStats();
+});
 
 function escapeHtml(str) {
   if (!str) return "";
@@ -253,6 +400,14 @@ let currentTab = "eat";
 
 let isFirstTabSwitch = true;
 let isSwitching = false;
+
+// 页面可见后重绘该页趋势图（隐藏页量到的宽度为 0，会导致图表缩放失真）
+function refreshTabTrend(tab) {
+  if (tab === "eat") renderEatStats();
+  else if (tab === "drink") updateDrinkStats();
+  else if (tab === "poop") updatePoopStats();
+  else if (tab === "pee") updatePeeStats();
+}
 
 function switchTab(tab, force = false) {
   if (!force && !isFirstTabSwitch && tab === currentTab) return;
@@ -300,6 +455,8 @@ function switchTab(tab, force = false) {
         newPage.style.transition = "opacity 0.2s ease, transform 0.2s ease";
         newPage.style.opacity = "1";
         newPage.style.transform = "translateX(0)";
+        // 页面真正可见后重绘趋势图，保证 canvas 量到真实宽度
+        refreshTabTrend(tab);
         // 动画完成后重置标志
         setTimeout(() => { isSwitching = false; }, 200);
       });
@@ -968,7 +1125,10 @@ function renderEatStats() {
       }
       detailEl.innerHTML = (row1 ? `<div class="eat-stats-row">${row1}</div>` : "") + (row2 ? `<div class="eat-stats-row">${row2}</div>` : "");
     }
-    renderSparkline("eatTrendCanvas", getDailyCounts(records, range.start, range.end), getComputedStyle(document.body).getPropertyValue('--eat').trim());
+    // 范围由卡片上方的「本周/本月」切换表达，图内不再重复标注
+    renderTrend("eatTrendCanvas", buildTrendData(records, range.start, range.end), {
+      color: getComputedStyle(document.body).getPropertyValue('--eat').trim(),
+    });
   });
 }
 
@@ -1898,7 +2058,11 @@ function updateDrinkStats() {
       todayEl.addEventListener("click", openDrinkCounter);
     }
 
-    renderSparkline("drinkTrendCanvas", getDailyCounts(records, mRange.start, mRange.end), getComputedStyle(document.body).getPropertyValue('--primary').trim());
+    // 喝水卡片没有周/月切换，用「本月」标注（与下方「本月」累计一致）
+    renderTrend("drinkTrendCanvas", buildTrendData(records, mRange.start, mRange.end), {
+      color: getComputedStyle(document.body).getPropertyValue('--primary').trim(),
+      rangeLabel: t("month"),
+    });
   });
 }
 
@@ -3365,7 +3529,9 @@ function updatePoopStats() {
         html += `<span class="stats-detail-item">${t('consecutiveIdeal', { n: streak }).replace(/\d+/, '<span class="detail-val">$&</span>')}</span>`;
       }
       detailEl.innerHTML = html;
-      renderSparkline("poopTrendCanvas", getDailyCounts(records, range.start, range.end), getComputedStyle(document.body).getPropertyValue('--poop').trim());
+      renderTrend("poopTrendCanvas", buildTrendData(records, range.start, range.end), {
+        color: getComputedStyle(document.body).getPropertyValue('--poop').trim(),
+      });
     }
   });
 }
@@ -4116,7 +4282,9 @@ function updatePeeStats() {
     const minEl = document.getElementById("peeMinInterval");
     if (maxEl) maxEl.textContent = maxInterval;
     if (minEl) minEl.textContent = minInterval;
-    renderSparkline("peeTrendCanvas", getDailyCounts(records, range.start, range.end), getComputedStyle(document.body).getPropertyValue('--pee').trim());
+    renderTrend("peeTrendCanvas", buildTrendData(records, range.start, range.end), {
+      color: getComputedStyle(document.body).getPropertyValue('--pee').trim(),
+    });
   });
 }
 
@@ -6473,10 +6641,6 @@ function renderPeriodBarChart() {
   });
 
   container.innerHTML = html;
-
-  // 周期持续天数趋势 mini 图（最近 6 个已完成周期）
-  const periodValues = sorted.map(d => d.duration);
-  renderSparkline("periodTrendCanvas", periodValues, getComputedStyle(document.body).getPropertyValue('--period').trim());
 }
 
 // 渲染周期记录时间轴
