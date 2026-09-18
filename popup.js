@@ -4632,7 +4632,7 @@ function updatePrimaryTrigger() {
   const rec = customThemes[currentThemeId];
   if (rec) {
     if (sw) sw.style.background = rec.dot;
-    if (cur) cur.textContent = t("customThemeTitle");
+    if (cur) cur.textContent = t("customThemeMode");
     return;
   }
   const preset = THEME_PRESETS[currentThemeId] || THEME_PRESETS[currentPresetId] || THEME_PRESETS.default;
@@ -4653,7 +4653,7 @@ function renderThemeOptions() {
   modeDot.className = "theme-dot theme-dot-rainbow";
   const modeLabel = document.createElement("span");
   modeLabel.className = "theme-label";
-  modeLabel.textContent = t("customThemeTitle");
+  modeLabel.textContent = t("customThemeMode");
   modeItem.append(modeDot, modeLabel);
   modeItem.addEventListener("click", activateCustomMode);
   menu.appendChild(modeItem);
@@ -4793,7 +4793,7 @@ function updateCustomTriggerUI() {
   } else {
     dd.classList.add("empty");
     sw.style.background = "transparent";
-    cur.textContent = t("customThemeTitle");
+    cur.textContent = t("customThemeMode");
   }
 }
 
