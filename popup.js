@@ -4578,8 +4578,12 @@ function themeBadgeColor(themeId) {
 const root = document.documentElement;
 const bodyEl = document.body;
 let currentThemeId = "default";
+// 预设下拉里「自定义主题」模式选项的标识（不是真实主题 id）
+const CUSTOM_MODE_ID = "__custom__";
 // 预设下拉始终显示"上次用过的预设"，方便自定义主题和预设之间来回切
 let currentPresetId = "default";
+// 上次使用的自定义主题，切回「自定义主题」模式时优先恢复它
+let selectedCustomThemeId = null;
 let editingThemeId = null;
 let editingBase = "light";
 
@@ -4621,20 +4625,44 @@ function applyThemeObject(preset, dataTheme) {
   bodyEl.style.background = preset.bgGradient;
 }
 
-// 预设下拉 trigger（显示上次使用的预设）
-function renderPresetTrigger(presetId) {
-  const preset = THEME_PRESETS[presetId] || THEME_PRESETS.default;
+// 第一个下拉的 trigger：处于自定义模式时显示「自定义主题」，避免显示预设名造成迷惑
+function updatePrimaryTrigger() {
   const sw = document.getElementById("themeSwatch");
-  if (sw) sw.style.background = preset.dot;
   const cur = document.getElementById("themeCurrent");
+  const rec = customThemes[currentThemeId];
+  if (rec) {
+    if (sw) sw.style.background = rec.dot;
+    if (cur) cur.textContent = t("customThemeTitle");
+    return;
+  }
+  const preset = THEME_PRESETS[currentThemeId] || THEME_PRESETS[currentPresetId] || THEME_PRESETS.default;
+  if (sw) sw.style.background = preset.dot;
   if (cur) cur.textContent = t(preset.name);
 }
 
-// 动态渲染预设主题下拉选项（新增主题无需改 HTML）
+// 第一个下拉：首项是「自定义主题」模式开关，选中它才会出现第二个「我的主题」下拉
 function renderThemeOptions() {
   const menu = document.getElementById("themeMenu");
   if (!menu) return;
   menu.innerHTML = "";
+
+  const modeItem = document.createElement("div");
+  modeItem.className = "theme-item theme-item-mode";
+  modeItem.dataset.theme = CUSTOM_MODE_ID;
+  const modeDot = document.createElement("span");
+  modeDot.className = "theme-dot theme-dot-rainbow";
+  const modeLabel = document.createElement("span");
+  modeLabel.className = "theme-label";
+  modeLabel.textContent = t("customThemeTitle");
+  modeItem.append(modeDot, modeLabel);
+  modeItem.addEventListener("click", activateCustomMode);
+  menu.appendChild(modeItem);
+
+  const divider = document.createElement("div");
+  divider.className = "theme-divider";
+  divider.style.margin = "4px 0";
+  menu.appendChild(divider);
+
   Object.entries(THEME_PRESETS).forEach(([id, p]) => {
     const item = document.createElement("div");
     item.className = "theme-item" + (id === currentThemeId ? " active" : "");
@@ -4643,6 +4671,38 @@ function renderThemeOptions() {
     item.querySelector(".theme-label").textContent = t(p.name);
     item.addEventListener("click", () => selectTheme(id));
     menu.appendChild(item);
+  });
+  updateThemeModeUI();
+}
+
+// 选中「自定义主题」模式：恢复上次用过的自定义主题；一个都没有则直接进编辑器
+function activateCustomMode() {
+  closeThemeDropdown();
+  const ids = Object.keys(customThemes).sort(
+    (a, b) => (customThemes[a].createdAt || 0) - (customThemes[b].createdAt || 0)
+  );
+  const pick = customThemes[selectedCustomThemeId] ? selectedCustomThemeId : (ids[0] || null);
+  if (pick) {
+    selectTheme(pick);
+  } else {
+    openCustomThemeEditor(null);
+  }
+}
+
+// 同步模式态：非自定义模式时隐藏「我的主题」下拉，并刷新两边的选中高亮
+function updateThemeModeUI() {
+  const isCustom = !!customThemes[currentThemeId];
+  const dd = document.getElementById("customThemeDropdown");
+  if (dd) dd.classList.toggle("collapsed", !isCustom);
+  document.querySelectorAll("#themeMenu .theme-item").forEach((it) => {
+    if (it.classList.contains("theme-item-mode")) {
+      it.classList.toggle("active", isCustom);
+    } else {
+      it.classList.toggle("active", !isCustom && it.dataset.theme === currentThemeId);
+    }
+  });
+  document.querySelectorAll("#customThemeMenu .theme-item[data-theme]").forEach((it) => {
+    it.classList.toggle("active", it.dataset.theme === currentThemeId);
   });
 }
 
@@ -4716,6 +4776,7 @@ function renderCustomOptions() {
   menu.appendChild(add);
 
   updateCustomTriggerUI();
+  updateThemeModeUI();
 }
 
 // 「我的主题」trigger：选中自定义主题才显示色块，否则虚线空态
@@ -4743,7 +4804,12 @@ function selectTheme(themeId) {
   applyTheme(themeId);
   closeThemeDropdown();
   const payload = { selectedTheme: themeId };
-  if (!preset.custom) payload.selectedPresetTheme = themeId;
+  if (preset.custom) {
+    selectedCustomThemeId = themeId;
+    payload.selectedCustomTheme = themeId;
+  } else {
+    payload.selectedPresetTheme = themeId;
+  }
   chrome.storage.local.set(payload, () => {
     showToast(t("toastThemeSwitched", { theme: themeLabel(themeId) }));
   });
@@ -4769,12 +4835,9 @@ function applyTheme(themeId) {
   // 预设 trigger 固定显示"上次用过的预设"，避免被自定义主题改写后无从切回
   if (!preset.custom) currentPresetId = themeId;
   if (!THEME_PRESETS[currentPresetId]) currentPresetId = "default";
-  renderPresetTrigger(currentPresetId);
+  updatePrimaryTrigger();
   updateCustomTriggerUI();
-
-  document.querySelectorAll(".theme-item").forEach((it) => {
-    it.classList.toggle("active", it.dataset.theme === themeId);
-  });
+  updateThemeModeUI();
 }
 
 // ==================== 自定义主题编辑器 ====================
@@ -4858,9 +4921,10 @@ function saveCustomTheme() {
     const modal = document.getElementById("customThemeModal");
     if (modal) modal.classList.add("hidden");
     editingThemeId = null;
+    selectedCustomThemeId = id;
     applyTheme(id);
     renderCustomOptions();
-    chrome.storage.local.set({ selectedTheme: id }, () => {
+    chrome.storage.local.set({ selectedTheme: id, selectedCustomTheme: id }, () => {
       showToast(t("customThemeSaved"));
       updateBadge();
     });
@@ -4870,6 +4934,10 @@ function saveCustomTheme() {
 function deleteCustomTheme(themeId) {
   showConfirm(t("customThemeDeleteConfirm"), () => {
     delete customThemes[themeId];
+    if (selectedCustomThemeId === themeId) {
+      selectedCustomThemeId = null;
+      chrome.storage.local.set({ selectedCustomTheme: null });
+    }
     chrome.storage.local.set({ customThemes }, () => {
       if (currentThemeId === themeId) {
         const fallback = THEME_PRESETS[currentPresetId] ? currentPresetId : "default";
@@ -4885,9 +4953,12 @@ function deleteCustomTheme(themeId) {
 }
 
 function loadTheme() {
-  chrome.storage.local.get(["selectedTheme", "selectedPresetTheme", "customThemes"], (data) => {
+  chrome.storage.local.get(
+    ["selectedTheme", "selectedPresetTheme", "selectedCustomTheme", "customThemes"],
+    (data) => {
     customThemes = normalizeCustomThemes(data.customThemes);
     currentPresetId = THEME_PRESETS[data.selectedPresetTheme] ? data.selectedPresetTheme : "default";
+    selectedCustomThemeId = data.selectedCustomTheme || null;
 
     let themeId = data.selectedTheme || "default";
     // 已删除的主题（旧的暗色主题、被删掉的自定义主题）回退到默认，并写回存储

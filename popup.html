@@ -6859,7 +6859,7 @@
       </div>
 
       <!-- 我的主题：与 38 个预设分开，避免在长列表里翻找 -->
-      <div class="theme-dropdown" id="customThemeDropdown">
+      <div class="theme-dropdown collapsed" id="customThemeDropdown">
         <button type="button" class="theme-trigger" id="customThemeTrigger" data-i18n-title="customThemeTitle">
           <span class="theme-swatch" id="customThemeSwatch"></span>
           <span class="theme-current" id="customThemeCurrent">自定义主题</span>
@@ -7207,13 +7207,18 @@
   </div>
     <!-- 自定义主题：下拉附加样式 + 编辑器弹窗 -->
   <style>
-    /* 「我的主题」下拉：与预设下拉同一节，空态用虚线提示可创建 */
+    /* 「我的主题」下拉：只有第一个下拉选中「自定义主题」时才出现 */
     #customThemeDropdown { margin-top: 8px; }
+    #customThemeDropdown.collapsed { display: none; }
     #customThemeDropdown.empty .theme-trigger { border-style: dashed; }
     #customThemeDropdown.empty .theme-swatch {
       background: transparent;
       box-shadow: none;
       border: 1px dashed var(--muted, #6b7280);
+    }
+    /* 第一个下拉里的「自定义主题」模式项：彩虹色点，和预设区分开 */
+    .theme-dot-rainbow {
+      background: conic-gradient(from 210deg, #FF8FB7, #FFD79A, #A8E6A1, #92EEFF, #A88BFF, #FF8FB7) !important;
     }
     .theme-act {
       flex-shrink: 0; width: 20px; height: 20px;
