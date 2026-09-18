@@ -1327,6 +1327,45 @@ export const THEME_PRESETS = {
       "--toast-text": "#ffffff"
     },
     bgGradient: "linear-gradient(150deg, #92EEFF 0%, #C4F7CA 55%, #D8FFC5 100%)"
+  },
+
+  seaglass: {
+    name: "themeSeaglassName",
+    dot: "linear-gradient(135deg,#CBF3BB,#ABE7B2,#93BFC7)",
+    vars: {
+      "--text": "#24413A",
+      "--muted": "rgba(36,65,58,0.6)",
+      "--primary": "#74C489",
+      "--primary2": "#ABE7B2",
+      "--primary-glow": "rgba(116,196,137,0.45)",
+      "--secondary": "#93BFC7",
+      "--secondary2": "#B8D8DE",
+      "--eat": "#74C489",
+      "--eat2": "#CBF3BB",
+      "--pee": "#93BFC7",
+      "--pee2": "#B8D8DE",
+      "--poop": "#8A6E4A",
+      "--poop2": "#6E5433",
+      "--period": "#E08FA6",
+      "--period2": "#F3BFCB",
+      "--period-glow": "rgba(224,143,166,0.42)",
+      "--card-bg": "#F7FBF4",
+      "--card-border": "rgba(116,196,137,0.16)",
+      "--input-bg": "rgba(255,255,255,0.75)",
+      "--modal-bg": "#F7FBF4",
+      "--tooltip-bg": "#F7FBF4",
+      "--sidebar-bg": "rgba(247,251,244,0.97)",
+      "--hover-bg": "rgba(116,196,137,0.08)",
+      "--day-hover": "rgba(116,196,137,0.12)",
+      "--day-today": "rgba(116,196,137,0.18)",
+      "--scrollbar-color": "#74C489",
+      "--scrollbar-hover": "#5BA877",
+      "--bg": "#ECF4E8",
+      "--badge": "#4E9464",
+      "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+      "--toast-text": "#ffffff"
+    },
+    bgGradient: "linear-gradient(150deg, #ECF4E8 0%, #CBF3BB 55%, #ABE7B2 100%)"
   }
 
 };
