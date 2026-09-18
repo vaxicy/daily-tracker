@@ -1,4 +1,9 @@
-import { THEME_PRESETS } from './themes.js';
+import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX } from './themes.js';
+
+// 用户自定义主题：{ "custom:xxx": { label, anchors, dot, vars, bgGradient, ... } }
+// 声明在模块顶部，避免早于主题系统初始化的调用（如 updateBadge）触发 TDZ 报错
+let customThemes = {};
+
 // ==================== 全局工具函数 ====================
 
 // 注意：Chrome Extension 使用 chrome.notifications API（由 manifest.json 声明）
@@ -2459,10 +2464,7 @@ function updateBadge() {
       var recordType = parts[0];
       var timeRange = parts[1];
       var theme = data.selectedTheme || "default";
-      var themeColor = (THEME_BADGE_COLOR[theme] || "#0b6bff");
-      if (!THEME_BADGE_COLOR[theme]) {
-        console.warn("[popup] 主题", theme, "无角标色（THEME_BADGE_COLOR 缺失），回退 #0b6bff。当前可用主题:", Object.keys(THEME_BADGE_COLOR));
-      }
+      var themeColor = themeBadgeColor(theme);
       console.log("[popup] updateBadge →", { theme, themeColor, badgeType, count });
       chrome.action.setIcon({ path: { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" } });
 
@@ -4557,18 +4559,78 @@ chrome.storage.onChanged.addListener((changes) => {
 });
 
 // ==================== 主题系统 ====================
-// 新增主题只需在此追加一项 + 在 i18n.js 补翻译，下拉框会自动渲染。
+// 预设主题：在 themes.js 的 THEME_PRESETS 追加 + 在 i18n.js 补翻译，下拉框自动渲染。
+// 自定义主题：存在 storage.local.customThemes，由 buildCustomTheme 从 3 个锚点色生成 31 个变量。
 
-// 角标色从 THEME_PRESETS 自动派生（消除双表维护，新增主题自动同步）
+// 预设主题角标色（从 THEME_PRESETS 自动派生，消除双表维护）
 const THEME_BADGE_COLOR = Object.fromEntries(
   Object.entries(THEME_PRESETS).map(([k, p]) => [k, p.vars && (p.vars["--badge"] || p.vars["--primary"]) || '#0b6bff'])
 );
 
+// 角标色统一解析：预设优先，其次自定义主题
+function themeBadgeColor(themeId) {
+  if (THEME_BADGE_COLOR[themeId]) return THEME_BADGE_COLOR[themeId];
+  const rec = customThemes[themeId];
+  if (rec && rec.vars && rec.vars["--badge"]) return rec.vars["--badge"];
+  return "#0b6bff";
+}
+
 const root = document.documentElement;
 const bodyEl = document.body;
 let currentThemeId = "default";
+// 预设下拉始终显示"上次用过的预设"，方便自定义主题和预设之间来回切
+let currentPresetId = "default";
+let editingThemeId = null;
+let editingBase = "light";
 
-// 动态渲染主题下拉选项（新增主题无需改 HTML）
+// 统一解析主题（预设 / 自定义）
+function resolveTheme(themeId) {
+  return getThemePreset(themeId, customThemes);
+}
+
+function themeLabel(themeId) {
+  return t(themeDisplayName(themeId, customThemes));
+}
+
+// 用当前生成器重算自定义主题，旧数据/手改数据也能正常渲染
+function normalizeCustomThemes(raw) {
+  const out = {};
+  if (!raw || typeof raw !== "object") return out;
+  Object.entries(raw).forEach(([id, rec]) => {
+    if (!rec || typeof rec !== "object" || !rec.anchors) return;
+    const built = buildCustomTheme(rec.anchors);
+    out[id] = {
+      label: String(rec.label || "").trim() || t("customThemeDefaultName"),
+      base: built.base,
+      anchors: built.anchors,
+      dot: built.dot,
+      vars: built.vars,
+      bgGradient: built.bgGradient,
+      createdAt: typeof rec.createdAt === "number" ? rec.createdAt : Date.now()
+    };
+  });
+  return out;
+}
+
+// 只写入 CSS 变量（不改动 currentThemeId），供应用主题与编辑器实时预览共用
+function applyThemeObject(preset, dataTheme) {
+  document.body.setAttribute("data-theme", dataTheme || "custom");
+  Object.entries(preset.vars).forEach(([k, v]) => {
+    root.style.setProperty(k, v);
+  });
+  bodyEl.style.background = preset.bgGradient;
+}
+
+// 预设下拉 trigger（显示上次使用的预设）
+function renderPresetTrigger(presetId) {
+  const preset = THEME_PRESETS[presetId] || THEME_PRESETS.default;
+  const sw = document.getElementById("themeSwatch");
+  if (sw) sw.style.background = preset.dot;
+  const cur = document.getElementById("themeCurrent");
+  if (cur) cur.textContent = t(preset.name);
+}
+
+// 动态渲染预设主题下拉选项（新增主题无需改 HTML）
 function renderThemeOptions() {
   const menu = document.getElementById("themeMenu");
   if (!menu) return;
@@ -4584,56 +4646,257 @@ function renderThemeOptions() {
   });
 }
 
-// 选择并应用主题
-function selectTheme(themeId) {
-  applyTheme(themeId);
-  closeThemeDropdown();
-  chrome.storage.local.set({ selectedTheme: themeId }, () => {
-    showToast(t("toastThemeSwitched", { theme: t(THEME_PRESETS[themeId].name) }));
+// 渲染「我的主题」下拉：自定义主题列表 + 新建入口
+function renderCustomOptions() {
+  const menu = document.getElementById("customThemeMenu");
+  if (!menu) return;
+  menu.innerHTML = "";
+  const ids = Object.keys(customThemes).sort(
+    (a, b) => (customThemes[a].createdAt || 0) - (customThemes[b].createdAt || 0)
+  );
+  if (!ids.length) {
+    const empty = document.createElement("div");
+    empty.className = "theme-item theme-item-empty";
+    empty.textContent = t("customThemeNone");
+    menu.appendChild(empty);
+  }
+  ids.forEach((id) => {
+    const rec = customThemes[id];
+    const item = document.createElement("div");
+    item.className = "theme-item" + (id === currentThemeId ? " active" : "");
+    item.dataset.theme = id;
+    const dot = document.createElement("span");
+    dot.className = "theme-dot";
+    dot.style.background = rec.dot;
+    const label = document.createElement("span");
+    label.className = "theme-label";
+    label.textContent = rec.label;
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "theme-act";
+    editBtn.dataset.act = "edit";
+    editBtn.title = t("customThemeEdit");
+    editBtn.textContent = "✎";
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "theme-act";
+    delBtn.dataset.act = "del";
+    delBtn.title = t("customThemeDelete");
+    delBtn.textContent = "✕";
+    item.append(dot, label, editBtn, delBtn);
+    item.addEventListener("click", (e) => {
+      if (e.target.closest("[data-act]")) return;
+      selectTheme(id);
+    });
+    item.querySelector('[data-act="edit"]').addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeThemeDropdown();
+      openCustomThemeEditor(id);
+    });
+    item.querySelector('[data-act="del"]').addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeThemeDropdown();
+      deleteCustomTheme(id);
+    });
+    menu.appendChild(item);
   });
+
+  const divider = document.createElement("div");
+  divider.className = "theme-divider";
+  menu.appendChild(divider);
+
+  const add = document.createElement("div");
+  add.className = "theme-item theme-item-add";
+  add.innerHTML = `<span class="theme-dot theme-dot-add">＋</span><span class="theme-label"></span>`;
+  add.querySelector(".theme-label").textContent = t("customThemeNew");
+  add.addEventListener("click", () => {
+    closeThemeDropdown();
+    openCustomThemeEditor(null);
+  });
+  menu.appendChild(add);
+
+  updateCustomTriggerUI();
 }
 
-// 关闭下拉菜单
+// 「我的主题」trigger：选中自定义主题才显示色块，否则虚线空态
+function updateCustomTriggerUI() {
+  const dd = document.getElementById("customThemeDropdown");
+  const sw = document.getElementById("customThemeSwatch");
+  const cur = document.getElementById("customThemeCurrent");
+  if (!dd || !sw || !cur) return;
+  const rec = customThemes[currentThemeId];
+  if (rec) {
+    dd.classList.remove("empty");
+    sw.style.background = rec.dot;
+    cur.textContent = rec.label;
+  } else {
+    dd.classList.add("empty");
+    sw.style.background = "transparent";
+    cur.textContent = t("customThemeTitle");
+  }
+}
+
+// 选择并应用主题
+function selectTheme(themeId) {
+  const preset = resolveTheme(themeId);
+  if (!preset) return;
+  applyTheme(themeId);
+  closeThemeDropdown();
+  const payload = { selectedTheme: themeId };
+  if (!preset.custom) payload.selectedPresetTheme = themeId;
+  chrome.storage.local.set(payload, () => {
+    showToast(t("toastThemeSwitched", { theme: themeLabel(themeId) }));
+  });
+  updateBadge();
+}
+
+// 关闭下拉菜单（两个下拉一起关）
 function closeThemeDropdown() {
-  const el = document.getElementById("themeDropdown");
-  if (el) el.classList.remove("open");
+  ["themeDropdown", "customThemeDropdown"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove("open");
+  });
 }
 
 function applyTheme(themeId) {
-  const preset = THEME_PRESETS[themeId];
+  const preset = resolveTheme(themeId);
   if (!preset) return;
   currentThemeId = themeId;
 
-  // 设置 data-theme 属性（用于 CSS 选择器）
-  document.body.setAttribute("data-theme", themeId);
+  // 深色自定义主题复用现成 dark 覆盖规则；浅色自定义主题走 custom（不套任何主题覆盖）
+  applyThemeObject(preset, preset.dataTheme || themeId);
 
-  // 应用 CSS 变量
-  Object.entries(preset.vars).forEach(([k, v]) => {
-    root.style.setProperty(k, v);
-  });
+  // 预设 trigger 固定显示"上次用过的预设"，避免被自定义主题改写后无从切回
+  if (!preset.custom) currentPresetId = themeId;
+  if (!THEME_PRESETS[currentPresetId]) currentPresetId = "default";
+  renderPresetTrigger(currentPresetId);
+  updateCustomTriggerUI();
 
-  // 背景渐变
-  bodyEl.style.background = preset.bgGradient;
-
-  // 更新触发按钮色块 + 当前主题名 + 下拉项选中态
-  const sw = document.getElementById("themeSwatch");
-  if (sw) sw.style.background = preset.dot;
-  const cur = document.getElementById("themeCurrent");
-  if (cur) cur.textContent = t(preset.name);
-  document.querySelectorAll(".theme-item").forEach(it => {
+  document.querySelectorAll(".theme-item").forEach((it) => {
     it.classList.toggle("active", it.dataset.theme === themeId);
   });
 }
 
+// ==================== 自定义主题编辑器 ====================
+
+function syncEditorBaseButtons() {
+  const l = document.getElementById("ctBaseLight");
+  const d = document.getElementById("ctBaseDark");
+  if (l) l.classList.toggle("active", editingBase === "light");
+  if (d) d.classList.toggle("active", editingBase === "dark");
+}
+
+function currentEditorAnchors() {
+  const nameEl = document.getElementById("ctName");
+  const p = document.getElementById("ctPrimary");
+  const s = document.getElementById("ctSecondary");
+  const g = document.getElementById("ctBg");
+  return {
+    primary: p ? p.value : "#0b6bff",
+    secondary: s ? s.value : "#8b5cf6",
+    bg: g ? g.value : "#eaf5ff",
+    base: editingBase,
+    name: nameEl ? nameEl.value : ""
+  };
+}
+
+// 实时预览：生成结果直接套到 popup 上，所见即所得
+function updateCustomThemePreview() {
+  const anchors = currentEditorAnchors();
+  const built = buildCustomTheme(anchors);
+  const dot = document.getElementById("ctPreviewDot");
+  if (dot) dot.style.background = built.dot;
+  const nm = document.getElementById("ctPreviewName");
+  if (nm) nm.textContent = String(anchors.name || "").trim() || t("customThemeDefaultName");
+  applyThemeObject(built, built.dataTheme);
+  return built;
+}
+
+function openCustomThemeEditor(themeId) {
+  const modal = document.getElementById("customThemeModal");
+  if (!modal) return;
+  editingThemeId = themeId || null;
+  const rec = themeId ? customThemes[themeId] : null;
+  const a = (rec && rec.anchors) || { primary: "#0b6bff", secondary: "#8b5cf6", bg: "#eaf5ff", base: "light" };
+  editingBase = a.base === "dark" ? "dark" : "light";
+  const nameEl = document.getElementById("ctName");
+  const p = document.getElementById("ctPrimary");
+  const s = document.getElementById("ctSecondary");
+  const g = document.getElementById("ctBg");
+  if (nameEl) nameEl.value = rec ? rec.label : t("customThemeDefaultName");
+  if (p) p.value = /^#[0-9a-fA-F]{6}$/.test(a.primary) ? a.primary : "#0b6bff";
+  if (s) s.value = /^#[0-9a-fA-F]{6}$/.test(a.secondary) ? a.secondary : "#8b5cf6";
+  if (g) g.value = /^#[0-9a-fA-F]{6}$/.test(a.bg) ? a.bg : "#eaf5ff";
+  syncEditorBaseButtons();
+  modal.classList.remove("hidden");
+  updateCustomThemePreview();
+}
+
+function closeCustomThemeEditor() {
+  const modal = document.getElementById("customThemeModal");
+  if (modal) modal.classList.add("hidden");
+  editingThemeId = null;
+  applyTheme(currentThemeId); // 丢弃预览，回到当前主题
+}
+
+function saveCustomTheme() {
+  const anchors = currentEditorAnchors();
+  const built = buildCustomTheme(anchors);
+  const label = String(anchors.name || "").trim() || t("customThemeDefaultName");
+  const id = editingThemeId || (CUSTOM_THEME_PREFIX + Date.now().toString(36));
+  const prev = customThemes[id];
+  customThemes[id] = {
+    label,
+    base: built.base,
+    anchors: built.anchors,
+    dot: built.dot,
+    vars: built.vars,
+    bgGradient: built.bgGradient,
+    createdAt: (prev && prev.createdAt) || Date.now()
+  };
+  chrome.storage.local.set({ customThemes }, () => {
+    const modal = document.getElementById("customThemeModal");
+    if (modal) modal.classList.add("hidden");
+    editingThemeId = null;
+    applyTheme(id);
+    renderCustomOptions();
+    chrome.storage.local.set({ selectedTheme: id }, () => {
+      showToast(t("customThemeSaved"));
+      updateBadge();
+    });
+  });
+}
+
+function deleteCustomTheme(themeId) {
+  showConfirm(t("customThemeDeleteConfirm"), () => {
+    delete customThemes[themeId];
+    chrome.storage.local.set({ customThemes }, () => {
+      if (currentThemeId === themeId) {
+        const fallback = THEME_PRESETS[currentPresetId] ? currentPresetId : "default";
+        applyTheme(fallback);
+        chrome.storage.local.set({ selectedTheme: fallback });
+      }
+      renderCustomOptions();
+      renderThemeOptions();
+      updateBadge();
+      showToast(t("customThemeDeleted"));
+    });
+  });
+}
+
 function loadTheme() {
-  chrome.storage.local.get(["selectedTheme"], (data) => {
+  chrome.storage.local.get(["selectedTheme", "selectedPresetTheme", "customThemes"], (data) => {
+    customThemes = normalizeCustomThemes(data.customThemes);
+    currentPresetId = THEME_PRESETS[data.selectedPresetTheme] ? data.selectedPresetTheme : "default";
+
     let themeId = data.selectedTheme || "default";
-    // 已删除的主题（如旧的暗色主题）自动回退到默认，并写回存储
-    if (!THEME_PRESETS[themeId]) {
+    // 已删除的主题（旧的暗色主题、被删掉的自定义主题）回退到默认，并写回存储
+    if (!resolveTheme(themeId)) {
       themeId = "default";
       chrome.storage.local.set({ selectedTheme: "default" });
     }
     renderThemeOptions();
+    renderCustomOptions();
     applyTheme(themeId);
   });
 }
@@ -4886,6 +5149,60 @@ if (themeTriggerEl && themeDropdownEl) {
     }
   });
 }
+
+// 绑定「我的主题」下拉（与预设下拉同一节，但列表独立，避免在 38 项里翻找）
+const customDropdownEl = document.getElementById("customThemeDropdown");
+const customTriggerEl = document.getElementById("customThemeTrigger");
+if (customTriggerEl && customDropdownEl) {
+  customTriggerEl.addEventListener("click", (e) => {
+    e.stopPropagation();
+    customDropdownEl.classList.toggle("open");
+  });
+  document.addEventListener("click", (e) => {
+    if (!customDropdownEl.contains(e.target)) {
+      customDropdownEl.classList.remove("open");
+    }
+  });
+}
+
+// 绑定自定义主题编辑器
+(function bindCustomThemeEditor() {
+  const modal = document.getElementById("customThemeModal");
+  if (!modal) return;
+  const nameEl = document.getElementById("ctName");
+  const primaryEl = document.getElementById("ctPrimary");
+  const secondaryEl = document.getElementById("ctSecondary");
+  const bgEl = document.getElementById("ctBg");
+  const closeBtn = document.getElementById("ctClose");
+  const cancelBtn = document.getElementById("ctCancel");
+  const saveBtn = document.getElementById("ctSave");
+  const lightBtn = document.getElementById("ctBaseLight");
+  const darkBtn = document.getElementById("ctBaseDark");
+
+  if (closeBtn) closeBtn.addEventListener("click", closeCustomThemeEditor);
+  if (cancelBtn) cancelBtn.addEventListener("click", closeCustomThemeEditor);
+  if (saveBtn) saveBtn.addEventListener("click", saveCustomTheme);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeCustomThemeEditor();
+  });
+  [nameEl, primaryEl, secondaryEl, bgEl].forEach((el) => {
+    if (el) el.addEventListener("input", updateCustomThemePreview);
+  });
+  if (lightBtn) {
+    lightBtn.addEventListener("click", () => {
+      editingBase = "light";
+      syncEditorBaseButtons();
+      updateCustomThemePreview();
+    });
+  }
+  if (darkBtn) {
+    darkBtn.addEventListener("click", () => {
+      editingBase = "dark";
+      syncEditorBaseButtons();
+      updateCustomThemePreview();
+    });
+  }
+})();
 
 
 
@@ -5200,6 +5517,7 @@ function selectLang(lang) {
   closeLangDropdown();
   // 刷新主题下拉选项文案（随语言切换）
   renderThemeOptions();
+  renderCustomOptions();
   applyTheme(currentThemeId);
   const langName = lang === "zh" ? t("langZh")
     : lang === "ja" ? t("langJa")

@@ -6858,6 +6858,16 @@
         <div class="theme-menu" id="themeMenu"></div>
       </div>
 
+      <!-- 我的主题：与 38 个预设分开，避免在长列表里翻找 -->
+      <div class="theme-dropdown" id="customThemeDropdown">
+        <button type="button" class="theme-trigger" id="customThemeTrigger" data-i18n-title="customThemeTitle">
+          <span class="theme-swatch" id="customThemeSwatch"></span>
+          <span class="theme-current" id="customThemeCurrent">＋ 自定义主题</span>
+          <svg class="theme-chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="theme-menu" id="customThemeMenu"></div>
+      </div>
+
       <!-- 分隔线 -->
       <div class="theme-divider"></div>
 
@@ -7195,6 +7205,128 @@
       </div>
     </div>
   </div>
+    <!-- 自定义主题：下拉附加样式 + 编辑器弹窗 -->
+  <style>
+    /* 「我的主题」下拉：与预设下拉同一节，空态用虚线提示可创建 */
+    #customThemeDropdown { margin-top: 8px; }
+    #customThemeDropdown.empty .theme-trigger { border-style: dashed; }
+    #customThemeDropdown.empty .theme-swatch {
+      background: transparent;
+      box-shadow: none;
+      border: 1px dashed var(--muted, #6b7280);
+    }
+    .theme-act {
+      flex-shrink: 0; width: 20px; height: 20px;
+      border: none; border-radius: 6px; background: transparent;
+      color: var(--muted); font-size: 11px; line-height: 1; cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .theme-act:hover {
+      background: color-mix(in srgb, var(--primary) 15%, transparent);
+      color: var(--primary);
+    }
+    .theme-item-add .theme-label { color: var(--primary); }
+    .theme-item-add .theme-dot-add {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+    }
+    .theme-item-empty { cursor: default; color: var(--muted); font-weight: 500; }
+
+    /* 编辑器（内边距沿用 .badge-modal-body） */
+    .ct-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; margin-bottom: 10px;
+      font-size: 12px; font-weight: 600; color: var(--text);
+    }
+    .ct-row input[type="text"] {
+      flex: 1; min-width: 0; padding: 6px 8px; font-size: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border, rgba(12,42,77,0.15));
+      background: var(--input-bg, rgba(255,255,255,0.8));
+      color: var(--text);
+    }
+    .ct-row input[type="text"]:focus { outline: none; border-color: var(--primary); }
+    .ct-row input[type="color"] {
+      width: 44px; height: 26px; padding: 0;
+      border: 1px solid var(--card-border, rgba(12,42,77,0.15));
+      border-radius: 6px; background: none; cursor: pointer;
+    }
+    .ct-seg { display: flex; gap: 6px; }
+    .ct-seg-btn {
+      padding: 5px 12px; font-size: 11px; font-weight: 600;
+      border-radius: 8px; cursor: pointer;
+      border: 1px solid var(--card-border, rgba(12,42,77,0.15));
+      background: transparent; color: var(--muted);
+      transition: all 0.15s ease;
+    }
+    .ct-seg-btn.active {
+      background: color-mix(in srgb, var(--primary) 15%, transparent);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .ct-preview {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; border-radius: 10px; margin: 12px 0 8px;
+      background: var(--card-bg, #fff);
+      border: 2px solid var(--card-border, rgba(12,42,77,0.1));
+    }
+    .ct-preview-dot { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; }
+    .ct-preview-name {
+      flex: 1; font-size: 12px; font-weight: 600; color: var(--text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .ct-preview-btn {
+      padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: 600;
+      color: #fff; background: linear-gradient(135deg, var(--primary), var(--primary2));
+    }
+    .ct-tip { font-size: 10px; color: var(--muted); line-height: 1.4; }
+    .ct-btns { margin-top: 12px; }
+  </style>
+  <div class="badge-modal-overlay hidden" id="customThemeModal">
+    <div class="badge-modal">
+      <div class="badge-modal-header">
+        <span class="badge-modal-title" data-i18n="customThemeTitle">自定义主题</span>
+        <button class="badge-modal-close" id="ctClose">✕</button>
+      </div>
+      <div class="badge-modal-body ct-body">
+        <label class="ct-row">
+          <span data-i18n="customThemeName">名称</span>
+          <input type="text" id="ctName" maxlength="12" data-i18n-placeholder="customThemeNamePlaceholder" />
+        </label>
+        <label class="ct-row">
+          <span data-i18n="customThemePrimary">主色</span>
+          <input type="color" id="ctPrimary" value="#0b6bff" />
+        </label>
+        <label class="ct-row">
+          <span data-i18n="customThemeSecondary">副色</span>
+          <input type="color" id="ctSecondary" value="#8b5cf6" />
+        </label>
+        <label class="ct-row">
+          <span data-i18n="customThemeBg">背景色</span>
+          <input type="color" id="ctBg" value="#eaf5ff" />
+        </label>
+        <div class="ct-row">
+          <span data-i18n="customThemeBase">明暗</span>
+          <div class="ct-seg">
+            <button type="button" class="ct-seg-btn active" id="ctBaseLight" data-i18n="customThemeBaseLight">浅色</button>
+            <button type="button" class="ct-seg-btn" id="ctBaseDark" data-i18n="customThemeBaseDark">深色</button>
+          </div>
+        </div>
+        <div class="ct-preview">
+          <span class="ct-preview-dot" id="ctPreviewDot"></span>
+          <span class="ct-preview-name" id="ctPreviewName"></span>
+          <span class="ct-preview-btn" data-i18n="customThemePreview">预览</span>
+        </div>
+        <div class="ct-tip" data-i18n="customThemeTip">选 3 个颜色即可，其余自动生成</div>
+        <div class="inline-confirm-btns ct-btns">
+          <button class="inline-confirm-btn cancel" id="ctCancel" data-i18n="cancel">取消</button>
+          <button class="inline-confirm-btn confirm" id="ctSave" data-i18n="save">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
     <!-- 内联确认弹窗（替代浏览器 confirm） -->
   <div class="inline-confirm-overlay" id="inlineConfirm">
     <div class="inline-confirm-box">

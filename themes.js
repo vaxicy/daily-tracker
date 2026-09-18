@@ -1408,3 +1408,138 @@ export const THEME_PRESETS = {
   }
 
 };
+
+// ==================== 自定义主题支持 ====================
+// 设计：用户只选 3 个锚点色（主色/副色/背景）+ 明暗，其余 30 个变量由本模块推导。
+// 这样用户永远搭不出「白字按钮看不清」「角标糊在背景里」的破主题。
+
+export const CUSTOM_THEME_PREFIX = "custom:";
+
+function clamp01(v) {
+  return Math.min(1, Math.max(0, v));
+}
+
+function hexToRgb(hex) {
+  let h = String(hex || "").trim().replace("#", "");
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  if (h.length !== 6 || /[^0-9a-fA-F]/.test(h)) return { r: 0, g: 0, b: 0 };
+  const n = parseInt(h, 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function rgbToHex(r, g, b) {
+  const f = (v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, "0");
+  return `#${f(r)}${f(g)}${f(b)}`;
+}
+
+// 按比例把 a 混向 b（ratio=0 → a，ratio=1 → b）
+export function mixHex(a, b, ratio) {
+  const A = hexToRgb(a);
+  const B = hexToRgb(b);
+  const t = clamp01(ratio);
+  return rgbToHex(A.r + (B.r - A.r) * t, A.g + (B.g - A.g) * t, A.b + (B.b - A.b) * t);
+}
+
+export function shadeHex(hex, ratio) {
+  return mixHex(hex, "#000000", ratio);
+}
+
+export function tintHex(hex, ratio) {
+  return mixHex(hex, "#ffffff", ratio);
+}
+
+export function hexWithAlpha(hex, alpha) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// WCAG 相对亮度判断（用于角标文字自动取黑/白）
+export function isLightColor(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  const lin = (v) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  return L > 0.62;
+}
+
+// 由 3 个锚点色生成完整主题（31 个 CSS 变量 + dot + bgGradient）
+export function buildCustomTheme(anchors = {}) {
+  const p = /^#[0-9a-fA-F]{6}$/.test(String(anchors.primary || "")) ? anchors.primary : "#0b6bff";
+  const s = /^#[0-9a-fA-F]{6}$/.test(String(anchors.secondary || "")) ? anchors.secondary : tintHex(p, 0.3);
+  const g = /^#[0-9a-fA-F]{6}$/.test(String(anchors.bg || "")) ? anchors.bg : tintHex(p, 0.88);
+  const dark = anchors.base === "dark";
+
+  const text = dark ? tintHex(p, 0.86) : shadeHex(p, 0.68);
+  const primary2 = tintHex(p, 0.45);
+  const secondary2 = tintHex(s, 0.4);
+  const cardBg = dark ? tintHex(mixHex(g, p, 0.08), 0.06) : tintHex(g, 0.6);
+  const period = mixHex("#E0679E", p, 0.2);
+  // 角标：先按主色加深，若仍偏亮再加深一档，保证浅色底可读
+  let badge = shadeHex(p, 0.22);
+  if (isLightColor(badge)) badge = shadeHex(p, 0.4);
+
+  const vars = {
+    "--text": text,
+    "--muted": hexWithAlpha(text, 0.6),
+    "--primary": p,
+    "--primary2": primary2,
+    "--primary-glow": hexWithAlpha(p, 0.45),
+    "--secondary": s,
+    "--secondary2": secondary2,
+    "--eat": p,
+    "--eat2": primary2,
+    "--pee": s,
+    "--pee2": secondary2,
+    "--poop": dark ? tintHex("#8A6E4A", 0.15) : "#8A6E4A",
+    "--poop2": dark ? tintHex("#6E5433", 0.15) : "#6E5433",
+    "--period": period,
+    "--period2": tintHex(period, 0.45),
+    "--period-glow": hexWithAlpha(period, 0.42),
+    "--card-bg": cardBg,
+    "--card-border": hexWithAlpha(p, 0.16),
+    "--input-bg": dark ? "rgba(0,0,0,0.25)" : "rgba(255,255,255,0.75)",
+    "--modal-bg": cardBg,
+    "--tooltip-bg": cardBg,
+    "--sidebar-bg": hexWithAlpha(cardBg, 0.97),
+    "--hover-bg": dark ? "rgba(255,255,255,0.08)" : hexWithAlpha(p, 0.08),
+    "--day-hover": dark ? "rgba(255,255,255,0.12)" : hexWithAlpha(p, 0.12),
+    "--day-today": hexWithAlpha(p, dark ? 0.34 : 0.18),
+    "--scrollbar-color": p,
+    "--scrollbar-hover": shadeHex(p, 0.15),
+    "--bg": g,
+    "--badge": badge,
+    "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
+    "--toast-text": "#ffffff"
+  };
+
+  return {
+    custom: true,
+    // 深色自定义主题复用现成的 dark 覆盖规则，浅色主题不套任何主题覆盖
+    dataTheme: dark ? "dark" : "custom",
+    base: dark ? "dark" : "light",
+    anchors: { primary: p, secondary: s, bg: g, base: dark ? "dark" : "light" },
+    vars,
+    dot: `linear-gradient(135deg,${p},${primary2},${s})`,
+    bgGradient: dark
+      ? `linear-gradient(150deg, ${shadeHex(g, 0.3)} 0%, ${g} 55%, ${mixHex(g, p, 0.14)} 100%)`
+      : `linear-gradient(150deg, ${tintHex(g, 0.6)} 0%, ${g} 55%, ${mixHex(g, p, 0.18)} 100%)`
+  };
+}
+
+// 统一解析：自定义主题优先，其次预设；都找不到返回 null
+export function getThemePreset(id, customThemes) {
+  if (customThemes && Object.prototype.hasOwnProperty.call(customThemes, id)) {
+    return customThemes[id];
+  }
+  return THEME_PRESETS[id] || null;
+}
+
+// 显示名：预设走 i18n key，自定义直接用用户起的名字
+export function themeDisplayName(id, customThemes) {
+  const rec = customThemes && customThemes[id];
+  if (rec && rec.label) return rec.label;
+  const preset = THEME_PRESETS[id];
+  return preset ? preset.name : id;
+}
