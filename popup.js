@@ -5629,6 +5629,11 @@ function refreshDynamicI18n() {
   if (typeof updatePeeTodayStatus === "function") updatePeeTodayStatus();
   if (typeof updateDrinkCounterDisplay === "function") updateDrinkCounterDisplay();
   if (typeof updateDrinkUI === "function") updateDrinkUI();
+  // 主题下拉是动态渲染的（元素上没有 data-i18n），语言变化时需要重渲染
+  if (typeof renderThemeOptions === "function") renderThemeOptions();
+  if (typeof renderCustomOptions === "function") renderCustomOptions();
+  if (typeof updatePrimaryTrigger === "function") updatePrimaryTrigger();
+  if (typeof updateCustomTriggerUI === "function") updateCustomTriggerUI();
   // 喝水页 timer/notif 状态文本（由 applyRunningUI/applyNotifUI 动态设置，不随 data-i18n 刷新）
   if (typeof isRunning !== "undefined" && typeof applyRunningUI === "function") applyRunningUI(isRunning);
   if (typeof notifToggle !== "undefined" && typeof applyNotifUI === "function") applyNotifUI(notifToggle.checked);
@@ -5661,6 +5666,9 @@ loadLanguage(() => {
   const lt = document.getElementById("langTriggerLabel");
   if (lt) lt.textContent = t("lang" + (currentLang === "zh" ? "Zh" : currentLang === "es" ? "Es" : currentLang === "ja" ? "Ja" : currentLang === "ko" ? "Ko" : currentLang === "fr" ? "Fr" : "En"));
   applyI18n();
+  // 动态渲染区域按已确定的语言重渲染一次：首次打开时它们可能与 loadTheme /
+  // loadDefaultTab 抢跑，导致非中文界面出现中文文案（主题名、默认首页等）
+  refreshDynamicI18n();
   // 重新应用动态状态文本，避免被 applyI18n 覆盖
   applyRunningUI(isRunning);
   applyNotifUI(notifToggle.checked);

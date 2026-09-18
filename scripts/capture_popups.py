@@ -22,6 +22,18 @@ MODULES = ["eat", "drink", "poop", "pee", "period"]
 LANGS = ["zh", "en"]
 
 
+def shoot(page, name):
+    """Screenshot the popup viewport; the mouse is parked first so hover
+    tooltips (e.g. the theme trigger's「主题风格」hint) don't leak into the shot."""
+    page.mouse.move(3, 3)
+    page.wait_for_timeout(320)
+    png = page.screenshot(clip={"x": 0, "y": 0, "width": W, "height": H})
+    out = os.path.join(OUT_DIR, name)
+    with open(out, "wb") as f:
+        f.write(png)
+    print("wrote", out)
+
+
 def main():
     ext_path = os.getcwd()  # project root = extension root
     user_data = tempfile.mkdtemp(prefix="dt_capture_profile_")
@@ -62,20 +74,23 @@ def main():
             for module in MODULES:
                 page.click(f"#nav{module.capitalize()}")
                 page.wait_for_timeout(500)  # page transition + theme transitions
-                png = page.screenshot(clip={"x": 0, "y": 0, "width": W, "height": H})
-                out = os.path.join(OUT_DIR, f"popup-{module}-{lang}.png")
-                with open(out, "wb") as f:
-                    f.write(png)
-                print("wrote", out)
+                shoot(page, f"popup-{module}-{lang}.png")
 
             # settings: open the sidebar
             page.click("#sidebarToggleBtn")
             page.wait_for_timeout(600)  # slide-in transition
-            png = page.screenshot(clip={"x": 0, "y": 0, "width": W, "height": H})
-            out = os.path.join(OUT_DIR, f"popup-settings-{lang}.png")
-            with open(out, "wb") as f:
-                f.write(png)
-            print("wrote", out)
+            shoot(page, f"popup-settings-{lang}.png")
+
+            # themes: sidebar scrolled to the theme section, with the theme list open
+            # (used by store screenshot 05-personalize)
+            page.evaluate(
+                "document.getElementById('themeDropdown').scrollIntoView({block:'start'})"
+            )
+            page.wait_for_timeout(300)
+            page.click("#themeTrigger")
+            page.wait_for_timeout(400)
+            shoot(page, f"popup-themes-{lang}.png")
+            page.evaluate("document.getElementById('themeDropdown').classList.remove('open')")
             page.click("#sidebarCloseBtn")
             page.wait_for_timeout(300)
 

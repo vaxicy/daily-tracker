@@ -123,9 +123,9 @@ ICONS = {"apps": icon_apps, "globe": icon_globe, "enter": icon_enter, "lock": ic
 CONTENT = {
     "zh": {
         "title": "个性化 & 隐私",
-        "subtitle": "30 款主题、六语界面、Enter 快捷、数据本地保存",
+        "subtitle": "30+ 款主题、六语界面、Enter 快捷、数据本地保存",
         "cards": [
-            ("多主题风格", "30 款主题一键切换", "apps"),
+            ("多主题风格", "30+ 款主题一键切换", "apps"),
             ("六语界面", "中 / 英 / 西 / 日 / 韩 / 法", "globe"),
             ("Enter 快捷打卡", "任一模块按 Enter 直接记录", "enter"),
             ("本地存储", "无感联网，隐私自己掌控", "lock"),
@@ -133,9 +133,9 @@ CONTENT = {
     },
     "en": {
         "title": "Personalize & Privacy",
-        "subtitle": "30 themes, six languages, Enter shortcut, all data stays local",
+        "subtitle": "30+ themes, six languages, Enter shortcut, all data stays local",
         "cards": [
-            ("Many Themes", "30 themes, one tap away", "apps"),
+            ("Many Themes", "30+ themes, one tap away", "apps"),
             ("Six Languages", "ZH / EN / ES / JA / KO / FR", "globe"),
             ("Enter Shortcut", "Log in any module with Enter", "enter"),
             ("Local Storage", "No internet, data stays local", "lock"),
@@ -163,7 +163,7 @@ def compose(lang):
     d.text((bx, by + 76), c["subtitle"], font=fs, fill=(225, 236, 255))
 
     # popup capture (real UI) on the left, rounded + shadow
-    cap_path = os.path.join(CAP_DIR, f"popup-drink-{lang}.png")
+    cap_path = os.path.join(CAP_DIR, f"popup-themes-{lang}.png")
     cap = Image.open(cap_path).convert("RGB")
     scale = POPUP_W / cap.width
     cap = cap.resize((POPUP_W, int(cap.height * scale)), Image.LANCZOS)

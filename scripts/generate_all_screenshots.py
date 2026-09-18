@@ -94,8 +94,8 @@ COPY = {
                       ("智能提醒", "经期、吃药、运动提醒", "bell")],
         },
         "05-personalize": {
-            "title": "个性化 & 隐私", "subtitle": "30 款主题、六语界面、Enter 快捷、数据本地保存",
-            "cards": [("多主题风格", "30 款主题一键切换", "apps"),
+            "title": "个性化 & 隐私", "subtitle": "30+ 款主题、六语界面、Enter 快捷、数据本地保存",
+            "cards": [("多主题风格", "30+ 款主题一键切换", "apps"),
                       ("六语界面", "中 / 英 / 西 / 日 / 韩 / 法", "globe"),
                       ("Enter 快捷打卡", "任一模块按 Enter 直接记录", "enter"),
                       ("本地存储", "无感联网，隐私自己掌控", "lock")],
@@ -131,8 +131,8 @@ COPY = {
                       ("Smart Reminders", "Period, meds, exercise reminders", "bell")],
         },
         "05-personalize": {
-            "title": "Personalize & Privacy", "subtitle": "30 themes, six languages, Enter shortcut, all data stays local",
-            "cards": [("Many Themes", "30 themes, one tap away", "apps"),
+            "title": "Personalize & Privacy", "subtitle": "30+ themes, six languages, Enter shortcut, all data stays local",
+            "cards": [("Many Themes", "30+ themes, one tap away", "apps"),
                       ("Six Languages", "ZH / EN / ES / JA / KO / FR", "globe"),
                       ("Enter Shortcut", "Log in any module with Enter", "enter"),
                       ("Local Storage", "No internet, data stays local", "lock")],
@@ -275,7 +275,8 @@ def compose(suffix, lang):
             paste_rounded(img, cap, (px, py))
         cx1, cx2, card_w = CARD_GEOM_DUAL
     else:
-        module = {"01-water": "drink", "02-diet": "eat", "04-period": "period", "05-personalize": "drink"}[suffix]
+        module = {"01-water": "drink", "02-diet": "eat", "04-period": "period",
+                  "05-personalize": "themes"}[suffix]
         px, py, pw = SINGLE_POPUP
         cap = Image.open(os.path.join(CAP_DIR, f"popup-{module}-{lang}.png")).convert("RGB")
         scale = pw / cap.width
