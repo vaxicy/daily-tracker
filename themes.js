@@ -1496,7 +1496,7 @@ function hslToRgb({ h, s, l }) {
   };
 }
 
-// 角标文字用的深色（浅色角标底上比纯黑柔和）
+// 角标文字用的深色（极浅角标底上比纯黑柔和）
 export const BADGE_DARK_TEXT = "#1F2937";
 
 // 与深色字的对比度
@@ -1504,27 +1504,17 @@ export function contrastWithDark(hex) {
   return (relativeLuminance(hex) + 0.05) / (relativeLuminance(BADGE_DARK_TEXT) + 0.05);
 }
 
-// 角标文字色：白字 / 深字 取对比更高的那个（浅色角标自动用深字）
+// 角标文字色：默认白字；只有浅到"白字基本看不见"（白字对比 < 1.4，约等于亮度 > 0.70）
+// 才换成深色字。参考：用户截图里的极浅色 1.04~1.24 用深字；粉色 #F9B2D7 是 1.70，仍用白字。
+const BADGE_DARK_TEXT_WHITE_CONTRAST_MAX = 1.4;
 export function badgeTextColorOn(bg) {
-  return contrastWithWhite(bg) >= contrastWithDark(bg) ? "#ffffff" : BADGE_DARK_TEXT;
+  return contrastWithWhite(bg) < BADGE_DARK_TEXT_WHITE_CONTRAST_MAX ? BADGE_DARK_TEXT : "#ffffff";
 }
 
-// 角标底色：默认【原样用主色】。文字色会自动在 白/深 之间取更清楚的那个，
-// 所以浅粉、浅蓝这类主色也能直接当角标底（不再被压暗成另一种艳色）。
-// 只有白字深字都不达标（中间调，如中灰）时，才保持色相+饱和度逐档压暗到白字达标。
+// 角标底色：永远【原样用主色】，一个色阶都不改（用户明确要求直接跟随主色）。
 export function badgeColorFor(primary) {
-  const rgb0 = hexToRgb(primary);
-  const hsl = rgbToHsl(rgb0);
-  let hex = rgbToHex(rgb0.r, rgb0.g, rgb0.b);
-  if (Math.max(contrastWithWhite(hex), contrastWithDark(hex)) >= 4.5) return hex; // 原样跟随主色
-  let l = hsl.l;
-  while (l > 0.2) {
-    l -= 0.02;
-    const rgb = hslToRgb({ h: hsl.h, s: hsl.s, l });
-    hex = rgbToHex(rgb.r, rgb.g, rgb.b);
-    if (contrastWithWhite(hex) >= 4.5) break;
-  }
-  return hex;
+  const { r, g, b } = hexToRgb(primary);
+  return rgbToHex(r, g, b);
 }
 
 // WCAG 相对亮度（用于角标文字取黑/白、角标底色压暗收敛）
