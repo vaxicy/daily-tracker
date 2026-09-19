@@ -1725,6 +1725,48 @@
         box-shadow: 0 0 0 2px color-mix(in srgb, var(--poop) 45%, transparent);
         transform: scale(1.12);
       }
+      /* 尿液颜色小圆点：选中态同样给光环（与大便颜色统一） */
+      .pee-color-btn-sm.active {
+        border-color: var(--pee);
+        border-width: 3px;
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--pee) 45%, transparent);
+      }
+      /* 编辑弹窗：标签与饱腹感按钮统一走 class（原来是散落各处的行内样式） */
+      .edit-tag-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 1px;
+        padding: 1px 5px;
+        border-radius: 6px;
+        border: 1px solid rgba(245, 158, 11, 0.15);
+        background: transparent;
+        color: var(--muted);
+        font-size: 9px;
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.15s ease;
+      }
+      .edit-tag-btn.active {
+        border-color: var(--eat);
+        background: rgba(245, 158, 11, 0.12);
+        color: var(--eat);
+      }
+      .edit-fullness-btn {
+        padding: 2px 5px;
+        border-radius: 10px;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        background: rgba(255, 255, 255, 0.8);
+        color: var(--text);
+        font-size: 9px;
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.15s ease;
+      }
+      .edit-fullness-btn.active {
+        background: var(--eat);
+        color: #fff;
+        border-color: var(--eat);
+      }
       /* 大便颜色显示区（已选颜色） */
       .poop-color-display {
         display: inline-flex;

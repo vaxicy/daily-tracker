@@ -1518,7 +1518,7 @@ function showEatEditModal(dateStr, dayRecords) {
           <span class="edit-rating-text" id="eatEditRatingText${idx}" style="font-size:9px;color:var(--eat);font-weight:600;min-width:24px;">${getRatingText(rec.rating)}</span>
           <input type="hidden" id="eatEditRating${idx}" value="${rec.rating || 0}" />
           <div class="edit-fullness-btns" id="eatEditFullnessBtns${idx}" style="display:flex;gap:2px;">
-            ${(t('fullnessLevels') || []).map((lvl, i) => `<button class="edit-fullness-btn ${(rec.fullness || 0) === i+1 ? 'active' : ''}" data-level="${i+1}" style="padding:2px 5px;border-radius:10px;border:1px solid rgba(245,158,11,0.2);background:rgba(255,255,255,0.8);color:var(--text);font-size:9px;cursor:pointer;user-select:none;">${lvl}</button>`).join('')}
+            ${(t('fullnessLevels') || []).map((lvl, i) => `<button class="edit-fullness-btn ${(rec.fullness || 0) === i+1 ? 'active' : ''}" data-level="${i+1}">${lvl}</button>`).join('')}
           </div>
           <input type="hidden" id="eatEditFullness${idx}" value="${rec.fullness || 0}" />
         </div>
@@ -1529,17 +1529,20 @@ function showEatEditModal(dateStr, dayRecords) {
               const allEmojis = (t('mealTagEmojis') || []);
               let tagHtml = allTags.map((tag, i) => {
                 const isActive = rec.tags && rec.tags.includes(tag);
-                return `<button class="edit-tag-btn ${isActive ? 'active' : ''}" data-tag="${tag}" style="display:inline-flex;align-items:center;gap:1px;padding:1px 5px;border-radius:6px;border:1px solid ${isActive ? 'var(--eat)' : 'rgba(245,158,11,0.15)'};background:${isActive ? 'rgba(245,158,11,0.12)' : 'transparent'};color:${isActive ? 'var(--eat)' : 'var(--muted)'};font-size:9px;cursor:pointer;user-select:none;">${allEmojis[i] || ''} ${tag}</button>`;
+                return `<button class="edit-tag-btn ${isActive ? 'active' : ''}" data-tag="${tag}">${allEmojis[i] || ''} ${tag}</button>`;
               }).join('');
               customMealTags.forEach((ct, ci) => {
                 const isActive = rec.tags && rec.tags.includes(ct.name);
-                tagHtml += `<button class="edit-tag-btn ${isActive ? 'active' : ''}" data-tag="${ct.name}" data-custom="1" style="display:inline-flex;align-items:center;gap:1px;padding:1px 5px;border-radius:6px;border:1px solid ${isActive ? 'var(--eat)' : 'rgba(245,158,11,0.15)'};background:${isActive ? 'rgba(245,158,11,0.12)' : 'transparent'};color:${isActive ? 'var(--eat)' : 'var(--muted)'};font-size:9px;cursor:pointer;user-select:none;">${ct.emoji} ${ct.name}</button>`;
+                tagHtml += `<button class="edit-tag-btn ${isActive ? 'active' : ''}" data-tag="${ct.name}" data-custom="1">${ct.emoji} ${ct.name}</button>`;
               });
               return tagHtml;
             })()}
           </div>
         </div>
-        <button class="edit-save-btn edit-save-btn-primary" data-action="save-eat" data-index="${idx}" style="margin-top:0;">💾 ${t('saveEdit')}</button>
+        <div style="display:flex;gap:8px;margin-top:0;">
+          <button class="edit-save-btn" data-action="cancel-eat" data-index="${idx}" style="flex:1;background:rgba(127,127,127,0.18);color:var(--text);box-shadow:none;">${t('cancel')}</button>
+          <button class="edit-save-btn edit-save-btn-primary" data-action="save-eat" data-index="${idx}" style="flex:2;">💾 ${t('saveEdit')}</button>
+        </div>
       </div>
     </div>
   `;
@@ -1577,7 +1580,7 @@ function showEatEditModal(dateStr, dayRecords) {
         <span class="edit-rating-text" id="eatAppendRatingText" style="font-size:9px;color:var(--eat);font-weight:600;min-width:24px;">${getRatingText(0)}</span>
         <input type="hidden" id="eatAppendRating" value="0" />
         <div class="edit-fullness-btns" id="eatAppendFullnessBtns" style="display:flex;gap:2px;">
-          ${(t('fullnessLevels') || []).map((lvl, i) => `<button class="edit-fullness-btn" data-level="${i+1}" style="padding:2px 5px;border-radius:10px;border:1px solid rgba(245,158,11,0.2);background:rgba(255,255,255,0.8);color:var(--text);font-size:9px;cursor:pointer;user-select:none;">${lvl}</button>`).join('')}
+          ${(t('fullnessLevels') || []).map((lvl, i) => `<button class="edit-fullness-btn" data-level="${i+1}">${lvl}</button>`).join('')}
         </div>
         <input type="hidden" id="eatAppendFullness" value="0" />
       </div>
@@ -1587,9 +1590,9 @@ function showEatEditModal(dateStr, dayRecords) {
           ${(() => {
             const allTags = (t('mealTags') || []);
             const allEmojis = (t('mealTagEmojis') || []);
-            let tagHtml = allTags.map((tag, i) => `<button class="edit-tag-btn" data-tag="${tag}" style="display:inline-flex;align-items:center;gap:1px;padding:1px 5px;border-radius:6px;border:1px solid rgba(245,158,11,0.15);background:transparent;color:var(--muted);font-size:9px;cursor:pointer;user-select:none;">${allEmojis[i] || ''} ${tag}</button>`).join('');
+            let tagHtml = allTags.map((tag, i) => `<button class="edit-tag-btn" data-tag="${tag}">${allEmojis[i] || ''} ${tag}</button>`).join('');
             customMealTags.forEach((ct) => {
-              tagHtml += `<button class="edit-tag-btn" data-tag="${ct.name}" data-custom="1" style="display:inline-flex;align-items:center;gap:1px;padding:1px 5px;border-radius:6px;border:1px solid rgba(245,158,11,0.15);background:transparent;color:var(--muted);font-size:9px;cursor:pointer;user-select:none;">${ct.emoji} ${ct.name}</button>`;
+              tagHtml += `<button class="edit-tag-btn" data-tag="${ct.name}" data-custom="1">${ct.emoji} ${ct.name}</button>`;
             });
             return tagHtml;
           })()}
@@ -1638,11 +1641,7 @@ function showEatEditModal(dateStr, dayRecords) {
           const newLevel = currentLevel === level ? 0 : level;
           document.getElementById("eatAppendFullness").value = newLevel;
           appendFullnessContainer.querySelectorAll(".edit-fullness-btn").forEach(b => {
-            const isActive = parseInt(b.dataset.level) === newLevel;
-            b.classList.toggle("active", isActive);
-            b.style.background = isActive ? 'var(--eat)' : 'rgba(255,255,255,0.8)';
-            b.style.color = isActive ? '#fff' : 'var(--text)';
-            b.style.borderColor = isActive ? 'var(--eat)' : 'rgba(245,158,11,0.2)';
+            b.classList.toggle("active", parseInt(b.dataset.level) === newLevel);
           });
         });
       });
@@ -1653,11 +1652,7 @@ function showEatEditModal(dateStr, dayRecords) {
       appendTagsContainer.dataset.bound = "1";
       appendTagsContainer.querySelectorAll(".edit-tag-btn").forEach(btn => {
         btn.addEventListener("click", () => {
-          const isActive = btn.classList.contains("active");
-          btn.classList.toggle("active", !isActive);
-          btn.style.background = !isActive ? 'rgba(245,158,11,0.12)' : 'transparent';
-          btn.style.color = !isActive ? 'var(--eat)' : 'var(--muted)';
-          btn.style.borderColor = !isActive ? 'var(--eat)' : 'rgba(245,158,11,0.15)';
+          btn.classList.toggle("active");
         });
       });
     }
@@ -1694,15 +1689,9 @@ function showEatEditModal(dateStr, dayRecords) {
         document.querySelectorAll("#eatAppendRatingStars .edit-fill").forEach(f => f.style.clipPath = "inset(0 100% 0 0)");
         document.querySelectorAll("#eatAppendFullnessBtns .edit-fullness-btn").forEach(b => {
           b.classList.remove("active");
-          b.style.background = 'rgba(255,255,255,0.8)';
-          b.style.color = 'var(--text)';
-          b.style.borderColor = 'rgba(245,158,11,0.2)';
         });
         document.querySelectorAll("#eatAppendTagsGrid .edit-tag-btn.active").forEach(b => {
           b.classList.remove("active");
-          b.style.background = 'transparent';
-          b.style.color = 'var(--muted)';
-          b.style.borderColor = 'rgba(245,158,11,0.15)';
         });
         renderEatCalendar();
         updateMealRecords();
@@ -3611,7 +3600,7 @@ function showPeeEditModal(dateStr, dayRecords) {
     // 渲染颜色选择器（补打卡表单）
     const peeColors = t("peeColors") || [];
     const colorBtns = peeColors.map((label, i) =>
-      `<button class="pee-color-btn-sm" data-color="${i+1}" data-tooltip="${label}" style="background:${PEE_COLOR_MAP[i] || '#eee'};border:2px solid rgba(0,0,0,0.15);"></button>`
+      `<button class="pee-color-btn-sm" data-color="${i+1}" data-tooltip="${label}" style="background:${PEE_COLOR_MAP[i] || '#eee'};"></button>`
     ).join("");
     // 渲染尿量选择器（补打卡表单）
     const peeAmounts = t("peeAmounts") || [];
@@ -3660,43 +3649,25 @@ function showPeeEditModal(dateStr, dayRecords) {
       });
     });
 
-    // 补打卡表单：颜色按钮点击事件
-    let addFormColor = 0;
-    editModalBody.querySelectorAll(".pee-color-btn-sm").forEach(btn => {
+    // 补打卡表单：颜色按钮（与拉屎模块同一实现：只切 class，选中样式交给 CSS）
+    const backfillColorBtns = editModalBody.querySelectorAll(".pee-color-btn-sm");
+    backfillColorBtns.forEach(btn => {
       btn.addEventListener("click", () => {
-        const color = parseInt(btn.dataset.color);
-        const label = btn.dataset.tooltip;
-        if (addFormColor === color) {
-          addFormColor = 0;
-          btn.classList.remove("active");
-          btn.style.border = "2px solid rgba(0,0,0,0.15)";
-          document.getElementById("peeAddColorLabel").textContent = "";
-        } else {
-          addFormColor = color;
-          editModalBody.querySelectorAll(".pee-color-btn-sm").forEach(b => {
-            b.classList.remove("active");
-            b.style.border = "2px solid rgba(0,0,0,0.15)";
-          });
-          btn.classList.add("active");
-          btn.style.border = "2px solid var(--pee)";
-          document.getElementById("peeAddColorLabel").textContent = label;
-        }
+        const wasActive = btn.classList.contains("active");
+        backfillColorBtns.forEach(b => b.classList.remove("active"));
+        if (!wasActive) btn.classList.add("active");
+        const labelEl = document.getElementById("peeAddColorLabel");
+        if (labelEl) labelEl.textContent = wasActive ? "" : (btn.dataset.tooltip || "");
       });
     });
 
     // 补打卡表单：尿量按钮点击事件
-    let addPeeAmount = 0;
-    editModalBody.querySelectorAll(".pee-amount-btn-sm").forEach(btn => {
+    const backfillAmountBtns = editModalBody.querySelectorAll(".pee-amount-btn-sm");
+    backfillAmountBtns.forEach(btn => {
       btn.addEventListener("click", () => {
-        const amount = parseInt(btn.dataset.amount);
-        if (addPeeAmount === amount) {
-          addPeeAmount = 0;
-          btn.classList.remove("active");
-        } else {
-          addPeeAmount = amount;
-          editModalBody.querySelectorAll(".pee-amount-btn-sm").forEach(b => b.classList.remove("active"));
-          btn.classList.add("active");
-        }
+        const wasActive = btn.classList.contains("active");
+        backfillAmountBtns.forEach(b => b.classList.remove("active"));
+        if (!wasActive) btn.classList.add("active");
       });
     });
     
@@ -3717,10 +3688,19 @@ function showPeeEditModal(dateStr, dayRecords) {
         recordTime = isToday ? new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" }) : t("makeUpCheckin");
       }
       
+      // 从表单读取尿量与颜色（与拉屎模块一致：以选中态为准，未选则不写入字段）
+      let addPeeAmount = 0;
+      backfillAmountBtns.forEach(btn => { if (btn.classList.contains("active")) addPeeAmount = parseInt(btn.dataset.amount); });
+      let addPeeColor = 0;
+      backfillColorBtns.forEach(btn => { if (btn.classList.contains("active")) addPeeColor = parseInt(btn.dataset.color); });
+
       chrome.storage.local.get(["peeRecords"], (data) => {
         const records = data.peeRecords || {};
         if (!records[dateStr]) records[dateStr] = [];
-        records[dateStr].push({ time: recordTime, remark, amount: addPeeAmount, color: addFormColor, timestamp: Date.now(), isBackfill: !isToday });
+        const newRec = { time: recordTime, remark, timestamp: Date.now(), isBackfill: !isToday };
+        if (addPeeAmount > 0) newRec.amount = addPeeAmount;
+        if (addPeeColor > 0) newRec.color = addPeeColor;
+        records[dateStr].push(newRec);
         persistRecords('peeRecords', records, () => {
           showToast(isToday ? "💧 " + t('checkinSuccess') : "💧 " + t('makeUpCheckinSuccess'));
           renderPeeCalendar();
@@ -3760,7 +3740,7 @@ function showPeeEditModal(dateStr, dayRecords) {
       const colorNum = i + 1;
       const isActive = rec.color === colorNum;
       const bgColor = PEE_COLOR_MAP[i] || '#eee';
-      return `<button class="pee-color-btn-sm ${isActive ? 'active' : ''}" data-idx="${idx}" data-color="${colorNum}" data-tooltip="${label}" style="background:${bgColor};border:2px solid ${isActive ? 'var(--pee)' : 'rgba(0,0,0,0.15)'};"></button>`;
+      return `<button class="pee-color-btn-sm ${isActive ? 'active' : ''}" data-idx="${idx}" data-color="${colorNum}" data-tooltip="${label}" style="background:${bgColor};"></button>`;
     }).join("");
     const colorLabel = rec.color ? peeColors[rec.color - 1] || "" : "";
 
@@ -3788,7 +3768,10 @@ function showPeeEditModal(dateStr, dayRecords) {
       </div>
       <div class="edit-input-row" id="peeEditForm${idx}" style="display:none;">
         <input class="edit-input" type="text" id="peeEditContent${idx}" value="${rec.remark || ""}" placeholder="${t('editRemarkPlaceholder')}" />
-        <button class="edit-save-btn" data-action="save-pee" data-index="${idx}">${t('saveEdit')}</button>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button class="edit-save-btn" data-action="cancel-pee" data-index="${idx}" style="flex:1;background:rgba(127,127,127,0.18);color:var(--text);box-shadow:none;">${t('cancel')}</button>
+          <button class="edit-save-btn" data-action="save-pee" data-index="${idx}" style="flex:2;">${t('saveEdit')}</button>
+        </div>
       </div>
     </div>
   `;
@@ -3804,13 +3787,13 @@ function showPeeEditModal(dateStr, dayRecords) {
         </label>
         <input type="time" class="edit-input" id="peeAppendTime" value="${new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" })}" style="width:110px;font-size:12px;padding:6px 8px;" />
       </div>
-      <div class="edit-input-row" style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <div class="pee-amount-selector-add" style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('peeAmountLabel')}</span>
-        ${peeAmounts.map((label, i) => `<button class="pee-amount-btn-sm" data-add-amount="${i+1}">${label}</button>`).join('')}
+        ${peeAmounts.map((label, i) => `<button class="pee-amount-btn-sm" data-amount="${i+1}">${label}</button>`).join('')}
       </div>
-      <div class="edit-input-row" style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div class="pee-color-picker-add" style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <span style="font-size:11px;color:var(--muted);">${t('peeColorLabel')}:</span>
-        ${peeColors.map((label, i) => `<button class="pee-color-btn-sm" data-add-color="${i+1}" data-tooltip="${label}" style="background:${PEE_COLOR_MAP[i] || '#eee'};"></button>`).join('')}
+        ${peeColors.map((label, i) => `<button class="pee-color-btn-sm" data-color="${i+1}" data-tooltip="${label}" style="background:${PEE_COLOR_MAP[i] || '#eee'};"></button>`).join('')}
         <span id="peeAppendColorLabel" style="font-size:11px;color:var(--pee);font-weight:600;"></span>
       </div>
       <div class="edit-input-row" style="margin-top:8px;">
@@ -3823,36 +3806,43 @@ function showPeeEditModal(dateStr, dayRecords) {
   (function bindPeeAppend() {
     const appendBtn = document.getElementById("peeAppendBtn");
     if (!appendBtn) return;
-    editModalBody.querySelectorAll(".pee-amount-btn-sm[data-add-amount]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const amount = parseInt(btn.dataset.addAmount);
-        const active = btn.classList.contains("active");
-        editModalBody.querySelectorAll(".pee-amount-btn-sm[data-add-amount]").forEach(b => b.classList.remove("active"));
-        if (!active) btn.classList.add("active");
+    // 追加区块：作用域限定在自己的容器里（与拉屎模块一致）
+    const appendAmountBtns = editModalBody.querySelectorAll(".pee-amount-selector-add .pee-amount-btn-sm");
+    const appendColorBtns = editModalBody.querySelectorAll(".pee-color-picker-add .pee-color-btn-sm");
+    const bindToggle = (btns) => {
+      btns.forEach(btn => {
+        btn.addEventListener("click", () => {
+          const wasActive = btn.classList.contains("active");
+          btns.forEach(b => b.classList.remove("active"));
+          if (!wasActive) btn.classList.add("active");
+        });
       });
-    });
-    editModalBody.querySelectorAll(".pee-color-btn-sm[data-add-color]").forEach(btn => {
+    };
+    bindToggle(appendAmountBtns);
+    appendColorBtns.forEach(btn => {
       btn.addEventListener("click", () => {
-        const color = parseInt(btn.dataset.addColor);
-        const label = btn.dataset.tooltip;
-        const active = btn.classList.contains("active");
-        editModalBody.querySelectorAll(".pee-color-btn-sm[data-add-color]").forEach(b => b.classList.remove("active"));
-        if (!active) { btn.classList.add("active"); document.getElementById("peeAppendColorLabel").textContent = label; }
-        else document.getElementById("peeAppendColorLabel").textContent = "";
+        const wasActive = btn.classList.contains("active");
+        appendColorBtns.forEach(b => b.classList.remove("active"));
+        if (!wasActive) btn.classList.add("active");
+        const labelEl = document.getElementById("peeAppendColorLabel");
+        if (labelEl) labelEl.textContent = wasActive ? "" : (btn.dataset.tooltip || "");
       });
     });
     appendBtn.addEventListener("click", () => {
       let addAmount = 0;
-      editModalBody.querySelectorAll(".pee-amount-btn-sm[data-add-amount]").forEach(btn => { if (btn.classList.contains("active")) addAmount = parseInt(btn.dataset.addAmount); });
+      appendAmountBtns.forEach(btn => { if (btn.classList.contains("active")) addAmount = parseInt(btn.dataset.amount); });
       let addColor = 0;
-      editModalBody.querySelectorAll(".pee-color-btn-sm[data-add-color]").forEach(btn => { if (btn.classList.contains("active")) addColor = parseInt(btn.dataset.addColor); });
+      appendColorBtns.forEach(btn => { if (btn.classList.contains("active")) addColor = parseInt(btn.dataset.color); });
       const remark = document.getElementById("peeAppendRemark").value.trim();
       const timeVal = document.getElementById("peeAppendTime").value;
       const recordTime = timeVal ? (() => { const [h, m] = timeVal.split(":"); return `${h.padStart(2,"0")}:${m.padStart(2,"0")}`; })() : new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
       chrome.storage.local.get(["peeRecords"], (data) => {
         const records = data.peeRecords || {};
         if (!records[dateStr]) records[dateStr] = [];
-        records[dateStr].push({ time: recordTime, remark, amount: addAmount, color: addColor, timestamp: Date.now(), isBackfill: !isToday });
+        const newRec = { time: recordTime, remark, timestamp: Date.now(), isBackfill: !isToday };
+        if (addAmount > 0) newRec.amount = addAmount;
+        if (addColor > 0) newRec.color = addColor;
+        records[dateStr].push(newRec);
         persistRecords('peeRecords', records, () => {
           showToast(isToday ? "💧 " + t('checkinSuccess') : "💧 " + t('makeUpCheckinSuccess'));
           renderPeeCalendar();
@@ -3866,47 +3856,37 @@ function showPeeEditModal(dateStr, dayRecords) {
     });
   })();
 
-  // 尿量按钮点击事件（事件委托）
-  editModalBody.querySelectorAll(".pee-amount-btn-sm").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const idx = Number(btn.dataset.idx);
-      const amount = Number(btn.dataset.amount);
-      chrome.storage.local.get(["peeRecords"], (data) => {
-        const records = data.peeRecords || {};
-        if (records[currentEditDate] && records[currentEditDate][idx]) {
-          const cur = records[currentEditDate][idx].amount;
-          records[currentEditDate][idx].amount = (cur === amount) ? null : amount;
-          persistRecords('peeRecords', records, () => {
-            chrome.storage.local.get(["peeRecords"], (d) => {
-              if (d.peeRecords && d.peeRecords[currentEditDate]) {
-                showPeeEditModal(currentEditDate, d.peeRecords[currentEditDate]);
-              }
-            });
-          });
-        }
+  // 单条记录内的尿量 / 颜色：就地保存 + 只切 class（不再整弹窗重渲染，
+  // 否则会清空用户正在填写的「追加记录」表单）
+  function togglePeeRecordField(btn, field, value, container) {
+    const idx = Number(btn.dataset.idx);
+    const wasActive = btn.classList.contains("active");
+    if (container) container.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+    if (!wasActive) btn.classList.add("active");
+    chrome.storage.local.get(["peeRecords"], (data) => {
+      const records = data.peeRecords || {};
+      const rec = records[currentEditDate] && records[currentEditDate][idx];
+      if (!rec) return;
+      rec[field] = (rec[field] === value) ? null : value;
+      persistRecords('peeRecords', records, () => {
+        renderPeeCalendar();
+        updatePeeTodayStatus();
+        updatePeeStats();
       });
+    });
+  }
+
+  // 尿量按钮点击事件（仅限单条记录的操作区）
+  editModalBody.querySelectorAll(".pee-amount-selector[data-record-idx] .pee-amount-btn-sm").forEach(btn => {
+    btn.addEventListener("click", () => {
+      togglePeeRecordField(btn, "amount", Number(btn.dataset.amount), btn.closest(".pee-amount-selector"));
     });
   });
 
-  // 尿液颜色按钮点击事件（事件委托）
-  editModalBody.querySelectorAll(".pee-color-btn-sm").forEach(btn => {
+  // 尿液颜色按钮点击事件（仅限单条记录的颜色选择区）
+  editModalBody.querySelectorAll(".pee-color-selector .pee-color-btn-sm").forEach(btn => {
     btn.addEventListener("click", () => {
-      const idx = Number(btn.dataset.idx);
-      const color = Number(btn.dataset.color);
-      chrome.storage.local.get(["peeRecords"], (data) => {
-        const records = data.peeRecords || {};
-        if (records[currentEditDate] && records[currentEditDate][idx]) {
-          const cur = records[currentEditDate][idx].color;
-          records[currentEditDate][idx].color = (cur === color) ? null : color;
-          persistRecords('peeRecords', records, () => {
-            chrome.storage.local.get(["peeRecords"], (d) => {
-              if (d.peeRecords && d.peeRecords[currentEditDate]) {
-                showPeeEditModal(currentEditDate, d.peeRecords[currentEditDate]);
-              }
-            });
-          });
-        }
-      });
+      togglePeeRecordField(btn, "color", Number(btn.dataset.color), btn.closest(".pee-color-selector"));
     });
   });
 }
@@ -4374,11 +4354,7 @@ editModalBody.addEventListener("click", (e) => {
           const newLevel = currentLevel === level ? 0 : level;
           document.getElementById("eatEditFullness" + idx).value = newLevel;
           fullnessContainer.querySelectorAll(".edit-fullness-btn").forEach(b => {
-            const isActive = parseInt(b.dataset.level) === newLevel;
-            b.classList.toggle("active", isActive);
-            b.style.background = isActive ? 'var(--eat)' : 'rgba(255,255,255,0.8)';
-            b.style.color = isActive ? '#fff' : 'var(--text)';
-            b.style.borderColor = isActive ? 'var(--eat)' : 'rgba(245,158,11,0.2)';
+            b.classList.toggle("active", parseInt(b.dataset.level) === newLevel);
           });
         });
       });
@@ -4390,22 +4366,14 @@ editModalBody.addEventListener("click", (e) => {
       tagsContainer.dataset.bound = "1";
       tagsContainer.querySelectorAll(".edit-tag-btn").forEach(btn => {
         btn.addEventListener("click", () => {
-          const tag = btn.dataset.tag;
-          const isActive = btn.classList.contains("active");
-          if (isActive) {
-            btn.classList.remove("active");
-            btn.style.borderColor = 'rgba(245,158,11,0.2)';
-            btn.style.background = 'rgba(245,158,11,0.06)';
-            btn.style.color = 'var(--text)';
-          } else {
-            btn.classList.add("active");
-            btn.style.borderColor = 'var(--eat)';
-            btn.style.background = 'rgba(245,158,11,0.15)';
-            btn.style.color = 'var(--eat)';
-          }
+          btn.classList.toggle("active");
         });
       });
     }
+  } else if (action === "cancel-eat") {
+    // 取消编辑：收起编辑区、恢复预览，不改动数据
+    document.getElementById("eatEditWrap" + idx).style.display = "none";
+    document.getElementById("eatPreview" + idx).style.display = "";
   } else if (action === "save-eat") {
     const newType = document.getElementById("eatEditType" + idx).value;
     const newContent = document.getElementById("eatEditContent" + idx).value.trim();
@@ -4496,6 +4464,11 @@ editModalBody.addEventListener("click", (e) => {
     document.getElementById("peeEditFormTime" + idx).style.display = "flex";
     document.getElementById("peeEditForm" + idx).style.display = "block";
     document.getElementById("peeContent" + idx).style.display = "none";
+  } else if (action === "cancel-pee") {
+    // 取消编辑：收起输入、恢复原文案，不改动数据
+    document.getElementById("peeEditFormTime" + idx).style.display = "none";
+    document.getElementById("peeEditForm" + idx).style.display = "none";
+    document.getElementById("peeContent" + idx).style.display = "block";
   } else if (action === "save-pee") {
     const newRemark = document.getElementById("peeEditContent" + idx).value.trim();
     // 获取编辑后的时间
