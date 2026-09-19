@@ -1301,6 +1301,20 @@ function renderEatCalendar() {
   });
 }
 
+// 快捷标签按钮：编辑弹窗的「补打卡 / 追加记录 / 编辑」三处共用同一份模板
+function mealTagButtonsHtml(activeTags) {
+  const allTags = t("mealTags") || [];
+  const allEmojis = t("mealTagEmojis") || [];
+  const active = activeTags || [];
+  let html = allTags.map((tag, i) =>
+    `<button class="edit-tag-btn${active.includes(tag) ? " active" : ""}" data-tag="${tag}">${allEmojis[i] || ""} ${tag}</button>`
+  ).join("");
+  customMealTags.forEach((ct) => {
+    html += `<button class="edit-tag-btn${active.includes(ct.name) ? " active" : ""}" data-tag="${ct.name}" data-custom="1">${ct.emoji} ${ct.name}</button>`;
+  });
+  return html;
+}
+
 function showEatEditModal(dateStr, dayRecords) {
   const isToday = dateStr === getToday();
   const typeLabel = { breakfast: t("breakfast"), lunch: t("lunch"), dinner: t("dinner"), snack: t("snack") };
@@ -1314,7 +1328,7 @@ function showEatEditModal(dateStr, dayRecords) {
     editModalBody.innerHTML = `
       <div class="edit-empty" style="margin-bottom: 12px;">${t('noMeal')}</div>
       <div class="edit-add-new-section" style="margin-top:0;">
-      <div class="edit-add-title">${t('addRecord')}</div>
+      <div class="edit-add-title">${t('makeUpCheckin')}</div>
       <!-- 餐次+时间一行 -->
       <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;">
         <select class="edit-type-select" id="eatAddType" style="flex:1;min-width:0;padding:6px 10px;">
@@ -1344,7 +1358,22 @@ function showEatEditModal(dateStr, dayRecords) {
         </div>
         <span class="rating-text" id="eatAddRatingText" style="font-size:10px;color:var(--eat);font-weight:600;">${t('ratingNone')}</span>
       </div>
-      <button class="edit-save-btn" id="eatAddBtn" style="background: var(--eat);font-size:12px;padding:6px 12px;">${t('addRecordBtn')}</button>
+      <!-- 饱腹感（与正常打卡一致） -->
+      <div class="edit-input-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--muted);">${t('fullnessLabel')}：</span>
+        <div class="edit-fullness-btns" id="eatAddFullnessBtns" style="display:flex;gap:2px;">
+          ${(t('fullnessLevels') || []).map((lvl, i) => `<button class="edit-fullness-btn" data-level="${i+1}">${lvl}</button>`).join('')}
+        </div>
+        <input type="hidden" id="eatAddFullness" value="0" />
+      </div>
+      <!-- 快捷标签（与正常打卡一致） -->
+      <div class="edit-input-row" style="margin-bottom:6px;">
+        <span style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">🏷 ${t('mealTagsLabel')}</span>
+        <div class="edit-tags-grid" id="eatAddTagsGrid" style="display:flex;flex-wrap:wrap;gap:3px;">
+          ${mealTagButtonsHtml([])}
+        </div>
+      </div>
+      <button class="edit-save-btn" id="eatAddBtn" style="background: var(--eat);font-size:12px;padding:6px 12px;">${t('makeUpCheckinBtn')}</button>
       </div>
     `;
 
@@ -1404,6 +1433,30 @@ function showEatEditModal(dateStr, dayRecords) {
         updateAddStarsDisplay(addRating);
       });
     }
+
+    // 饱腹感交互（补打卡表单，与正常打卡一致）
+    const addFullnessContainer = document.getElementById("eatAddFullnessBtns");
+    if (addFullnessContainer) {
+      addFullnessContainer.querySelectorAll(".edit-fullness-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const level = parseInt(btn.dataset.level);
+          const currentLevel = parseInt(document.getElementById("eatAddFullness").value) || 0;
+          const newLevel = currentLevel === level ? 0 : level;
+          document.getElementById("eatAddFullness").value = newLevel;
+          addFullnessContainer.querySelectorAll(".edit-fullness-btn").forEach(b => {
+            b.classList.toggle("active", parseInt(b.dataset.level) === newLevel);
+          });
+        });
+      });
+    }
+
+    // 快捷标签交互（补打卡表单）
+    const addTagsContainer = document.getElementById("eatAddTagsGrid");
+    if (addTagsContainer) {
+      addTagsContainer.querySelectorAll(".edit-tag-btn").forEach(btn => {
+        btn.addEventListener("click", () => btn.classList.toggle("active"));
+      });
+    }
   }
     
     // 根据当前时间自动识别餐次
@@ -1430,11 +1483,18 @@ function showEatEditModal(dateStr, dayRecords) {
       // 获取备注和评价
       const remark = document.getElementById("eatAddRemark") ? document.getElementById("eatAddRemark").value.trim() : "";
       const rating = addRating || 0;
+      // 饱腹感与快捷标签（与正常打卡同样入库）
+      const fullnessEl = document.getElementById("eatAddFullness");
+      const fullness = fullnessEl ? (parseInt(fullnessEl.value) || 0) : 0;
+      const addTagsGrid = document.getElementById("eatAddTagsGrid");
+      const tags = addTagsGrid
+        ? Array.from(addTagsGrid.querySelectorAll(".edit-tag-btn.active")).map(b => b.dataset.tag)
+        : [];
 
       chrome.storage.local.get(["mealRecords"], (data) => {
         const records = data.mealRecords || {};
         if (!records[dateStr]) records[dateStr] = [];
-        records[dateStr].push({
+        const newRec = {
           content,
           time: recordTime,
           type,
@@ -1442,7 +1502,10 @@ function showEatEditModal(dateStr, dayRecords) {
           rating,
           timestamp: Date.now(),
           isBackfill: !isToday
-        });
+        };
+        if (fullness > 0) newRec.fullness = fullness;
+        if (tags.length > 0) newRec.tags = tags;
+        records[dateStr].push(newRec);
         persistRecords('mealRecords', records, () => {
           showToast(isToday ? t('toastMealAdded') : "🍽️ " + t('makeUpCheckinSuccess'));
           renderEatCalendar();
@@ -1524,19 +1587,7 @@ function showEatEditModal(dateStr, dayRecords) {
         </div>
         <div class="edit-input-row" style="margin-bottom:6px;">
           <div class="edit-tags-grid" id="eatEditTagsGrid${idx}" style="display:flex;flex-wrap:wrap;gap:3px;">
-            ${(() => {
-              const allTags = (t('mealTags') || []);
-              const allEmojis = (t('mealTagEmojis') || []);
-              let tagHtml = allTags.map((tag, i) => {
-                const isActive = rec.tags && rec.tags.includes(tag);
-                return `<button class="edit-tag-btn ${isActive ? 'active' : ''}" data-tag="${tag}">${allEmojis[i] || ''} ${tag}</button>`;
-              }).join('');
-              customMealTags.forEach((ct, ci) => {
-                const isActive = rec.tags && rec.tags.includes(ct.name);
-                tagHtml += `<button class="edit-tag-btn ${isActive ? 'active' : ''}" data-tag="${ct.name}" data-custom="1">${ct.emoji} ${ct.name}</button>`;
-              });
-              return tagHtml;
-            })()}
+            ${mealTagButtonsHtml(rec.tags)}
           </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:0;">
@@ -1586,16 +1637,9 @@ function showEatEditModal(dateStr, dayRecords) {
       </div>
       <!-- 标签 -->
       <div class="edit-input-row" style="margin-bottom:6px;">
+        <span style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">🏷 ${t('mealTagsLabel')}</span>
         <div class="edit-tags-grid" id="eatAppendTagsGrid" style="display:flex;flex-wrap:wrap;gap:3px;">
-          ${(() => {
-            const allTags = (t('mealTags') || []);
-            const allEmojis = (t('mealTagEmojis') || []);
-            let tagHtml = allTags.map((tag, i) => `<button class="edit-tag-btn" data-tag="${tag}">${allEmojis[i] || ''} ${tag}</button>`).join('');
-            customMealTags.forEach((ct) => {
-              tagHtml += `<button class="edit-tag-btn" data-tag="${ct.name}" data-custom="1">${ct.emoji} ${ct.name}</button>`;
-            });
-            return tagHtml;
-          })()}
+          ${mealTagButtonsHtml([])}
         </div>
       </div>
       <button class="edit-save-btn" id="eatAppendBtn" style="background:var(--eat);font-size:12px;padding:6px 12px;">${t('appendRecordBtn')}</button>
@@ -2331,7 +2375,7 @@ function showDrinkEditModal(dateStr, dayRecords) {
           records[dateStr].splice(idx, 1);
           if (records[dateStr].length === 0) delete records[dateStr];
           persistRecords('drinkRecords', records, () => {
-            showToast("🗑 " + t('deleteSuccess'));
+            showToast("🗑 " + t('toastDeleteSuccess'));
             renderDrinkCalendar();
             updateDrinkUI();
             chrome.storage.local.get(["drinkRecords"], (d) => {
