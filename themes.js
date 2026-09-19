@@ -1496,20 +1496,18 @@ function hslToRgb({ h, s, l }) {
   };
 }
 
-// 角标色：按主色「降亮度、保饱和度」，而不是混黑 —— 混黑会让粉/黄这类亮色发灰发浑。
-// 亮色主色（黄/青/绿）即使 L=0.44 白字也不够清楚，所以再逐档压暗直到白字对比达标。
+// 角标色：默认【直接用主色】，只有主色太浅（白字对比 < 4.5）时才逐档压暗 —— 保持同一色相与饱和度，
+// 所以角标始终认得出是用户选的那个颜色（不再提饱和度、不再混黑）。
 export function badgeColorFor(primary) {
-  const hsl = rgbToHsl(hexToRgb(primary));
-  const s = hsl.s < 0.12 ? hsl.s : Math.max(hsl.s, 0.55); // 有彩度的主色再提一点，避免灰扑扑
-  const toHex = (l) => {
-    const rgb = hslToRgb({ h: hsl.h, s, l });
-    return rgbToHex(rgb.r, rgb.g, rgb.b);
-  };
-  let l = Math.min(hsl.l, 0.44);
-  let hex = toHex(l);
+  const rgb0 = hexToRgb(primary);
+  const hsl = rgbToHsl(rgb0);
+  let hex = rgbToHex(rgb0.r, rgb0.g, rgb0.b);
+  if (contrastWithWhite(hex) >= 4.5) return hex; // 主色本身够深 → 原样使用
+  let l = hsl.l;
   while (contrastWithWhite(hex) < 4.5 && l > 0.2) {
     l -= 0.02;
-    hex = toHex(l);
+    const rgb = hslToRgb({ h: hsl.h, s: hsl.s, l });
+    hex = rgbToHex(rgb.r, rgb.g, rgb.b);
   }
   return hex;
 }

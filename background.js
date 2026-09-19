@@ -72,11 +72,13 @@ function applyBadgeColor(theme, color) {
 }
 
 // SW 唤醒：先读缓存立即上色（早于统计逻辑，避免闪现默认色）
+// 注意：缓存只在「主题 id 一致」时才可信，否则会闪回上一个主题的角标色
 chrome.storage.local.get([BADGE_COLOR_CACHE_KEY, 'selectedTheme', 'customThemes'], (data) => {
   const c = data && data[BADGE_COLOR_CACHE_KEY];
   const theme = (data && data.selectedTheme) || 'default';
   lastKnownTheme = theme;
-  applyBadgeColor(theme, (c && c.color) || resolveBadgeColor(theme, data && data.customThemes));
+  const cachedColor = c && c.theme === theme ? c.color : null;
+  applyBadgeColor(theme, cachedColor || resolveBadgeColor(theme, data && data.customThemes));
 });
 
 async function updateBadge() {

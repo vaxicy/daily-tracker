@@ -1,4 +1,4 @@
-import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX } from './themes.js';
+import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX, isLightColor } from './themes.js';
 
 // 用户自定义主题：{ "custom:xxx": { label, anchors, dot, vars, bgGradient, ... } }
 // 声明在模块顶部，避免早于主题系统初始化的调用（如 updateBadge）触发 TDZ 报错
@@ -2484,7 +2484,7 @@ notifToggle.addEventListener("change", async () => {
 
 function updateBadge() {
   chrome.storage.local.get(
-    ["drinkRecords","poopRecords","peeRecords","mealRecords","selectedTheme","badgeEnabled","badgeContentType"],
+    ["drinkRecords","poopRecords","peeRecords","mealRecords","selectedTheme","badgeEnabled","badgeContentType","customThemes"],
     function(data){
       if (chrome.runtime.lastError) {
         console.error("[popup] 读取角标配置失败:", chrome.runtime.lastError.message);
@@ -2501,8 +2501,8 @@ function updateBadge() {
       var recordType = parts[0];
       var timeRange = parts[1];
       var theme = data.selectedTheme || "default";
-      var themeColor = themeBadgeColor(theme);
-      console.log("[popup] updateBadge →", { theme, themeColor, badgeType, count });
+      // 用 storage 刚读到的 customThemes 解析，避免内存副本过期导致角标色错误
+      var themeColor = themeBadgeColor(theme, data.customThemes);
       chrome.action.setIcon({ path: { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" } });
 
       var records = {};
@@ -2534,13 +2534,16 @@ function updateBadge() {
       }
 
       var txt = count > 99 ? "99+" : String(count);
-      var badgeTextColor = (theme === "greenplum") ? "#450C3F" : "#ffffff";
+      // 与 background.js 保持同一规则：偏亮角标自动改深色字，绿色主题特殊处理
+      var badgeTextColor = (theme === "greenplum" || isLightColor(themeColor)) ? "#1F2937" : "#ffffff";
+      if (theme === "greenplum") badgeTextColor = "#450C3F";
       chrome.action.setBadgeText({ text: txt });
       chrome.action.setBadgeBackgroundColor({ color: themeColor });
       if (chrome.action.setBadgeTextColor) {
         chrome.action.setBadgeTextColor({ color: badgeTextColor });
       }
       // 缓存当前主题角标色，供后台 SW 冷启动/浏览器重启后立即恢复
+      // 必须带 theme，SW 只在 theme 一致时才信任这个缓存
       chrome.storage.local.set({ badgeColorCache: { theme: theme, color: themeColor } });
     }
   );
@@ -4573,9 +4576,10 @@ const THEME_BADGE_COLOR = Object.fromEntries(
 );
 
 // 角标色统一解析：预设优先，其次自定义主题
-function themeBadgeColor(themeId) {
+// customs 可传入 storage 刚读到的快照，避免用到过期的内存副本（角标闪回旧色）
+function themeBadgeColor(themeId, customs) {
   if (THEME_BADGE_COLOR[themeId]) return THEME_BADGE_COLOR[themeId];
-  const rec = customThemes[themeId];
+  const rec = (customs || customThemes)[themeId];
   if (rec && rec.vars && rec.vars["--badge"]) return rec.vars["--badge"];
   return "#0b6bff";
 }
@@ -4813,6 +4817,8 @@ function selectTheme(themeId) {
   } else {
     payload.selectedPresetTheme = themeId;
   }
+  // 与 selectedTheme 同一次写入，SW 唤醒时缓存立刻可用（否则会先闪回上一个主题的颜色）
+  payload.badgeColorCache = { theme: themeId, color: themeBadgeColor(themeId) };
   chrome.storage.local.set(payload, () => {
     showToast(t("toastThemeSwitched", { theme: themeLabel(themeId) }));
   });
@@ -4911,7 +4917,9 @@ function saveCustomTheme() {
     bgGradient: built.bgGradient,
     createdAt: (prev && prev.createdAt) || Date.now()
   };
-  chrome.storage.local.set({ customThemes }, () => {
+  chrome.storage.local.set(
+    { customThemes, badgeColorCache: { theme: id, color: built.vars["--badge"] } },
+    () => {
     const modal = document.getElementById("customThemeModal");
     if (modal) modal.classList.add("hidden");
     editingThemeId = null;
@@ -4936,7 +4944,17 @@ function deleteCustomTheme(themeId) {
       if (currentThemeId === themeId) {
         const fallback = THEME_PRESETS[currentPresetId] ? currentPresetId : "default";
         applyTheme(fallback);
-        chrome.storage.local.set({ selectedTheme: fallback });
+        // 与 selectedTheme 同一次写入，避免 SW 用旧缓存闪回被删主题的角标色
+        chrome.storage.local.set(
+          { selectedTheme: fallback, badgeColorCache: { theme: fallback, color: themeBadgeColor(fallback) } },
+          () => {
+            renderCustomOptions();
+            renderThemeOptions();
+            updateBadge();
+            showToast(t("customThemeDeleted"));
+          }
+        );
+        return;
       }
       renderCustomOptions();
       renderThemeOptions();
