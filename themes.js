@@ -1410,8 +1410,10 @@ export const THEME_PRESETS = {
 };
 
 // ==================== 自定义主题支持 ====================
-// 设计：用户只选 3 个锚点色（主色/副色/背景）+ 明暗，其余 30 个变量由本模块推导。
-// 这样用户永远搭不出「白字按钮看不清」「角标糊在背景里」的破主题。
+// 设计：用户只选 3 个锚点色（主色/副色/背景）+ 文字深浅，其余 30 个变量由本模块推导。
+// 约定：颜色严格按用户色卡（背景色原样使用，不改写亮度）；背景明暗由背景色自身亮度判定，
+// 文字深浅只决定文字方向，且带对比度护栏 —— 这样用户永远搭不出
+// 「浅底浅字看不见」「角标糊在背景里」的破主题。
 
 export const CUSTOM_THEME_PREFIX = "custom:";
 
@@ -1469,12 +1471,20 @@ export function buildCustomTheme(anchors = {}) {
   const p = /^#[0-9a-fA-F]{6}$/.test(String(anchors.primary || "")) ? anchors.primary : "#0b6bff";
   const s = /^#[0-9a-fA-F]{6}$/.test(String(anchors.secondary || "")) ? anchors.secondary : tintHex(p, 0.3);
   const g = /^#[0-9a-fA-F]{6}$/.test(String(anchors.bg || "")) ? anchors.bg : tintHex(p, 0.88);
-  const dark = anchors.base === "dark";
 
-  const text = dark ? tintHex(p, 0.86) : shadeHex(p, 0.68);
+  // 背景明暗【完全由用户选的背景色决定】，不再由开关改写用户色卡
+  const bgIsDark = !isLightColor(g);
+  // 开关语义 = 「文字深浅」：深色字（base="dark"）/ 浅色字
+  const wantDarkText = anchors.base === "dark";
+  // 对比度护栏：深色字配深底、浅色字配浅底都会看不见 → 自动改用可读的一侧
+  const textFlipped = (wantDarkText === bgIsDark);
+  const darkText = textFlipped ? !wantDarkText : wantDarkText;
+
+  const text = darkText ? shadeHex(p, 0.68) : tintHex(p, 0.9);
   const primary2 = tintHex(p, 0.45);
   const secondary2 = tintHex(s, 0.4);
-  const cardBg = dark ? tintHex(mixHex(g, p, 0.08), 0.06) : tintHex(g, 0.6);
+  // 卡片跟着背景走（浅底更浅、深底更亮），不再混主色以免偏离用户色卡
+  const cardBg = bgIsDark ? tintHex(g, 0.12) : tintHex(g, 0.62);
   const period = mixHex("#E0679E", p, 0.2);
   // 角标：先按主色加深，若仍偏亮再加深一档，保证浅色底可读
   let badge = shadeHex(p, 0.22);
@@ -1492,20 +1502,20 @@ export function buildCustomTheme(anchors = {}) {
     "--eat2": primary2,
     "--pee": s,
     "--pee2": secondary2,
-    "--poop": dark ? tintHex("#8A6E4A", 0.15) : "#8A6E4A",
-    "--poop2": dark ? tintHex("#6E5433", 0.15) : "#6E5433",
+    "--poop": darkText ? "#8A6E4A" : tintHex("#8A6E4A", 0.15),
+    "--poop2": darkText ? "#6E5433" : tintHex("#6E5433", 0.15),
     "--period": period,
     "--period2": tintHex(period, 0.45),
     "--period-glow": hexWithAlpha(period, 0.42),
     "--card-bg": cardBg,
     "--card-border": hexWithAlpha(p, 0.16),
-    "--input-bg": dark ? "rgba(0,0,0,0.25)" : "rgba(255,255,255,0.75)",
+    "--input-bg": darkText ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.10)",
     "--modal-bg": cardBg,
     "--tooltip-bg": cardBg,
     "--sidebar-bg": hexWithAlpha(cardBg, 0.97),
-    "--hover-bg": dark ? "rgba(255,255,255,0.08)" : hexWithAlpha(p, 0.08),
-    "--day-hover": dark ? "rgba(255,255,255,0.12)" : hexWithAlpha(p, 0.12),
-    "--day-today": hexWithAlpha(p, dark ? 0.34 : 0.18),
+    "--hover-bg": darkText ? hexWithAlpha(p, 0.08) : "rgba(255,255,255,0.08)",
+    "--day-hover": darkText ? hexWithAlpha(p, 0.12) : "rgba(255,255,255,0.12)",
+    "--day-today": hexWithAlpha(p, darkText ? 0.18 : 0.34),
     "--scrollbar-color": p,
     "--scrollbar-hover": shadeHex(p, 0.15),
     "--bg": g,
@@ -1516,13 +1526,18 @@ export function buildCustomTheme(anchors = {}) {
 
   return {
     custom: true,
-    // 深色自定义主题复用现成的 dark 覆盖规则，浅色主题不套任何主题覆盖
-    dataTheme: dark ? "dark" : "custom",
-    base: dark ? "dark" : "light",
-    anchors: { primary: p, secondary: s, bg: g, base: dark ? "dark" : "light" },
+    // 复用现成的 dark 覆盖规则，依据「实际背景」而不是开关
+    dataTheme: bgIsDark ? "dark" : "custom",
+    // 记录用户选的文字深浅，供编辑器回显
+    base: wantDarkText ? "dark" : "light",
+    // 实际生效的文字方向（护栏纠正后）
+    darkText,
+    // 是否因对比不足被自动纠正（编辑器据此给提示）
+    textFlipped,
+    anchors: { primary: p, secondary: s, bg: g, base: wantDarkText ? "dark" : "light" },
     vars,
     dot: `linear-gradient(135deg,${p},${primary2},${s})`,
-    bgGradient: dark
+    bgGradient: bgIsDark
       ? `linear-gradient(150deg, ${shadeHex(g, 0.3)} 0%, ${g} 55%, ${mixHex(g, p, 0.14)} 100%)`
       : `linear-gradient(150deg, ${tintHex(g, 0.6)} 0%, ${g} 55%, ${mixHex(g, p, 0.18)} 100%)`
   };

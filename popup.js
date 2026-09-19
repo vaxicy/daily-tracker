@@ -1,4 +1,4 @@
-import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX } from './themes.js';
+import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX, isLightColor } from './themes.js';
 
 // 用户自定义主题：{ "custom:xxx": { label, anchors, dot, vars, bgGradient, ... } }
 // 声明在模块顶部，避免早于主题系统初始化的调用（如 updateBadge）触发 TDZ 报错
@@ -4876,6 +4876,14 @@ function updateCustomThemePreview() {
   if (dot) dot.style.background = built.dot;
   const nm = document.getElementById("ctPreviewName");
   if (nm) nm.textContent = String(anchors.name || "").trim() || t("customThemeDefaultName");
+  // 背景明暗决定文字方向；若用户选的深浅与背景冲突，生成器会自动纠正并在此提示
+  const tip = document.getElementById("ctTip");
+  if (tip) {
+    const effDir = built.darkText ? t("customThemeBaseDark") : t("customThemeBaseLight");
+    tip.textContent = built.textFlipped
+      ? t("customThemeContrastTip", { dir: effDir })
+      : t("customThemeTip");
+  }
   applyThemeObject(built, built.dataTheme);
   return built;
 }
@@ -4885,8 +4893,11 @@ function openCustomThemeEditor(themeId) {
   if (!modal) return;
   editingThemeId = themeId || null;
   const rec = themeId ? customThemes[themeId] : null;
-  const a = (rec && rec.anchors) || { primary: "#0b6bff", secondary: "#8b5cf6", bg: "#eaf5ff", base: "light" };
-  editingBase = a.base === "dark" ? "dark" : "light";
+  const a = (rec && rec.anchors) || { primary: "#0b6bff", secondary: "#8b5cf6", bg: "#eaf5ff" };
+  // 新建时按背景明暗选一个可读的默认文字深浅（浅底→深色字）；编辑时回显用户的选择
+  editingBase = rec
+    ? (a.base === "dark" ? "dark" : "light")
+    : (isLightColor(a.bg) ? "dark" : "light");
   const nameEl = document.getElementById("ctName");
   const p = document.getElementById("ctPrimary");
   const s = document.getElementById("ctSecondary");
