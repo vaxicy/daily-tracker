@@ -1368,7 +1368,7 @@ function showEatEditModal(dateStr, dayRecords) {
       </div>
       <!-- 快捷标签（与正常打卡一致） -->
       <div class="edit-input-row" style="margin-bottom:6px;">
-        <span style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">🏷 ${t('mealTagsLabel')}</span>
+        <span style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">${t('mealTagsLabel')}</span>
         <div class="edit-tags-grid" id="eatAddTagsGrid" style="display:flex;flex-wrap:wrap;gap:3px;">
           ${mealTagButtonsHtml([])}
         </div>
@@ -1549,7 +1549,7 @@ function showEatEditModal(dateStr, dayRecords) {
           <div style="margin-bottom:3px;">📝 ${t('remarkLabel')}: ${remarkHtml}</div>
           <div style="margin-bottom:3px;">⭐ ${t('rateLabelShort')}: <span style="display:inline-flex;align-items:center;gap:4px;">${ratingStarsHtml}</span></div>
           ${rec.fullness ? `<div style="margin-bottom:3px;">🍽️ ${t('fullnessLabel')}: ${t('fullnessLevels')[rec.fullness - 1] || ""}</div>` : ''}
-          ${rec.tags && rec.tags.length > 0 ? `<div>🏷 ${t('autoTagHint')}: ${rec.tags.map(tag => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--eat);font-size:10px;margin-right:3px;">${tag}</span>`).join("")}</div>` : ''}
+          ${rec.tags && rec.tags.length > 0 ? `<div>🔖 ${t('autoTagHint')}: ${rec.tags.map(tag => `<span style="display:inline-block;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--eat);font-size:10px;margin-right:3px;">${tag}</span>`).join("")}</div>` : ''}
         </div>
       </div>
       <!-- 编辑表单（编辑状态下替换预览） -->
@@ -1637,7 +1637,7 @@ function showEatEditModal(dateStr, dayRecords) {
       </div>
       <!-- 标签 -->
       <div class="edit-input-row" style="margin-bottom:6px;">
-        <span style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">🏷 ${t('mealTagsLabel')}</span>
+        <span style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">${t('mealTagsLabel')}</span>
         <div class="edit-tags-grid" id="eatAppendTagsGrid" style="display:flex;flex-wrap:wrap;gap:3px;">
           ${mealTagButtonsHtml([])}
         </div>
