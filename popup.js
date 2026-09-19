@@ -1,4 +1,4 @@
-import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX, isLightColor } from './themes.js';
+import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX, badgeTextColorOn } from './themes.js';
 
 // 用户自定义主题：{ "custom:xxx": { label, anchors, dot, vars, bgGradient, ... } }
 // 声明在模块顶部，避免早于主题系统初始化的调用（如 updateBadge）触发 TDZ 报错
@@ -2534,9 +2534,8 @@ function updateBadge() {
       }
 
       var txt = count > 99 ? "99+" : String(count);
-      // 与 background.js 保持同一规则：偏亮角标自动改深色字，绿色主题特殊处理
-      var badgeTextColor = (theme === "greenplum" || isLightColor(themeColor)) ? "#1F2937" : "#ffffff";
-      if (theme === "greenplum") badgeTextColor = "#450C3F";
+      // 与 background.js 保持同一规则：浅色角标用深色字，绿色主题特殊处理
+      var badgeTextColor = (theme === "greenplum") ? "#450C3F" : badgeTextColorOn(themeColor);
       chrome.action.setBadgeText({ text: txt });
       chrome.action.setBadgeBackgroundColor({ color: themeColor });
       if (chrome.action.setBadgeTextColor) {

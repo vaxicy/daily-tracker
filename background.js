@@ -3,7 +3,7 @@ const DEFAULT_MINUTES = 30;
 // ==================== 角标：显示今日喝水次数（后台原生角标）====================
 // 角标色直接从共享的 THEME_PRESETS 自动派生（消除手动双表，新增主题自动同步）
 // 自定义主题的角标色存在 storage.local.customThemes，需要动态解析
-import { THEME_PRESETS, isLightColor } from './themes.js';
+import { THEME_PRESETS, badgeTextColorOn } from './themes.js';
 const THEME_BADGE_COLOR = Object.fromEntries(
   Object.entries(THEME_PRESETS).map(([k, p]) => [k, (p.vars && (p.vars["--badge"] || p.vars["--primary"])) || '#0b6bff'])
 );
@@ -57,11 +57,10 @@ function actionSetBadgeTextColor(color) {
 // chrome.action 的外观修改会在浏览器重启后被清空，且异步读取期间存在空窗，
 // 因此把主题派生的角标色缓存进 storage，SW 每次唤醒先立即上色。
 const BADGE_COLOR_CACHE_KEY = 'badgeColorCache';
-// 白字是默认；绿色主题和偏亮的自定义角标自动改用深色字，保证可读
+// 白/深字自动取对比更高的那个（浅色角标底也能直接用主色，文字改用深色）
 function badgeTextColorFor(theme, color) {
   if (theme === 'greenplum') return '#450C3F';
-  if (color && isLightColor(color)) return '#1F2937';
-  return '#ffffff';
+  return badgeTextColorOn(color || '#0b6bff');
 }
 function applyBadgeColor(theme, color) {
   if (!color) return;

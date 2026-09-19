@@ -1496,18 +1496,33 @@ function hslToRgb({ h, s, l }) {
   };
 }
 
-// 角标色：默认【直接用主色】，只有主色太浅（白字对比 < 4.5）时才逐档压暗 —— 保持同一色相与饱和度，
-// 所以角标始终认得出是用户选的那个颜色（不再提饱和度、不再混黑）。
+// 角标文字用的深色（浅色角标底上比纯黑柔和）
+export const BADGE_DARK_TEXT = "#1F2937";
+
+// 与深色字的对比度
+export function contrastWithDark(hex) {
+  return (relativeLuminance(hex) + 0.05) / (relativeLuminance(BADGE_DARK_TEXT) + 0.05);
+}
+
+// 角标文字色：白字 / 深字 取对比更高的那个（浅色角标自动用深字）
+export function badgeTextColorOn(bg) {
+  return contrastWithWhite(bg) >= contrastWithDark(bg) ? "#ffffff" : BADGE_DARK_TEXT;
+}
+
+// 角标底色：默认【原样用主色】。文字色会自动在 白/深 之间取更清楚的那个，
+// 所以浅粉、浅蓝这类主色也能直接当角标底（不再被压暗成另一种艳色）。
+// 只有白字深字都不达标（中间调，如中灰）时，才保持色相+饱和度逐档压暗到白字达标。
 export function badgeColorFor(primary) {
   const rgb0 = hexToRgb(primary);
   const hsl = rgbToHsl(rgb0);
   let hex = rgbToHex(rgb0.r, rgb0.g, rgb0.b);
-  if (contrastWithWhite(hex) >= 4.5) return hex; // 主色本身够深 → 原样使用
+  if (Math.max(contrastWithWhite(hex), contrastWithDark(hex)) >= 4.5) return hex; // 原样跟随主色
   let l = hsl.l;
-  while (contrastWithWhite(hex) < 4.5 && l > 0.2) {
+  while (l > 0.2) {
     l -= 0.02;
     const rgb = hslToRgb({ h: hsl.h, s: hsl.s, l });
     hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+    if (contrastWithWhite(hex) >= 4.5) break;
   }
   return hex;
 }
