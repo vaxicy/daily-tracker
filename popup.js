@@ -1,4 +1,4 @@
-import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX, isLightColor } from './themes.js';
+import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX } from './themes.js';
 
 // 用户自定义主题：{ "custom:xxx": { label, anchors, dot, vars, bgGradient, ... } }
 // 声明在模块顶部，避免早于主题系统初始化的调用（如 updateBadge）触发 TDZ 报错
@@ -4590,7 +4590,6 @@ let currentPresetId = "default";
 // 上次使用的自定义主题，切回「自定义主题」模式时优先恢复它
 let selectedCustomThemeId = null;
 let editingThemeId = null;
-let editingBase = "light";
 
 // 统一解析主题（预设 / 自定义）
 function resolveTheme(themeId) {
@@ -4610,7 +4609,6 @@ function normalizeCustomThemes(raw) {
     const built = buildCustomTheme(rec.anchors);
     out[id] = {
       label: String(rec.label || "").trim() || t("customThemeDefaultName"),
-      base: built.base,
       anchors: built.anchors,
       dot: built.dot,
       vars: built.vars,
@@ -4847,13 +4845,6 @@ function applyTheme(themeId) {
 
 // ==================== 自定义主题编辑器 ====================
 
-function syncEditorBaseButtons() {
-  const l = document.getElementById("ctBaseLight");
-  const d = document.getElementById("ctBaseDark");
-  if (l) l.classList.toggle("active", editingBase === "light");
-  if (d) d.classList.toggle("active", editingBase === "dark");
-}
-
 function currentEditorAnchors() {
   const nameEl = document.getElementById("ctName");
   const p = document.getElementById("ctPrimary");
@@ -4863,12 +4854,12 @@ function currentEditorAnchors() {
     primary: p ? p.value : "#0b6bff",
     secondary: s ? s.value : "#8b5cf6",
     bg: g ? g.value : "#eaf5ff",
-    base: editingBase,
     name: nameEl ? nameEl.value : ""
   };
 }
 
 // 实时预览：生成结果直接套到 popup 上，所见即所得
+// 文字深浅由生成器按背景亮度自动分配（浅底深字 / 深底浅字），编辑器不再提供开关
 function updateCustomThemePreview() {
   const anchors = currentEditorAnchors();
   const built = buildCustomTheme(anchors);
@@ -4876,14 +4867,6 @@ function updateCustomThemePreview() {
   if (dot) dot.style.background = built.dot;
   const nm = document.getElementById("ctPreviewName");
   if (nm) nm.textContent = String(anchors.name || "").trim() || t("customThemeDefaultName");
-  // 背景明暗决定文字方向；若用户选的深浅与背景冲突，生成器会自动纠正并在此提示
-  const tip = document.getElementById("ctTip");
-  if (tip) {
-    const effDir = built.darkText ? t("customThemeBaseDark") : t("customThemeBaseLight");
-    tip.textContent = built.textFlipped
-      ? t("customThemeContrastTip", { dir: effDir })
-      : t("customThemeTip");
-  }
   applyThemeObject(built, built.dataTheme);
   return built;
 }
@@ -4894,10 +4877,6 @@ function openCustomThemeEditor(themeId) {
   editingThemeId = themeId || null;
   const rec = themeId ? customThemes[themeId] : null;
   const a = (rec && rec.anchors) || { primary: "#0b6bff", secondary: "#8b5cf6", bg: "#eaf5ff" };
-  // 新建时按背景明暗选一个可读的默认文字深浅（浅底→深色字）；编辑时回显用户的选择
-  editingBase = rec
-    ? (a.base === "dark" ? "dark" : "light")
-    : (isLightColor(a.bg) ? "dark" : "light");
   const nameEl = document.getElementById("ctName");
   const p = document.getElementById("ctPrimary");
   const s = document.getElementById("ctSecondary");
@@ -4906,7 +4885,6 @@ function openCustomThemeEditor(themeId) {
   if (p) p.value = /^#[0-9a-fA-F]{6}$/.test(a.primary) ? a.primary : "#0b6bff";
   if (s) s.value = /^#[0-9a-fA-F]{6}$/.test(a.secondary) ? a.secondary : "#8b5cf6";
   if (g) g.value = /^#[0-9a-fA-F]{6}$/.test(a.bg) ? a.bg : "#eaf5ff";
-  syncEditorBaseButtons();
   modal.classList.remove("hidden");
   updateCustomThemePreview();
 }
@@ -5275,8 +5253,6 @@ if (customTriggerEl && customDropdownEl) {
   const closeBtn = document.getElementById("ctClose");
   const cancelBtn = document.getElementById("ctCancel");
   const saveBtn = document.getElementById("ctSave");
-  const lightBtn = document.getElementById("ctBaseLight");
-  const darkBtn = document.getElementById("ctBaseDark");
 
   if (closeBtn) closeBtn.addEventListener("click", closeCustomThemeEditor);
   if (cancelBtn) cancelBtn.addEventListener("click", closeCustomThemeEditor);
@@ -5287,20 +5263,6 @@ if (customTriggerEl && customDropdownEl) {
   [nameEl, primaryEl, secondaryEl, bgEl].forEach((el) => {
     if (el) el.addEventListener("input", updateCustomThemePreview);
   });
-  if (lightBtn) {
-    lightBtn.addEventListener("click", () => {
-      editingBase = "light";
-      syncEditorBaseButtons();
-      updateCustomThemePreview();
-    });
-  }
-  if (darkBtn) {
-    darkBtn.addEventListener("click", () => {
-      editingBase = "dark";
-      syncEditorBaseButtons();
-      updateCustomThemePreview();
-    });
-  }
 })();
 
 

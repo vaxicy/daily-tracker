@@ -7305,19 +7305,6 @@
       border: 1px solid var(--card-border, rgba(12,42,77,0.15));
       border-radius: 6px; background: none; cursor: pointer;
     }
-    .ct-seg { display: flex; gap: 6px; }
-    .ct-seg-btn {
-      padding: 5px 12px; font-size: 11px; font-weight: 600;
-      border-radius: 8px; cursor: pointer;
-      border: 1px solid var(--card-border, rgba(12,42,77,0.15));
-      background: transparent; color: var(--muted);
-      transition: all 0.15s ease;
-    }
-    .ct-seg-btn.active {
-      background: color-mix(in srgb, var(--primary) 15%, transparent);
-      border-color: var(--primary);
-      color: var(--primary);
-    }
     .ct-preview {
       display: flex; align-items: center; gap: 8px;
       padding: 8px 10px; border-radius: 10px; margin: 12px 0 8px;
@@ -7359,13 +7346,6 @@
           <span data-i18n="customThemeBg">背景色</span>
           <input type="color" id="ctBg" value="#eaf5ff" />
         </label>
-        <div class="ct-row">
-          <span data-i18n="customThemeBase">明暗</span>
-          <div class="ct-seg">
-            <button type="button" class="ct-seg-btn active" id="ctBaseLight" data-i18n="customThemeBaseLight">浅色</button>
-            <button type="button" class="ct-seg-btn" id="ctBaseDark" data-i18n="customThemeBaseDark">深色</button>
-          </div>
-        </div>
         <div class="ct-preview">
           <span class="ct-preview-dot" id="ctPreviewDot"></span>
           <span class="ct-preview-name" id="ctPreviewName"></span>

@@ -1410,10 +1410,13 @@ export const THEME_PRESETS = {
 };
 
 // ==================== 自定义主题支持 ====================
-// 设计：用户只选 3 个锚点色（主色/副色/背景）+ 文字深浅，其余 30 个变量由本模块推导。
-// 约定：颜色严格按用户色卡（背景色原样使用，不改写亮度）；背景明暗由背景色自身亮度判定，
-// 文字深浅只决定文字方向，且带对比度护栏 —— 这样用户永远搭不出
-// 「浅底浅字看不见」「角标糊在背景里」的破主题。
+// 设计：用户只选 3 个锚点色（主色/副色/背景），其余 30 个变量由本模块推导。
+// 约定：
+// 1. 颜色严格按用户色卡 —— 背景色原样使用，不改写亮度；
+// 2. 明暗（卡片/输入框/表面/文字）全部由背景色自身亮度自动推导：
+//    浅色主题 → 深色字，深色主题 → 浅色字，用户不需要选；
+// 3. 角标用「保饱和度压暗」而不是混黑，避免发灰。
+// 这样用户永远搭不出「浅底浅字看不见」「角标灰扑扑」的破主题。
 
 export const CUSTOM_THEME_PREFIX = "custom:";
 
@@ -1455,18 +1458,83 @@ export function hexWithAlpha(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-// WCAG 相对亮度判断（用于角标文字自动取黑/白）
-export function isLightColor(hex) {
+function rgbToHsl({ r, g, b }) {
+  const R = r / 255, G = g / 255, B = b / 255;
+  const max = Math.max(R, G, B), min = Math.min(R, G, B);
+  const l = (max + min) / 2;
+  let h = 0, s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === R) h = ((G - B) / d + (G < B ? 6 : 0)) / 6;
+    else if (max === G) h = ((B - R) / d + 2) / 6;
+    else h = ((R - G) / d + 4) / 6;
+  }
+  return { h, s, l };
+}
+
+function hslToRgb({ h, s, l }) {
+  if (s === 0) {
+    const v = Math.round(l * 255);
+    return { r: v, g: v, b: v };
+  }
+  const hue = (p, q, t) => {
+    let tt = t;
+    if (tt < 0) tt += 1;
+    if (tt > 1) tt -= 1;
+    if (tt < 1 / 6) return p + (q - p) * 6 * tt;
+    if (tt < 1 / 2) return q;
+    if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6;
+    return p;
+  };
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  return {
+    r: Math.round(hue(p, q, h + 1 / 3) * 255),
+    g: Math.round(hue(p, q, h) * 255),
+    b: Math.round(hue(p, q, h - 1 / 3) * 255)
+  };
+}
+
+// 角标色：按主色「降亮度、保饱和度」，而不是混黑 —— 混黑会让粉/黄这类亮色发灰发浑。
+// 亮色主色（黄/青/绿）即使 L=0.44 白字也不够清楚，所以再逐档压暗直到白字对比达标。
+export function badgeColorFor(primary) {
+  const hsl = rgbToHsl(hexToRgb(primary));
+  const s = hsl.s < 0.12 ? hsl.s : Math.max(hsl.s, 0.55); // 有彩度的主色再提一点，避免灰扑扑
+  const toHex = (l) => {
+    const rgb = hslToRgb({ h: hsl.h, s, l });
+    return rgbToHex(rgb.r, rgb.g, rgb.b);
+  };
+  let l = Math.min(hsl.l, 0.44);
+  let hex = toHex(l);
+  while (contrastWithWhite(hex) < 4.5 && l > 0.2) {
+    l -= 0.02;
+    hex = toHex(l);
+  }
+  return hex;
+}
+
+// WCAG 相对亮度（用于角标文字取黑/白、角标底色压暗收敛）
+export function relativeLuminance(hex) {
   const { r, g, b } = hexToRgb(hex);
   const lin = (v) => {
     const s = v / 255;
     return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
   };
-  const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-  return L > 0.62;
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+export function isLightColor(hex) {
+  return relativeLuminance(hex) > 0.62;
+}
+
+// 与白字的对比度（角标默认白字）
+function contrastWithWhite(hex) {
+  return 1.05 / (relativeLuminance(hex) + 0.05);
 }
 
 // 由 3 个锚点色生成完整主题（31 个 CSS 变量 + dot + bgGradient）
+// anchors.base 已废弃（保留兼容：旧数据里可能还有，直接忽略）
 export function buildCustomTheme(anchors = {}) {
   const p = /^#[0-9a-fA-F]{6}$/.test(String(anchors.primary || "")) ? anchors.primary : "#0b6bff";
   const s = /^#[0-9a-fA-F]{6}$/.test(String(anchors.secondary || "")) ? anchors.secondary : tintHex(p, 0.3);
@@ -1474,11 +1542,8 @@ export function buildCustomTheme(anchors = {}) {
 
   // 背景明暗【完全由用户选的背景色决定】，不再由开关改写用户色卡
   const bgIsDark = !isLightColor(g);
-  // 开关语义 = 「文字深浅」：深色字（base="dark"）/ 浅色字
-  const wantDarkText = anchors.base === "dark";
-  // 对比度护栏：深色字配深底、浅色字配浅底都会看不见 → 自动改用可读的一侧
-  const textFlipped = (wantDarkText === bgIsDark);
-  const darkText = textFlipped ? !wantDarkText : wantDarkText;
+  // 文字深浅【全自动】：深色主题出浅色字，浅色主题出深色字（用户无需选择）
+  const darkText = !bgIsDark;
 
   const text = darkText ? shadeHex(p, 0.68) : tintHex(p, 0.9);
   const primary2 = tintHex(p, 0.45);
@@ -1486,9 +1551,8 @@ export function buildCustomTheme(anchors = {}) {
   // 卡片跟着背景走（浅底更浅、深底更亮），不再混主色以免偏离用户色卡
   const cardBg = bgIsDark ? tintHex(g, 0.12) : tintHex(g, 0.62);
   const period = mixHex("#E0679E", p, 0.2);
-  // 角标：先按主色加深，若仍偏亮再加深一档，保证浅色底可读
-  let badge = shadeHex(p, 0.22);
-  if (isLightColor(badge)) badge = shadeHex(p, 0.4);
+  // 角标：保饱和度压暗（混黑会发灰）
+  const badge = badgeColorFor(p);
 
   const vars = {
     "--text": text,
@@ -1528,13 +1592,9 @@ export function buildCustomTheme(anchors = {}) {
     custom: true,
     // 复用现成的 dark 覆盖规则，依据「实际背景」而不是开关
     dataTheme: bgIsDark ? "dark" : "custom",
-    // 记录用户选的文字深浅，供编辑器回显
-    base: wantDarkText ? "dark" : "light",
-    // 实际生效的文字方向（护栏纠正后）
+    // 实际生效的文字方向（自动推导，浅底深字 / 深底浅字）
     darkText,
-    // 是否因对比不足被自动纠正（编辑器据此给提示）
-    textFlipped,
-    anchors: { primary: p, secondary: s, bg: g, base: wantDarkText ? "dark" : "light" },
+    anchors: { primary: p, secondary: s, bg: g },
     vars,
     dot: `linear-gradient(135deg,${p},${primary2},${s})`,
     bgGradient: bgIsDark
