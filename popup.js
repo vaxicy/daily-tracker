@@ -1234,12 +1234,15 @@ function showEditModal(title, dateStr, type) {
   currentEditType = type;
   editModalTitle.textContent = title;
   editModal.classList.add("show");
+  // 弹窗内不显示滚动条（含 JS 条），开/关后刷新一次
+  requestAnimationFrame(() => { if (window.updateCustomScrollbar) window.updateCustomScrollbar(); });
 }
 
 function hideEditModal() {
   editModal.classList.remove("show");
   currentEditDate = null;
   currentEditType = null;
+  if (window.updateCustomScrollbar) window.updateCustomScrollbar();
 }
 
 // ==================== 吃 - 日历 ====================
@@ -2364,6 +2367,7 @@ function showDrinkEditModal(dateStr, dayRecords) {
     </div>
   `;
   editModal.classList.add("show");
+  requestAnimationFrame(() => { if (window.updateCustomScrollbar) window.updateCustomScrollbar(); });
 
   // 删除单条
   editModalBody.querySelectorAll("[data-drink-idx]").forEach(btn => {
@@ -5069,7 +5073,19 @@ function initCustomScrollbar() {
     }
   }
 
+  // 编辑弹窗：原生条已按全局规则隐藏，这里同时不显示 JS 条
+  // → 弹窗内「看不到滚动条但仍可滚轮/触摸滚动」
+  function editModalIsOpen() {
+    const m = document.getElementById("editModal");
+    return !!(m && m.classList.contains("show"));
+  }
+
   function update() {
+    if (editModalIsOpen()) {
+      bar.classList.remove("visible");
+      thumb.style.height = "0px";
+      return;
+    }
     active = getActiveContainer();
     const m = getMetrics(active);
     const maxScroll = m.scrollHeight - m.clientHeight;
