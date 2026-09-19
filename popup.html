@@ -1721,6 +1721,9 @@
       .poop-color-btn-sm.active {
         border-color: var(--poop);
         border-width: 3px;
+        /* 选中态要有明显光环：以前只改 border，被按钮上的行内 border 覆盖后毫无反馈 */
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--poop) 45%, transparent);
+        transform: scale(1.12);
       }
       /* 大便颜色显示区（已选颜色） */
       .poop-color-display {

@@ -2780,6 +2780,34 @@ function renderPoopCalendar() {
   });
 }
 
+// 记录摘要（Bristol / 排便量 / 颜色）——渲染与就地刷新共用，避免两处文案不一致
+function poopBristolLabel(rec) {
+  if (!rec || !rec.bristolType) return "";
+  const types = t("bristolTypes") || [];
+  return `${types[rec.bristolType - 1] || ""}(${t("bristolPrefix") || "Bristol "}${rec.bristolType})`;
+}
+
+function poopSummaryHtml(rec) {
+  const amounts = t("poopAmounts") || [];
+  const colors = t("poopColors") || [];
+  const label = poopBristolLabel(rec);
+  const dotBg = rec.color ? (POOP_COLOR_MAP[rec.color - 1] || "#eee") : "rgba(0,0,0,0.08)";
+  return `${label ? `<div style="margin-bottom:3px;">🎯 Bristol: ${label}</div>` : ""}
+    <div style="margin-bottom:3px;">💩 ${t("poopAmountLabel")}: ${rec.amount ? amounts[rec.amount - 1] || "" : t("noRemark")}</div>
+    <div>🟤 ${t("poopColorLabel")}: <span class="poop-color-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${dotBg};vertical-align:middle;"></span> ${rec.color ? colors[rec.color - 1] || "" : t("poopColorNotSelected")}</div>`;
+}
+
+// 就地刷新单条记录的摘要与主文案：不重渲染整个弹窗，用户正在编辑的备注/追加表单不会被清空
+function refreshPoopRecordView(idx, rec) {
+  const summary = document.getElementById("poopSummary" + idx);
+  const content = document.getElementById("poopContent" + idx);
+  if (summary) summary.innerHTML = poopSummaryHtml(rec);
+  if (content) {
+    const label = poopBristolLabel(rec);
+    content.textContent = rec.remark ? rec.remark : (label ? `💩 ${label}` : t("noRemark"));
+  }
+}
+
 function showPoopEditModal(dateStr, dayRecords) {
   const isToday = dateStr === getToday();
   const isFuture = dateStr > getToday();
@@ -2824,7 +2852,7 @@ function showPoopEditModal(dateStr, dayRecords) {
         </div>
         <div class="poop-color-selector" style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopColorLabel')}</span>
-          ${(t("poopColors") || []).map((label, i) => `<button class="poop-color-btn-sm" data-color="${i+1}" id="poopAddColor${i+1}" data-tooltip="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid rgba(0,0,0,0.15);"></button>`).join("")}
+          ${(t("poopColors") || []).map((label, i) => `<button class="poop-color-btn-sm" data-color="${i+1}" id="poopAddColor${i+1}" data-tooltip="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};"></button>`).join("")}
         </div>
         <div class="edit-input-row" style="margin-top:8px;">
           <input class="edit-input" type="text" id="poopAddRemark" placeholder="${t('remarkPlaceholder')}" />
@@ -2964,10 +2992,8 @@ function showPoopEditModal(dateStr, dayRecords) {
       <div class="edit-record-content" id="poopContent${idx}" style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px;">
         ${rec.remark ? rec.remark : (bristolLabel ? `💩 ${bristolLabel}` : t('noRemark'))}
       </div>
-      <div style="font-size:11px;color:var(--muted);background:rgba(0,0,0,0.03);border-radius:6px;padding:8px 10px;margin-bottom:8px;">
-        ${bristolLabel ? `<div style="margin-bottom:3px;">🎯 Bristol: ${bristolLabel}</div>` : ''}
-        <div style="margin-bottom:3px;">💩 ${t('poopAmountLabel')}: ${rec.amount ? poopAmounts[rec.amount - 1] || '' : t('noRemark')}</div>
-        <div>🟤 ${t('poopColorLabel')}: <span class="poop-color-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${rec.color ? POOP_COLOR_MAP[rec.color - 1] || '#eee' : 'rgba(0,0,0,0.08)'};vertical-align:middle;"></span> ${rec.color ? poopColors[rec.color - 1] || '' : t('poopColorNotSelected')}</div>
+      <div id="poopSummary${idx}" style="font-size:11px;color:var(--muted);background:rgba(0,0,0,0.03);border-radius:6px;padding:8px 10px;margin-bottom:8px;">
+        ${poopSummaryHtml(rec)}
       </div>
       <div style="font-size:10px;color:var(--muted);white-space:nowrap;margin-top:4px;">${t('bristolTypeLabel')}</div>
       <div class="bristol-selector" data-record-idx="${idx}" style="margin-top:4px;">${bristolBtns}</div>
@@ -2977,7 +3003,7 @@ function showPoopEditModal(dateStr, dayRecords) {
       </div>
       <div class="poop-color-label" style="font-size:10px;color:var(--muted);white-space:nowrap;margin-top:6px;">${t('poopColorLabel')}</div>
       <div class="poop-color-picker expanded" data-idx="${idx}" style="margin-top:4px;">
-        ${poopColors.map((label, i) => `<button class="poop-color-btn-sm ${rec.color === (i+1) ? 'active' : ''}" data-idx="${idx}" data-color="${i+1}" data-tooltip="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid ${rec.color === (i+1) ? 'var(--poop)' : 'rgba(0,0,0,0.15)'};"></button>`).join("")}
+        ${poopColors.map((label, i) => `<button class="poop-color-btn-sm ${rec.color === (i+1) ? 'active' : ''}" data-idx="${idx}" data-color="${i+1}" data-tooltip="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};"></button>`).join("")}
       </div>
       <div class="edit-input-row" id="poopEditFormTime${idx}" style="display:none;align-items:center;margin-top:8px;">
         <input type="time" class="edit-input" id="poopEditTime${idx}" value="${parsedTime}" placeholder="HH:mm" style="width:auto;flex:none;" />
@@ -2985,7 +3011,10 @@ function showPoopEditModal(dateStr, dayRecords) {
       </div>
       <div class="edit-input-row" id="poopEditForm${idx}" style="display:none;">
         <input class="edit-input" type="text" id="poopEditContent${idx}" value="${rec.remark || ""}" placeholder="${t('editRemarkPlaceholder')}" />
-        <button class="edit-save-btn" data-action="save-poop" data-index="${idx}">${t('saveEdit')}</button>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button class="edit-save-btn" data-action="cancel-poop" data-index="${idx}" style="flex:1;background:rgba(127,127,127,0.18);color:var(--text);box-shadow:none;">${t('cancel')}</button>
+          <button class="edit-save-btn" data-action="save-poop" data-index="${idx}" style="flex:2;">${t('saveEdit')}</button>
+        </div>
       </div>
     </div>
   `;
@@ -3008,14 +3037,14 @@ function showPoopEditModal(dateStr, dayRecords) {
         ${bristolTypes.map((label, i) => `<button class="bristol-btn" data-type="${i+1}" data-tooltip="${label}(${bristolDescs[i] || ''})">${i+1}</button>`).join('')}
       </div>
       <!-- 排便量 -->
-      <div class="edit-input-row" style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <div class="poop-amount-selector-add" style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${t('poopAmountLabel')}</span>
         ${poopAmounts.map((label, i) => `<button class="poop-amount-btn-sm" data-amount="${i+1}" id="poopAppendAmount${i+1}">${label}</button>`).join('')}
       </div>
       <!-- 颜色 -->
       <div class="poop-color-label" style="font-size:10px;color:var(--muted);white-space:nowrap;margin-top:6px;">${t('poopColorLabel')}</div>
       <div class="poop-color-picker-add" style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
-        ${poopColors.map((label, i) => `<button class="poop-color-btn-sm" data-color="${i+1}" data-tooltip="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};border:2px solid rgba(0,0,0,0.15);"></button>`).join('')}
+        ${poopColors.map((label, i) => `<button class="poop-color-btn-sm" data-color="${i+1}" data-tooltip="${label}" style="background:${POOP_COLOR_MAP[i] || '#eee'};"></button>`).join('')}
       </div>
       <div class="edit-input-row" style="margin-top:8px;">
         <input class="edit-input" type="text" id="poopAppendRemark" placeholder="${t('remarkPlaceholder')}" maxlength="50" style="font-size:11px;" />
@@ -3028,40 +3057,30 @@ function showPoopEditModal(dateStr, dayRecords) {
   (function bindPoopAppend() {
     const appendBtn = document.getElementById("poopAppendBtn");
     if (!appendBtn) return;
-    // Bristol 选择
-    editModalBody.querySelectorAll(".bristol-selector-add .bristol-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const type = parseInt(btn.dataset.type);
-        const active = btn.classList.contains("active");
-        editModalBody.querySelectorAll(".bristol-selector-add .bristol-btn").forEach(b => { b.classList.remove("active"); b.style.border = "1px solid rgba(0,0,0,0.15)"; });
-        if (!active) { btn.classList.add("active"); btn.style.border = "2px solid var(--poop)"; }
+    // 三组选择器各自独立作用域：以前用全局 querySelectorAll 互相清空选中态，
+    // 还给按钮加行内 border 覆盖 CSS，导致点选没有反馈
+    const bristolBtns = editModalBody.querySelectorAll(".bristol-selector-add .bristol-btn");
+    const amountBtns = editModalBody.querySelectorAll(".poop-amount-selector-add .poop-amount-btn-sm");
+    const colorBtns = editModalBody.querySelectorAll(".poop-color-picker-add .poop-color-btn-sm");
+    const bindToggle = (btns) => {
+      btns.forEach(btn => {
+        btn.addEventListener("click", () => {
+          const wasActive = btn.classList.contains("active");
+          btns.forEach(b => b.classList.remove("active"));
+          if (!wasActive) btn.classList.add("active");
+        });
       });
-    });
-    // 排便量
-    editModalBody.querySelectorAll(".poop-amount-btn-sm").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const amount = parseInt(btn.dataset.amount);
-        const active = btn.classList.contains("active");
-        editModalBody.querySelectorAll(".poop-amount-btn-sm").forEach(b => b.classList.remove("active"));
-        if (!active) btn.classList.add("active");
-      });
-    });
-    // 颜色
-    editModalBody.querySelectorAll(".poop-color-btn-sm").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const color = parseInt(btn.dataset.color);
-        const active = btn.classList.contains("active");
-        editModalBody.querySelectorAll(".poop-color-btn-sm").forEach(b => { b.classList.remove("active"); b.style.border = "2px solid rgba(0,0,0,0.15)"; });
-        if (!active) { btn.classList.add("active"); btn.style.border = "2px solid var(--poop)"; }
-      });
-    });
+    };
+    bindToggle(bristolBtns);
+    bindToggle(amountBtns);
+    bindToggle(colorBtns);
     appendBtn.addEventListener("click", () => {
       let addBristol = 0;
-      editModalBody.querySelectorAll(".bristol-selector-add .bristol-btn").forEach(btn => { if (btn.classList.contains("active")) addBristol = parseInt(btn.dataset.type); });
+      bristolBtns.forEach(btn => { if (btn.classList.contains("active")) addBristol = parseInt(btn.dataset.type); });
       let addAmount = 0;
-      editModalBody.querySelectorAll(".poop-amount-btn-sm").forEach(btn => { if (btn.classList.contains("active")) addAmount = parseInt(btn.dataset.amount); });
+      amountBtns.forEach(btn => { if (btn.classList.contains("active")) addAmount = parseInt(btn.dataset.amount); });
       let addColor = 0;
-      editModalBody.querySelectorAll(".poop-color-btn-sm").forEach(btn => { if (btn.classList.contains("active")) addColor = parseInt(btn.dataset.color); });
+      colorBtns.forEach(btn => { if (btn.classList.contains("active")) addColor = parseInt(btn.dataset.color); });
       const remark = document.getElementById("poopAppendRemark").value.trim();
       const timeVal = document.getElementById("poopAppendTime").value;
       const recordTime = timeVal ? (() => { const [h, m] = timeVal.split(":"); return `${h.padStart(2,"0")}:${m.padStart(2,"0")}`; })() : new Date().toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });
@@ -3086,85 +3105,45 @@ function showPoopEditModal(dateStr, dayRecords) {
     });
   })();
 
-  // Bristol 按钮点击事件（事件委托）
-  editModalBody.querySelectorAll(".bristol-btn").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      const idx = Number(btn.dataset.idx);
-      const type = Number(btn.dataset.type);
-      chrome.storage.local.get(["poopRecords"], (data) => {
-        const records = data.poopRecords || {};
-        if (records[currentEditDate] && records[currentEditDate][idx]) {
-          // 切换：再次点击同一类型则取消
-          const cur = records[currentEditDate][idx].bristolType;
-          records[currentEditDate][idx].bristolType = (cur === type) ? null : type;
-          persistRecords('poopRecords', records, () => {
-            // 刷新弹窗
-            chrome.storage.local.get(["poopRecords"], (d) => {
-              if (d.poopRecords && d.poopRecords[currentEditDate]) {
-                showPoopEditModal(currentEditDate, d.poopRecords[currentEditDate]);
-              }
-            });
-          });
-        }
+  // 单条记录内的选择器（Bristol / 排便量 / 颜色）：就地保存 + 就地刷新摘要。
+  // 以前每次都整弹窗重渲染，会把用户正在填写的备注或「追加记录」表单清空。
+  function togglePoopRecordField(btn, field, value, container) {
+    const idx = Number(btn.dataset.idx);
+    const wasActive = btn.classList.contains("active");
+    if (container) container.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+    if (!wasActive) btn.classList.add("active");
+    chrome.storage.local.get(["poopRecords"], (data) => {
+      const records = data.poopRecords || {};
+      const rec = records[currentEditDate] && records[currentEditDate][idx];
+      if (!rec) return;
+      rec[field] = (rec[field] === value) ? null : value;
+      persistRecords('poopRecords', records, () => {
+        renderPoopCalendar();
+        updatePoopTodayStatus();
+        updatePoopStats();
+        refreshPoopRecordView(idx, rec);
       });
+    });
+  }
+
+  // Bristol 按钮点击事件（仅限单条记录的选择器，追加区块另有一套绑定）
+  editModalBody.querySelectorAll(".bristol-selector .bristol-btn[data-idx]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      togglePoopRecordField(btn, "bristolType", Number(btn.dataset.type), btn.closest(".bristol-selector"));
     });
   });
 
-  // 排便量按钮点击事件
-  editModalBody.querySelectorAll(".poop-amount-btn-sm").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      const idx = Number(btn.dataset.idx);
-      const amount = Number(btn.dataset.amount);
-      chrome.storage.local.get(["poopRecords"], (data) => {
-        const records = data.poopRecords || {};
-        if (records[currentEditDate] && records[currentEditDate][idx]) {
-          const cur = records[currentEditDate][idx].amount;
-          records[currentEditDate][idx].amount = (cur === amount) ? null : amount;
-          persistRecords('poopRecords', records, () => {
-            chrome.storage.local.get(["poopRecords"], (d) => {
-              if (d.poopRecords && d.poopRecords[currentEditDate]) {
-                showPoopEditModal(currentEditDate, d.poopRecords[currentEditDate]);
-              }
-            });
-          });
-        }
-      });
+  // 排便量按钮点击事件（仅限单条记录的操作区）
+  editModalBody.querySelectorAll(".poop-amount-selector[data-record-idx] .poop-amount-btn-sm").forEach(btn => {
+    btn.addEventListener("click", () => {
+      togglePoopRecordField(btn, "amount", Number(btn.dataset.amount), btn.closest(".poop-amount-selector"));
     });
   });
 
-  // 大便颜色：点击显示区 → 展开/收起选择面板
-  editModalBody.querySelectorAll(".poop-color-display").forEach(display => {
-    display.addEventListener("click", () => {
-      const idx = display.dataset.idx;
-      const picker = editModalBody.querySelector(`.poop-color-picker[data-idx="${idx}"]`);
-      if (!picker) return;
-      // 关闭其他已展开的面板
-      editModalBody.querySelectorAll(".poop-color-picker.expanded").forEach(p => {
-        if (p !== picker) p.classList.remove("expanded");
-      });
-      picker.classList.toggle("expanded");
-    });
-  });
-
-  // 大便颜色按钮点击事件
-  editModalBody.querySelectorAll(".poop-color-btn-sm").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      const idx = Number(btn.dataset.idx);
-      const color = Number(btn.dataset.color);
-      chrome.storage.local.get(["poopRecords"], (data) => {
-        const records = data.poopRecords || {};
-        if (records[currentEditDate] && records[currentEditDate][idx]) {
-          const cur = records[currentEditDate][idx].color;
-          records[currentEditDate][idx].color = (cur === color) ? null : color;
-          persistRecords('poopRecords', records, () => {
-            chrome.storage.local.get(["poopRecords"], (d) => {
-              if (d.poopRecords && d.poopRecords[currentEditDate]) {
-                showPoopEditModal(currentEditDate, d.poopRecords[currentEditDate]);
-              }
-            });
-          });
-        }
-      });
+  // 大便颜色按钮点击事件（仅限单条记录的颜色面板）
+  editModalBody.querySelectorAll(".poop-color-picker .poop-color-btn-sm").forEach(btn => {
+    btn.addEventListener("click", () => {
+      togglePoopRecordField(btn, "color", Number(btn.dataset.color), btn.closest(".poop-color-picker"));
     });
   });
 }
@@ -4476,6 +4455,11 @@ editModalBody.addEventListener("click", (e) => {
     document.getElementById("poopEditFormTime" + idx).style.display = "flex";
     document.getElementById("poopEditForm" + idx).style.display = "block";
     document.getElementById("poopContent" + idx).style.display = "none";
+  } else if (action === "cancel-poop") {
+    // 取消编辑：收起输入、恢复原文案，不改动数据
+    document.getElementById("poopEditFormTime" + idx).style.display = "none";
+    document.getElementById("poopEditForm" + idx).style.display = "none";
+    document.getElementById("poopContent" + idx).style.display = "block";
   } else if (action === "save-poop") {
     const newRemark = document.getElementById("poopEditContent" + idx).value.trim();
     // 获取编辑后的时间
