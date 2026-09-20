@@ -4877,9 +4877,9 @@ function applyTheme(themeId) {
   currentThemeId = themeId;
 
   // 深色自定义主题复用现成 dark 覆盖规则；浅色自定义主题走 custom（不套任何主题覆盖）
-  // 不能只看 preset.dataTheme：早期存的自定义主题没这个字段，会退化成 "custom:xxx"，
-  // 导致 body[data-theme="dark"] 那层深色规则全部失效（卡片发白、浅色文字看不见）。
-  const dataTheme = preset.dataTheme || customThemeDataAttr(preset) || themeId;
+  // 必须【按背景色现算】优先：存下来的 dataTheme 可能是旧判据算错的（浅紫主题被当成深色），
+  // 只有现算才能让老主题在下一次打开时自动修好，不用用户重新保存一遍。
+  const dataTheme = customThemeDataAttr(preset) || preset.dataTheme || themeId;
   applyThemeObject(preset, dataTheme);
 
   // 预设 trigger 固定显示"上次用过的预设"，避免被自定义主题改写后无从切回
@@ -5011,6 +5011,15 @@ function loadTheme() {
     ["selectedTheme", "selectedPresetTheme", "selectedCustomTheme", "customThemes"],
     (data) => {
     customThemes = normalizeCustomThemes(data.customThemes);
+    // 一键修复：规范化结果与存储不一致（旧判据算出的明暗/派生色）就写回一次，
+    // 之后两边一致不再写。老主题因此不需要用户重新保存就能修好。
+    try {
+      if (JSON.stringify(customThemes) !== JSON.stringify(data.customThemes || {})) {
+        chrome.storage.local.set({ customThemes });
+      }
+    } catch (e) {
+      // 序列化失败（异常数据）就只修内存里的，别阻塞主题加载
+    }
     currentPresetId = THEME_PRESETS[data.selectedPresetTheme] ? data.selectedPresetTheme : "default";
     selectedCustomThemeId = data.selectedCustomTheme || null;
 

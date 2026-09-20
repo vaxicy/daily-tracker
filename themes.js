@@ -1535,8 +1535,12 @@ export function relativeLuminance(hex) {
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
+// 明暗判定：直接比较「白字 / 深字」哪个在这个色上更清楚，谁更清楚就按哪一边算。
+// 不要用亮度阈值硬卡 —— 粉、紫、浅薰衣草这类"看着很浅但 WCAG 亮度偏低"的色
+// 会被 0.62 这种阈值误判成深色（用户截图：浅紫背景却套上了深色卡片/按钮/开关）。
+// 这个判据与 fillTextColorOn 完全一致，所以"主题明暗"和"文字该用什么色"永不打架。
 export function isLightColor(hex) {
-  return relativeLuminance(hex) > 0.62;
+  return contrastWithWhite(hex) < contrastWithDark(hex);
 }
 
 // 两色对比度
@@ -1553,7 +1557,9 @@ export function readableOn(color, surface, target = 4.5) {
   if (contrastRatio(color, surface) >= target) return color;
   const rgb = hexToRgb(color);
   const hsl = rgbToHsl(rgb);
-  const toLight = relativeLuminance(surface) < 0.5; // 深底 → 往亮走；浅底 → 往暗走
+  // 往哪个方向调？看「白 / 黑」谁在这个底色上对比更高 —— 不能拿底色亮度卡 0.5：
+  // 亮蓝 (#30AFFF, 亮度 0.385) 其实该压暗，按 0.5 判会一路走到白、对比反而更差。
+  const toLight = contrastRatio("#ffffff", surface) > contrastRatio("#000000", surface);
   let l = hsl.l;
   let out = color;
   for (let i = 0; i < 60; i++) {
