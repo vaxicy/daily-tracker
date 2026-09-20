@@ -1634,6 +1634,17 @@ function pickBest(list, score) {
   return list.reduce((best, c) => (score(c) > score(best) ? c : best), list[0]);
 }
 
+// 调色板"灰不灰"：一个够鲜艳的颜色都没有（彩度全 < 0.25），并且整体偏暗或整体偏亮
+// （即"一坨暗暗的灰紫"或"一片浅白灰"）→ 主题会没重点、看着发灰。
+// 编辑器据此给一句提示；注意**不自动改用户颜色** —— 颜色始终由用户说了算。
+export function isDullPalette(colors) {
+  const list = (Array.isArray(colors) ? colors : []).map(normalizeHex).filter(Boolean);
+  if (list.length < 2) return false;
+  if (Math.max(...list.map(chromaOf)) >= 0.25) return false;
+  const lums = list.map(relativeLuminance);
+  return Math.max(...lums) < 0.4 || Math.min(...lums) > 0.55;
+}
+
 export function resolvePalette(anchors = {}) {
   let palette = Array.isArray(anchors.palette) ? anchors.palette.map(normalizeHex).filter(Boolean) : [];
   if (!palette.length) {
@@ -1723,15 +1734,15 @@ export function randomPalette() {
   const baseHue = rndInt(0, 359);
   const dir = Math.random() < 0.5 ? 1 : -1;
 
-  // 背景：同色相的极淡/极深色，饱和度压低（别抢戏，也不会变成艳色底）
+  // 背景：同色相的极淡/极深色（彩度压低但别压成灰 —— 饱和度太低会得到一个"灰底"主题）
   const bg = dark
-    ? hsl(baseHue + rndInt(-40, 40), rnd(0.18, 0.4), rnd(0.10, 0.20))
-    : hsl(baseHue + rndInt(-40, 40), rnd(0.10, 0.35), rnd(0.88, 0.96));
+    ? hsl(baseHue + rndInt(-40, 40), rnd(0.3, 0.55), rnd(0.12, 0.22))
+    : hsl(baseHue + rndInt(-40, 40), rnd(0.12, 0.38), rnd(0.88, 0.96));
   // 主色：同色相家族里"能站住"的那个明度（深底要亮、浅底要沉）
   const mainL = dark ? rnd(0.64, 0.78) : rnd(0.42, 0.56);
-  const primary = hsl(baseHue, rnd(0.55, 0.9), mainL);
+  const primary = hsl(baseHue, rnd(0.65, 0.95), mainL);
   // 副色：撞色 —— 色相偏 100~200 度（这就是"两个颜色一起撞色"）
-  const secondary = hsl(baseHue + dir * rndInt(100, 200), rnd(0.5, 0.9), mainL + rnd(-0.08, 0.08));
+  const secondary = hsl(baseHue + dir * rndInt(100, 200), rnd(0.6, 0.95), mainL + rnd(-0.08, 0.08));
 
   const palette = [primary, secondary];
   // 一半概率再给一个点缀色（用在经期这类需要第三色的地方）
