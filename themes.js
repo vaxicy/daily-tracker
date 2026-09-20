@@ -1587,8 +1587,6 @@ export function buildCustomTheme(anchors = {}) {
   const p = /^#[0-9a-fA-F]{6}$/.test(String(anchors.primary || "")) ? anchors.primary : "#0b6bff";
   const s = /^#[0-9a-fA-F]{6}$/.test(String(anchors.secondary || "")) ? anchors.secondary : tintHex(p, 0.3);
   const g = /^#[0-9a-fA-F]{6}$/.test(String(anchors.bg || "")) ? anchors.bg : tintHex(p, 0.88);
-  // 强调色（可选，编辑器第 4 个色）：留空 = 自动（由主色推导）
-  const accentRaw = /^#[0-9a-fA-F]{6}$/.test(String(anchors.accent || "")) ? anchors.accent : null;
 
   // 背景明暗【完全由用户选的背景色决定】，不再由开关改写用户色卡
   const bgIsDark = !isLightColor(g);
@@ -1610,20 +1608,9 @@ export function buildCustomTheme(anchors = {}) {
   // 所以在深色主题里往白走、浅色主题里往黑走，逐档微调到 4.5:1。预设主题不定义这组变量，
   // CSS 里都用 var(--xxx-text, var(--xxx)) 回退，所以 38 个预设的观感完全不变。
   const asText = (c) => readableOn(c, cardBg);
-  // 强调色：所有「当文字/图形用」的颜色都由它派生 —— 日历色阶基准、图表柱子、强调文字。
-  // 用户没给就自动用主色推导；给了也仍要过对比度检查，不达标就朝安全方向微调（并记下来给编辑器看）。
-  // 没有它的话，浅淡主色会被硬压成发灰的颜色（用户反馈"黑不溜秋、不符合主题选色"）。
-  // 手动指定的强调色【一律原样使用，绝不自动校正】（用户要求）；只有自动模式才由主色推导
-  const accent = accentRaw || readableOn(p, cardBg);
-  const accentLowContrast = !!accentRaw && contrastRatio(accentRaw, cardBg) < 4.5;
-  // 对比度检查明细（编辑器会展示：通过 / 哪一项被自动校正成什么）。
-  // 只有"自动模式下的主色推导"会出现在这里 —— 用户手选的强调色永不校正、也就不上报。
-  const contrastFixes = [];
-  if (!accentRaw && contrastRatio(p, cardBg) < 4.5) {
-    contrastFixes.push({ key: "primary", from: p, to: accent });
-  }
-  // 等级阶梯的基准色（"最强"那一档）= 强调色，再往卡片方向逐档混
-  const lvBase = accent;
+  // 等级阶梯的基准色（"最强"那一档）：先把主色调到在卡片上可读（≥4.5:1），再往卡片方向逐档混。
+  // readableOn 只改明度、保留色相与饱和度，所以浅淡主色也能排出可见的 4 档而不是一片灰。
+  const lvBase = asText(p);
   // 四档从卡片底单调递进：浅色主题越深=喝得越多，深色主题越亮=喝得越多。
   // 全部由同一个基准色推出来，保证单调、不会出现"第 5 档比第 4 档还浅"的错乱。
   const lvTint = (r) => mixHex(cardBg, lvBase, r);
@@ -1668,10 +1655,10 @@ export function buildCustomTheme(anchors = {}) {
     "--period": period,
     "--period2": tintHex(period, 0.45),
     "--period-glow": hexWithAlpha(period, 0.42),
-    // 当文字/图形用的语义色（深底提亮 / 浅底压暗，保证可读）；主色与吃饭色跟随强调色
-    "--primary-text": accent,
+    // 当文字用的语义色（深底提亮 / 浅底压暗，保证可读）
+    "--primary-text": lvBase,
     "--secondary-text": asText(s),
-    "--eat-text": accent,
+    "--eat-text": lvBase,
     "--pee-text": asText(s),
     "--poop-text": asText(poop),
     "--period-text": asText(period),
@@ -1705,14 +1692,7 @@ export function buildCustomTheme(anchors = {}) {
     dataTheme: bgIsDark ? "dark" : "custom",
     // 实际生效的文字方向（自动推导，浅底深字 / 深底浅字）
     darkText,
-    // 对比度检查：自动模式下哪些项被推导校正过（编辑器用来显示"全部通过 / 已校正为 xxx"）
-    contrastFixes,
-    // 手动强调色的对比度是否偏低（只提示，不改色）
-    accentLowContrast,
-    // 强调色只在用户真填了的时候存（留空 = 自动，不落库）
-    anchors: accentRaw
-      ? { primary: p, secondary: s, bg: g, accent: accentRaw }
-      : { primary: p, secondary: s, bg: g },
+    anchors: { primary: p, secondary: s, bg: g },
     vars,
     dot: `linear-gradient(135deg,${p},${primary2},${s})`,
     bgGradient: bgIsDark

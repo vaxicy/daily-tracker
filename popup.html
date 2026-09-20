@@ -7347,20 +7347,6 @@
       border: 1px solid var(--card-border, rgba(12,42,77,0.15));
       border-radius: 6px; background: none; cursor: pointer;
     }
-    /* 强调色：色块 + 「自动」开关（关闭后由用户指定） */
-    .ct-color-field { display: flex; align-items: center; gap: 6px; }
-    .ct-auto-btn {
-      border: 1px solid var(--card-border, rgba(12,42,77,0.15));
-      background: transparent; color: var(--muted);
-      font-size: 10px; font-weight: 600; line-height: 1;
-      padding: 5px 7px; border-radius: 6px; cursor: pointer;
-      transition: color 0.15s, border-color 0.15s, background 0.15s;
-    }
-    .ct-auto-btn:hover { color: var(--primary-text, var(--primary)); border-color: var(--primary-text, var(--primary)); }
-    .ct-auto-btn.on { color: var(--on-primary, #fff); background: var(--primary); border-color: transparent; }
-    /* 对比度检查结果：通过时低调，被自动校正时用强调色提醒 */
-    .ct-check { font-size: 10px; line-height: 1.45; color: var(--muted); margin: 0 0 6px; }
-    .ct-check.fix { color: var(--primary-text, var(--primary)); }
     .ct-preview {
       display: flex; align-items: center; gap: 8px;
       padding: 8px 10px; border-radius: 10px; margin: 12px 0 8px;
@@ -7402,20 +7388,12 @@
           <span data-i18n="customThemeBg">背景色</span>
           <input type="color" id="ctBg" value="#eaf5ff" />
         </label>
-        <label class="ct-row">
-          <span data-i18n="customThemeAccent">强调色</span>
-          <span class="ct-color-field">
-            <input type="color" id="ctAccent" value="#0b6bff" />
-            <button type="button" class="ct-auto-btn on" id="ctAccentAuto" data-i18n="customThemeAccentAuto">自动</button>
-          </span>
-        </label>
         <div class="ct-preview">
           <span class="ct-preview-dot" id="ctPreviewDot"></span>
           <span class="ct-preview-name" id="ctPreviewName"></span>
           <span class="ct-preview-btn" data-i18n="customThemePreview">预览</span>
         </div>
-        <div class="ct-check" id="ctContrastNote"></div>
-        <div class="ct-tip" id="ctTip" data-i18n="customThemeTip">选 4 个颜色即可，其余自动生成</div>
+        <div class="ct-tip" id="ctTip" data-i18n="customThemeTip">选 3 个颜色即可，其余自动生成</div>
         <div class="inline-confirm-btns ct-btns">
           <button class="inline-confirm-btn cancel" id="ctCancel" data-i18n="cancel">取消</button>
           <button class="inline-confirm-btn confirm" id="ctSave" data-i18n="save">保存</button>
