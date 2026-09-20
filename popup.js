@@ -4892,15 +4892,87 @@ function applyTheme(themeId) {
 
 // ==================== 自定义主题编辑器 ====================
 
+// ==================== 调色板（2~4 个颜色，角色由生成器自动分配） ====================
+
+let ctPalette = []; // 用户给的原始颜色（顺序即用户所见）
+// 已经定好的角色分配（编辑器里必须沿用）：新增一个颜色时它会补到"空角色"上，
+// 而不是按规则重排 —— 否则用户加个颜色就会把原来的主色/背景抢走（踩过）
+let ctRoles = {};
+
+// 新增色块时的候选：挑第一个还没用到的，保证一加就能看出区别
+const CT_NEW_COLOR_CANDIDATES = ["#e0679e", "#0bbf9c", "#f5a524", "#7c5cff", "#3fa9f5"];
+
+const isHexColor = (v) => /^#[0-9a-fA-F]{6}$/.test(String(v || ""));
+
+// 从已存主题的 anchors 还原出调色板（兼容老格式 {primary, secondary, bg}）
+function editorPaletteFromAnchors(a) {
+  const out = [];
+  const push = (c) => {
+    if (!isHexColor(c)) return;
+    const v = String(c).toLowerCase();
+    if (!out.some((x) => x.toLowerCase() === v)) out.push(String(c));
+  };
+  if (a && Array.isArray(a.palette)) a.palette.forEach(push);
+  if (!out.length && a) {
+    const roles = a.roles || {};
+    push(roles.primary || a.primary);
+    push(roles.secondary || a.secondary);
+    push(roles.accent || a.accent);
+    push(roles.bg || a.bg);
+  }
+  // 至少要两个颜色（只有一个时由它淡出背景）
+  if (out.length === 1) out.push("#eaf5ff");
+  if (!out.length) return ["#0b6bff", "#eaf5ff"];
+  return out.slice(0, 4);
+}
+
+// 老主题（只存了 primary/bg 这类字段、没有 roles）也要把角色带过来
+function editorRolesFromAnchors(a) {
+  if (!a) return {};
+  if (a.roles && Object.keys(a.roles).length) return Object.assign({}, a.roles);
+  const out = {};
+  ["primary", "secondary", "accent", "bg"].forEach((role) => {
+    if (isHexColor(a[role])) out[role] = a[role];
+  });
+  return out;
+}
+
 function currentEditorAnchors() {
   const nameEl = document.getElementById("ctName");
-  const p = document.getElementById("ctPrimary");
-  const g = document.getElementById("ctBg");
   return {
-    primary: p ? p.value : "#0b6bff",
-    bg: g ? g.value : "#eaf5ff",
+    palette: ctPalette.slice(),
+    roles: Object.assign({}, ctRoles),
     name: nameEl ? nameEl.value : ""
   };
+}
+
+// 渲染色块行：2~4 个；多于 2 个时每个色块右上角出现 ✕
+function renderEditorPalette() {
+  const box = document.getElementById("ctPalette");
+  if (!box) return;
+  box.innerHTML = "";
+  ctPalette.forEach((color, i) => {
+    const wrap = document.createElement("span");
+    wrap.className = "ct-swatch";
+    const input = document.createElement("input");
+    input.type = "color";
+    input.value = color;
+    input.dataset.index = String(i);
+    wrap.appendChild(input);
+    if (ctPalette.length > 2) {
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "ct-swatch-del";
+      del.dataset.index = String(i);
+      del.textContent = "✕";
+      del.title = t("customThemeRemoveColor");
+      wrap.appendChild(del);
+    }
+    box.appendChild(wrap);
+  });
+  const addBtn = document.getElementById("ctAddColor");
+  if (addBtn) addBtn.style.display = ctPalette.length >= 4 ? "none" : "";
+  updateCustomThemePreview();
 }
 
 // 实时预览：生成结果直接套到 popup 上，所见即所得
@@ -4912,6 +4984,8 @@ function updateCustomThemePreview() {
   if (dot) dot.style.background = built.dot;
   const nm = document.getElementById("ctPreviewName");
   if (nm) nm.textContent = String(anchors.name || "").trim() || t("customThemeDefaultName");
+  // 把这次的分配结果记下来，后续增删颜色时沿用（角色稳定，不会互相抢）
+  ctRoles = built.anchors.roles || {};
   applyThemeObject(built, built.dataTheme);
   return built;
 }
@@ -4921,15 +4995,12 @@ function openCustomThemeEditor(themeId) {
   if (!modal) return;
   editingThemeId = themeId || null;
   const rec = themeId ? customThemes[themeId] : null;
-  const a = (rec && rec.anchors) || { primary: "#0b6bff", bg: "#eaf5ff" };
   const nameEl = document.getElementById("ctName");
-  const p = document.getElementById("ctPrimary");
-  const g = document.getElementById("ctBg");
   if (nameEl) nameEl.value = rec ? rec.label : t("customThemeDefaultName");
-  if (p) p.value = /^#[0-9a-fA-F]{6}$/.test(a.primary) ? a.primary : "#0b6bff";
-  if (g) g.value = /^#[0-9a-fA-F]{6}$/.test(a.bg) ? a.bg : "#eaf5ff";
+  ctPalette = editorPaletteFromAnchors(rec ? rec.anchors : null);
+  ctRoles = editorRolesFromAnchors(rec ? rec.anchors : null);
   modal.classList.remove("hidden");
-  updateCustomThemePreview();
+  renderEditorPalette();
 }
 
 function closeCustomThemeEditor() {
@@ -5312,8 +5383,8 @@ if (customTriggerEl && customDropdownEl) {
   const modal = document.getElementById("customThemeModal");
   if (!modal) return;
   const nameEl = document.getElementById("ctName");
-  const primaryEl = document.getElementById("ctPrimary");
-  const bgEl = document.getElementById("ctBg");
+  const paletteBox = document.getElementById("ctPalette");
+  const addColorBtn = document.getElementById("ctAddColor");
   const closeBtn = document.getElementById("ctClose");
   const cancelBtn = document.getElementById("ctCancel");
   const saveBtn = document.getElementById("ctSave");
@@ -5324,9 +5395,32 @@ if (customTriggerEl && customDropdownEl) {
   modal.addEventListener("click", (e) => {
     if (e.target === modal) closeCustomThemeEditor();
   });
-  [nameEl, primaryEl, bgEl].forEach((el) => {
-    if (el) el.addEventListener("input", updateCustomThemePreview);
-  });
+  if (nameEl) nameEl.addEventListener("input", updateCustomThemePreview);
+  // 色块是动态渲染的，所以用事件委托
+  if (paletteBox) {
+    paletteBox.addEventListener("input", (e) => {
+      const input = e.target;
+      if (!input || input.type !== "color") return;
+      ctPalette[Number(input.dataset.index)] = input.value;
+      updateCustomThemePreview();
+    });
+    paletteBox.addEventListener("click", (e) => {
+      const del = e.target && e.target.closest ? e.target.closest(".ct-swatch-del") : null;
+      if (!del || ctPalette.length <= 2) return;
+      ctPalette.splice(Number(del.dataset.index), 1);
+      renderEditorPalette();
+    });
+  }
+  if (addColorBtn) {
+    addColorBtn.addEventListener("click", () => {
+      if (ctPalette.length >= 4) return;
+      const next =
+        CT_NEW_COLOR_CANDIDATES.find((c) => !ctPalette.some((x) => x.toLowerCase() === c.toLowerCase())) ||
+        CT_NEW_COLOR_CANDIDATES[0];
+      ctPalette.push(next);
+      renderEditorPalette();
+    });
+  }
 })();
 
 

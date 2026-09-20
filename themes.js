@@ -1578,7 +1578,10 @@ export function readableOn(color, surface, target = 4.5) {
 // 依据【实际背景亮度】推导，不依赖存下来的字段 —— 旧数据/手改数据也能正确挂载。
 export function customThemeDataAttr(rec) {
   if (!rec || !rec.custom) return null;
-  const bg = (rec.vars && rec.vars["--bg"]) || (rec.anchors && rec.anchors.bg);
+  const bg =
+    (rec.vars && rec.vars["--bg"]) ||
+    (rec.roles && rec.roles.bg) ||
+    (rec.anchors && (rec.anchors.bg || (rec.anchors.roles && rec.anchors.roles.bg)));
   return bg && !isLightColor(bg) ? "dark" : "custom";
 }
 
@@ -1587,14 +1590,125 @@ function contrastWithWhite(hex) {
   return 1.05 / (relativeLuminance(hex) + 0.05);
 }
 
-// 由 3 个锚点色生成完整主题（31 个 CSS 变量 + dot + bgGradient）
-// anchors.base 已废弃（保留兼容：旧数据里可能还有，直接忽略）
+// ==================== 调色板 → 角色分配（智能分配，不需要用户指定谁是谁） ====================
+// 用户最多给 4 个颜色，谁当背景/主色/副色/点缀由对比度 + 饱和度测试决定：
+//   · 背景：挑"像画布"的那个（够淡或够深、且不太艳）；一个都不像就由主色淡出来 —— 绝不让艳色当全屏底
+//   · 主色：剩下里最鲜艳的（撞色时它就是主角）
+//   · 副色：剩下里与主色色相差最大的（撞色优先，两个颜色才"撞"得起来）
+//   · 点缀色（第 4 个）：剩下的那个，用在经期这类需要第三种颜色的地方
+// 已定好的角色（老数据 / 上次的分配结果）只要色值还在调色板里就沿用，观感不会跳。
+function normalizeHex(v) {
+  const s = String(v || "");
+  if (!/^#[0-9a-fA-F]{6}$/.test(s)) return null;
+  const { r, g, b } = hexToRgb(s);
+  return rgbToHex(r, g, b);
+}
+
+// 彩度（max-min）：比 HSL 的 S 稳 —— HSL 的 S 在接近纯白/纯黑时会虚高到 1
+function chromaOf(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  return (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
+}
+
+function hueOf(hex) {
+  return rgbToHsl(hexToRgb(hex)).h;
+}
+
+// "像画布"的颜色：要么够淡、要么够深，而且不太艳（艳色当全屏底色会刺眼）
+function isCanvasColor(hex) {
+  const l = relativeLuminance(hex);
+  return chromaOf(hex) <= 0.35 && (l >= 0.55 || l <= 0.25);
+}
+
+function canvasScore(hex) {
+  return Math.abs(relativeLuminance(hex) - 0.5) * 2 * (1 - chromaOf(hex) * 0.7);
+}
+
+function pickBest(list, score) {
+  return list.reduce((best, c) => (score(c) > score(best) ? c : best), list[0]);
+}
+
+export function resolvePalette(anchors = {}) {
+  let palette = Array.isArray(anchors.palette) ? anchors.palette.map(normalizeHex).filter(Boolean) : [];
+  if (!palette.length) {
+    // 老格式：{primary, secondary, bg} → 当成一串颜色看待
+    palette = [anchors.primary, anchors.secondary, anchors.accent, anchors.bg].map(normalizeHex).filter(Boolean);
+  }
+  palette = palette.filter((c, i) => palette.findIndex((x) => x.toLowerCase() === c.toLowerCase()) === i);
+  if (palette.length === 1) palette = palette.concat(tintHex(palette[0], 0.88));
+  if (!palette.length) palette = ["#0b6bff", "#eaf5ff"];
+
+  // 继承已有角色（色值必须仍在调色板里）
+  const prev = anchors.roles || {};
+  const keep = {};
+  ["bg", "primary", "secondary", "accent"].forEach((role) => {
+    const want = normalizeHex(prev[role]) || normalizeHex(anchors[role]);
+    if (!want) return;
+    const hit = palette.find((c) => c.toLowerCase() === want.toLowerCase());
+    if (hit) keep[role] = hit;
+  });
+  const free = palette.filter((c) => !Object.values(keep).some((k) => k.toLowerCase() === c.toLowerCase()));
+  const take = (c) => {
+    const i = free.indexOf(c);
+    if (i >= 0) free.splice(i, 1);
+    return c;
+  };
+
+  if (!keep.bg) {
+    const cands = free.filter(isCanvasColor);
+    if (cands.length) keep.bg = take(pickBest(cands, canvasScore));
+  }
+  if (!keep.primary) {
+    // 没有空闲颜色时（比如用户把"主色"那个色块删掉了）就从别的角色里"抢"一个回来，
+    // 否则主色会退化成背景色（两者同色 → 整个主题失去重点）
+    const pool = free.length ? free : palette.filter((c) => c !== keep.bg);
+    if (pool.length) {
+      const bgRef = keep.bg || null;
+      const chosen = pickBest(
+        pool,
+        (c) => chromaOf(c) * 2 + (bgRef ? Math.min(contrastRatio(c, bgRef), 6) / 6 : 0)
+      );
+      ["secondary", "accent"].forEach((r) => {
+        if (keep[r] === chosen) delete keep[r];
+      });
+      keep.primary = take(chosen);
+    }
+  }
+  if (!keep.secondary && free.length) {
+    keep.secondary = take(pickBest(free, (c) => {
+      const d = Math.abs(hueOf(c) - hueOf(keep.primary));
+      return Math.min(d, 360 - d) * (0.3 + Math.min(chromaOf(c), 0.5));
+    }));
+  }
+  if (!keep.accent && free.length) keep.accent = take(free[0]);
+
+  const primary = keep.primary || palette[0];
+  const secondary = keep.secondary || tintHex(primary, 0.3);
+  const bg = keep.bg || tintHex(primary, 0.88);
+  return {
+    palette,
+    primary,
+    secondary,
+    bg,
+    accent: keep.accent || null,
+    // 只有"确实是调色板里的颜色"才回存角色；派生出来的不存，
+    // 否则以后改主色时背景/副色不会跟着变（会留着旧值打架）
+    roles: {
+      primary,
+      ...(keep.secondary ? { secondary: keep.secondary } : {}),
+      ...(keep.accent ? { accent: keep.accent } : {}),
+      ...(keep.bg ? { bg: keep.bg } : {})
+    }
+  };
+}
+
+// 由调色板（最多 4 个颜色）生成完整主题（31 个 CSS 变量 + dot + bgGradient）
+// anchors 兼容三种形态：{palette, roles}（新）/ {primary, secondary, bg}（老）/ {primary, bg}
 export function buildCustomTheme(anchors = {}) {
-  const p = /^#[0-9a-fA-F]{6}$/.test(String(anchors.primary || "")) ? anchors.primary : "#0b6bff";
-  // 副色不再由用户控制（编辑器只给 2 个颜色：主色 + 背景色），一律从主色推导 ——
-  // 这样改主色时副色会跟着一起变，不会留下旧副色跟新主色打架。
-  const s = tintHex(p, 0.3);
-  const g = /^#[0-9a-fA-F]{6}$/.test(String(anchors.bg || "")) ? anchors.bg : tintHex(p, 0.88);
+  const pal = resolvePalette(anchors);
+  const p = pal.primary;
+  const s = pal.secondary;
+  const g = pal.bg;
 
   // 背景明暗【完全由用户选的背景色决定】，不再由开关改写用户色卡
   const bgIsDark = !isLightColor(g);
@@ -1606,7 +1720,8 @@ export function buildCustomTheme(anchors = {}) {
   const secondary2 = tintHex(s, 0.4);
   // 卡片跟着背景走（浅底更浅、深底更亮），不再混主色以免偏离用户色卡
   const cardBg = bgIsDark ? tintHex(g, 0.12) : tintHex(g, 0.62);
-  const period = mixHex("#E0679E", p, 0.2);
+  // 经期色：调色板给了第 4 个颜色就用它（撞色），否则沿用"粉与主色混一档"
+  const period = pal.accent || mixHex("#E0679E", p, 0.2);
   const poop = darkText ? "#8A6E4A" : tintHex("#8A6E4A", 0.15);
   // 角标：保饱和度压暗（混黑会发灰）
   const badge = badgeColorFor(p);
@@ -1700,8 +1815,8 @@ export function buildCustomTheme(anchors = {}) {
     dataTheme: bgIsDark ? "dark" : "custom",
     // 实际生效的文字方向（自动推导，浅底深字 / 深底浅字）
     darkText,
-    // 只存用户真正控制的两个颜色：副色是派生物，不落库（改主色时才能跟着一起变）
-    anchors: { primary: p, bg: g },
+    // 存用户给的调色板 + 分配结果；派生出来的（不在调色板里的）角色不回存
+    anchors: { palette: pal.palette, roles: pal.roles },
     vars,
     dot: `linear-gradient(135deg,${p},${primary2},${s})`,
     bgGradient: bgIsDark

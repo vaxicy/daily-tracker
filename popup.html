@@ -7347,6 +7347,37 @@
       border: 1px solid var(--card-border, rgba(12,42,77,0.15));
       border-radius: 6px; background: none; cursor: pointer;
     }
+    /* 调色板：2~4 个色块（角色由生成器自动分配，界面上不区分谁是谁） */
+    .ct-palette-row { align-items: center; }
+    .ct-palette {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      justify-content: flex-end; flex: 1; min-width: 0;
+    }
+    .ct-swatch { position: relative; display: inline-flex; }
+    .ct-swatch input[type="color"] {
+      width: 46px; height: 30px; padding: 0;
+      border: 1px solid var(--card-border, rgba(12,42,77,0.15));
+      border-radius: 8px; background: none; cursor: pointer;
+    }
+    .ct-swatch-del {
+      position: absolute; top: -6px; right: -6px;
+      width: 16px; height: 16px; padding: 0; line-height: 1;
+      border: none; border-radius: 50%;
+      background: var(--card-border, rgba(12,42,77,0.35));
+      color: var(--card-bg, #fff);
+      font-size: 9px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ct-swatch-del:hover { background: var(--period, #e0679e); color: #fff; }
+    .ct-add-color {
+      width: 100%; margin: 0 0 12px; padding: 6px 10px;
+      border: 1px dashed var(--card-border, rgba(12,42,77,0.25));
+      border-radius: 8px; background: transparent;
+      color: var(--muted); font-size: 11px; font-weight: 600;
+      font-family: inherit; cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .ct-add-color:hover { color: var(--primary-text, var(--primary)); border-color: var(--primary-text, var(--primary)); }
     .ct-preview {
       display: flex; align-items: center; gap: 8px;
       padding: 8px 10px; border-radius: 10px; margin: 12px 0 8px;
@@ -7376,20 +7407,17 @@
           <span data-i18n="customThemeName">名称</span>
           <input type="text" id="ctName" maxlength="12" data-i18n-placeholder="customThemeNamePlaceholder" />
         </label>
-        <label class="ct-row">
-          <span data-i18n="customThemePrimary">主色</span>
-          <input type="color" id="ctPrimary" value="#0b6bff" />
-        </label>
-        <label class="ct-row">
-          <span data-i18n="customThemeBg">背景色</span>
-          <input type="color" id="ctBg" value="#eaf5ff" />
-        </label>
+        <div class="ct-row ct-palette-row">
+          <span data-i18n="customThemePalette">颜色</span>
+          <span class="ct-palette" id="ctPalette"></span>
+        </div>
+        <button type="button" class="ct-add-color" id="ctAddColor" data-i18n="customThemeAddColor">＋ 添加颜色</button>
         <div class="ct-preview">
           <span class="ct-preview-dot" id="ctPreviewDot"></span>
           <span class="ct-preview-name" id="ctPreviewName"></span>
           <span class="ct-preview-btn" data-i18n="customThemePreview">预览</span>
         </div>
-        <div class="ct-tip" id="ctTip" data-i18n="customThemeTip">选 2 个颜色即可，其余自动生成</div>
+        <div class="ct-tip" id="ctTip" data-i18n="customThemeTip">选 2~4 个颜色，自动分配背景 / 主色 / 副色（对比度自动校验）</div>
         <div class="inline-confirm-btns ct-btns">
           <button class="inline-confirm-btn cancel" id="ctCancel" data-i18n="cancel">取消</button>
           <button class="inline-confirm-btn confirm" id="ctSave" data-i18n="save">保存</button>
