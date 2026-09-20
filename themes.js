@@ -1517,10 +1517,22 @@ export function fillTextColorOn(bg) {
   return contrastWithWhite(bg) >= contrastWithDark(bg) ? "#ffffff" : BADGE_DARK_TEXT;
 }
 
-// 角标底色：永远【原样用主色】，一个色阶都不改（用户明确要求直接跟随主色）。
+// 角标底色：默认【原样用主色】；只有浅到"白字几乎看不见"（白字对比 < 1.6）时才
+// 保持同一色相 + 同一饱和度逐档压暗到白字达标（≥4.5）—— 用户要求这种极浅色用"深色角标"。
+// 参考：粉 #F9B2D7 白字对比 1.70 → 原样；浅薰衣草 #D8CCE8 是 1.57 → 压暗。
+const BADGE_PALE_WHITE_CONTRAST_MAX = 1.6;
 export function badgeColorFor(primary) {
-  const { r, g, b } = hexToRgb(primary);
-  return rgbToHex(r, g, b);
+  const rgb0 = hexToRgb(primary);
+  let hex = rgbToHex(rgb0.r, rgb0.g, rgb0.b);
+  if (contrastWithWhite(hex) >= BADGE_PALE_WHITE_CONTRAST_MAX) return hex;
+  const hsl = rgbToHsl(rgb0);
+  let l = hsl.l;
+  while (l > 0.16 && contrastWithWhite(hex) < 4.5) {
+    l -= 0.02;
+    const rgb = hslToRgb({ h: hsl.h, s: hsl.s, l });
+    hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+  }
+  return hex;
 }
 
 // WCAG 相对亮度（用于角标文字取黑/白、角标底色压暗收敛）
@@ -1544,15 +1556,22 @@ export function contrastRatio(a, b) {
   return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
 }
 
-// 把 color 朝「更亮/更暗」方向逐档微调，直到在 surface 上达到 target 对比度 ——
-// 用于深色底上让主色/副色等「当文字用」时依然看得清（色相保留，只改明度）。
+// 把 color 沿「明度」方向逐档微调，直到在 surface 上达到 target 对比度。
+// 关键：在 HSL 里只改明度、保留色相与饱和度 —— 直接往黑/白里混会让颜色变灰发浑
+// （用户反馈"黑不溜秋、不符合主题选色"），保留饱和度才能看出还是自己选的那个色系。
 export function readableOn(color, surface, target = 4.5) {
   if (contrastRatio(color, surface) >= target) return color;
-  const toWhite = relativeLuminance(surface) < 0.5;
+  const rgb = hexToRgb(color);
+  const hsl = rgbToHsl(rgb);
+  const toLight = relativeLuminance(surface) < 0.5; // 深底 → 往亮走；浅底 → 往暗走
+  let l = hsl.l;
   let out = color;
-  for (let i = 0; i < 24; i++) {
-    out = mixHex(out, toWhite ? "#ffffff" : "#000000", 0.08);
+  for (let i = 0; i < 60; i++) {
+    l = Math.min(1, Math.max(0, l + (toLight ? 0.03 : -0.03)));
+    const c = hslToRgb({ h: hsl.h, s: hsl.s, l });
+    out = rgbToHex(c.r, c.g, c.b);
     if (contrastRatio(out, surface) >= target) break;
+    if (l <= 0 || l >= 1) break;
   }
   return out;
 }
@@ -1578,6 +1597,8 @@ export function buildCustomTheme(anchors = {}) {
   const p = /^#[0-9a-fA-F]{6}$/.test(String(anchors.primary || "")) ? anchors.primary : "#0b6bff";
   const s = /^#[0-9a-fA-F]{6}$/.test(String(anchors.secondary || "")) ? anchors.secondary : tintHex(p, 0.3);
   const g = /^#[0-9a-fA-F]{6}$/.test(String(anchors.bg || "")) ? anchors.bg : tintHex(p, 0.88);
+  // 强调色（可选，编辑器第 4 个色）：留空 = 自动（由主色推导）
+  const accentRaw = /^#[0-9a-fA-F]{6}$/.test(String(anchors.accent || "")) ? anchors.accent : null;
 
   // 背景明暗【完全由用户选的背景色决定】，不再由开关改写用户色卡
   const bgIsDark = !isLightColor(g);
@@ -1599,9 +1620,18 @@ export function buildCustomTheme(anchors = {}) {
   // 所以在深色主题里往白走、浅色主题里往黑走，逐档微调到 4.5:1。预设主题不定义这组变量，
   // CSS 里都用 var(--xxx-text, var(--xxx)) 回退，所以 38 个预设的观感完全不变。
   const asText = (c) => readableOn(c, cardBg);
-  // 等级阶梯的基准色（"最强"那一档）：先把主色调到在卡片上可读（≥4.5:1），
-  // 再往卡片方向逐档混 —— 这样即使是浅淡的主色（如浅黄/浅紫）也能排出可见的 4 档。
-  const lvBase = asText(p);
+  // 强调色：所有「当文字/图形用」的颜色都由它派生 —— 日历色阶基准、图表柱子、强调文字。
+  // 用户没给就自动用主色推导；给了也仍要过对比度检查，不达标就朝安全方向微调（并记下来给编辑器看）。
+  // 没有它的话，浅淡主色会被硬压成发灰的颜色（用户反馈"黑不溜秋、不符合主题选色"）。
+  const accentSource = accentRaw || p;
+  const accent = readableOn(accentSource, cardBg);
+  // 对比度检查明细（编辑器会展示：通过 / 哪一项被自动校正成什么）
+  const contrastFixes = [];
+  if (contrastRatio(accentSource, cardBg) < 4.5) {
+    contrastFixes.push({ key: accentRaw ? "accent" : "primary", from: accentSource, to: accent });
+  }
+  // 等级阶梯的基准色（"最强"那一档）= 强调色，再往卡片方向逐档混
+  const lvBase = accent;
   // 四档从卡片底单调递进：浅色主题越深=喝得越多，深色主题越亮=喝得越多。
   // 全部由同一个基准色推出来，保证单调、不会出现"第 5 档比第 4 档还浅"的错乱。
   const lvTint = (r) => mixHex(cardBg, lvBase, r);
@@ -1638,16 +1668,18 @@ export function buildCustomTheme(anchors = {}) {
     // 不能再用「主色→primary2」的渐变 —— 浅淡主色时它会比 lv3 更浅，色阶在第 5 档"跳回去"，
     // 图例和日历看着就错乱（用户反馈过）。
     "--lv4": `linear-gradient(135deg, ${lv3c}, ${lvBase})`,
-    // 等级块上的数字颜色：按"实际填充色"取对比更高的白/深字（浅档一组、深档一组）
+    // 等级块上的数字颜色：按"实际填充色"取对比更高的白/深字。
+    // lv4 是渐变（lv3 → 基准色），要按渐变最深的那一端判，所以单独一路。
     "--lv-text": fillTextColorOn(lv2c),
     "--lv-text-strong": fillTextColorOn(lv3c),
+    "--lv-text-max": fillTextColorOn(lvBase),
     "--period": period,
     "--period2": tintHex(period, 0.45),
     "--period-glow": hexWithAlpha(period, 0.42),
-    // 当文字用的语义色（深底提亮 / 浅底压暗，保证可读）
-    "--primary-text": asText(p),
+    // 当文字/图形用的语义色（深底提亮 / 浅底压暗，保证可读）；主色与吃饭色跟随强调色
+    "--primary-text": accent,
     "--secondary-text": asText(s),
-    "--eat-text": asText(p),
+    "--eat-text": accent,
     "--pee-text": asText(s),
     "--poop-text": asText(poop),
     "--period-text": asText(period),
@@ -1681,7 +1713,12 @@ export function buildCustomTheme(anchors = {}) {
     dataTheme: bgIsDark ? "dark" : "custom",
     // 实际生效的文字方向（自动推导，浅底深字 / 深底浅字）
     darkText,
-    anchors: { primary: p, secondary: s, bg: g },
+    // 对比度检查：哪些项被自动校正过（编辑器用来显示"全部通过 / 已校正为 xxx"）
+    contrastFixes,
+    // 强调色只在用户真填了的时候存（留空 = 自动，不落库）
+    anchors: accentRaw
+      ? { primary: p, secondary: s, bg: g, accent: accentRaw }
+      : { primary: p, secondary: s, bg: g },
     vars,
     dot: `linear-gradient(135deg,${p},${primary2},${s})`,
     bgGradient: bgIsDark

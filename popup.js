@@ -2304,7 +2304,11 @@ function renderDrinkCalendar() {
         // 浅档（lv1/lv2）与深档（lv3/lv4）分别用生成器算好的字色
         const lv = getDrinkLevel(count);
         cell.style.color = hasCustomLv
-          ? (lv >= 3 ? "var(--lv-text-strong, #fff)" : "var(--lv-text, var(--text))")
+          ? (lv >= 4
+              ? "var(--lv-text-max, #fff)"
+              : lv >= 3
+                ? "var(--lv-text-strong, #fff)"
+                : "var(--lv-text, var(--text))")
           : (count >= 6 ? "#fff" : "var(--text)");
       }
 
@@ -4888,17 +4892,40 @@ function applyTheme(themeId) {
 
 // ==================== 自定义主题编辑器 ====================
 
+// 强调色是否「自动」：自动 = 由主色推导（不落库），手动 = 用输入框里的颜色
+let ctAccentAuto = true;
+
 function currentEditorAnchors() {
   const nameEl = document.getElementById("ctName");
   const p = document.getElementById("ctPrimary");
   const s = document.getElementById("ctSecondary");
   const g = document.getElementById("ctBg");
+  const a = document.getElementById("ctAccent");
   return {
     primary: p ? p.value : "#0b6bff",
     secondary: s ? s.value : "#8b5cf6",
     bg: g ? g.value : "#eaf5ff",
+    // null = 自动（生成器按主色推导）
+    accent: ctAccentAuto || !a ? null : a.value,
     name: nameEl ? nameEl.value : ""
   };
+}
+
+// 对比度检查结果：全部通过 / 哪一项被自动校正成了什么颜色
+function renderContrastNote(built) {
+  const el = document.getElementById("ctContrastNote");
+  if (!el) return;
+  const fixes = (built && built.contrastFixes) || [];
+  if (!fixes.length) {
+    el.classList.remove("fix");
+    el.textContent = t("customThemeCheckOk");
+    return;
+  }
+  el.classList.add("fix");
+  const list = fixes
+    .map((f) => t(f.key === "accent" ? "customThemeAccent" : "customThemePrimary") + " → " + String(f.to).toUpperCase())
+    .join(", ");
+  el.textContent = t("customThemeCheckFixed", { list });
 }
 
 // 实时预览：生成结果直接套到 popup 上，所见即所得
@@ -4910,6 +4937,10 @@ function updateCustomThemePreview() {
   if (dot) dot.style.background = built.dot;
   const nm = document.getElementById("ctPreviewName");
   if (nm) nm.textContent = String(anchors.name || "").trim() || t("customThemeDefaultName");
+  // 自动模式下把推导出的强调色回显到色块上，让用户看到"自动"到底是什么颜色
+  const accentEl = document.getElementById("ctAccent");
+  if (accentEl && ctAccentAuto) accentEl.value = built.vars["--primary-text"];
+  renderContrastNote(built);
   applyThemeObject(built, built.dataTheme);
   return built;
 }
@@ -4928,6 +4959,12 @@ function openCustomThemeEditor(themeId) {
   if (p) p.value = /^#[0-9a-fA-F]{6}$/.test(a.primary) ? a.primary : "#0b6bff";
   if (s) s.value = /^#[0-9a-fA-F]{6}$/.test(a.secondary) ? a.secondary : "#8b5cf6";
   if (g) g.value = /^#[0-9a-fA-F]{6}$/.test(a.bg) ? a.bg : "#eaf5ff";
+  // 强调色：老主题没有这个字段 → 自动模式
+  ctAccentAuto = !(a && /^#[0-9a-fA-F]{6}$/.test(String(a.accent || "")));
+  const accentEl = document.getElementById("ctAccent");
+  if (accentEl && !ctAccentAuto) accentEl.value = a.accent;
+  const autoBtn = document.getElementById("ctAccentAuto");
+  if (autoBtn) autoBtn.classList.toggle("on", ctAccentAuto);
   modal.classList.remove("hidden");
   updateCustomThemePreview();
 }
@@ -5319,6 +5356,23 @@ if (customTriggerEl && customDropdownEl) {
   [nameEl, primaryEl, secondaryEl, bgEl].forEach((el) => {
     if (el) el.addEventListener("input", updateCustomThemePreview);
   });
+  // 强调色：动了色块 = 手动指定；「自动」按钮在 自动/手动 之间切换
+  const accentEl = document.getElementById("ctAccent");
+  const accentAutoBtn = document.getElementById("ctAccentAuto");
+  if (accentEl) {
+    accentEl.addEventListener("input", () => {
+      ctAccentAuto = false;
+      if (accentAutoBtn) accentAutoBtn.classList.remove("on");
+      updateCustomThemePreview();
+    });
+  }
+  if (accentAutoBtn) {
+    accentAutoBtn.addEventListener("click", () => {
+      ctAccentAuto = !ctAccentAuto;
+      accentAutoBtn.classList.toggle("on", ctAccentAuto);
+      updateCustomThemePreview();
+    });
+  }
 })();
 
 
