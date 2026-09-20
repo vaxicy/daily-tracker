@@ -4790,7 +4790,10 @@ function renderCustomOptions() {
     delBtn.className = "theme-act";
     delBtn.dataset.act = "del";
     delBtn.title = t("customThemeDelete");
-    delBtn.textContent = "✕";
+    // 和铅笔一样用内联 SVG：字符 ✕ 的笔重和 SVG 铅笔不一致，两个图标并排会一轻一重
+    delBtn.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M6.5 6.5l11 11"/><path d="M17.5 6.5l-11 11"/></svg>';
     item.append(dot, label, editBtn, delBtn);
     item.addEventListener("click", (e) => {
       if (e.target.closest("[data-act]")) return;

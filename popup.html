@@ -4952,8 +4952,10 @@
         border-color: rgba(148,163,184,0.1);
       }
 
+      /* 深色主题下不要给每行常驻底色（否则一排圆角块很重、很丑）——
+         背景只在悬浮（:hover）和当前选中（.active）时出现，与浅色主题一致 */
       body[data-theme="dark"] .theme-item {
-        background: rgba(51,65,85,0.3);
+        background: transparent;
         color: var(--muted, rgba(226,232,240,0.55));
       }
 
@@ -6001,8 +6003,9 @@
         border-color: rgba(216,205,224,0.1);
       }
 
+      /* 同上：常驻底色去掉，只留悬浮/选中态 */
       body[data-theme="winerose"] .theme-item {
-        background: rgba(90,69,99,0.3);
+        background: transparent;
         color: var(--muted, rgba(248,244,236,0.55));
       }
 
