@@ -5935,6 +5935,11 @@ document.querySelectorAll(".donate-qr-tab").forEach(tab => {
 let periodCalendarYear = new Date().getFullYear();
 let periodCalendarMonth = new Date().getMonth();
 let periodCycles = []; // { startDate, endDate, days }
+// 预测设置：用户在预测横幅的齿轮里手动指定；null = 自动按历史平均
+let periodCycleLength = null;
+let periodDuration = null;
+// 没有任何已结束周期时的默认经期天数
+const PERIOD_PREDICT_DEFAULT_DURATION = 6;
 let selectedMood = 0;
 let selectedPain = 0;
 let selectedSymptoms = [];
@@ -5966,7 +5971,16 @@ function migratePeriodData(records, callback) {
 
 // 加载经期周期数据
 function loadPeriodCycles(callback) {
-  chrome.storage.local.get(["periodCycles", "periodRecords"], (data) => {
+  chrome.storage.local.get(
+    ["periodCycles", "periodRecords", "periodCycleLength", "periodDuration"],
+    (data) => {
+    // 预测设置：只接受正整数，其余（含空/0/旧数据）当作"自动"
+    const toPositiveInt = (v) => {
+      const n = typeof v === "string" ? parseInt(v, 10) : v;
+      return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+    };
+    periodCycleLength = toPositiveInt(data.periodCycleLength);
+    periodDuration = toPositiveInt(data.periodDuration);
     if (data.periodCycles) {
       periodCycles = data.periodCycles;
       // 兼容旧数据：将 mood/symptoms/remark 迁移到 days 中
@@ -6094,6 +6108,57 @@ function formatDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// 预测下次经期
+// 规则：① 周期长度优先用手动设置，未设置则用「相邻两次经期开始日的平均间隔」（只取 10~90 天，过滤漏记）；
+// ② 经期天数优先用手动设置，未设置则用已结束周期的平均天数，一个都没有时默认 6 天；
+// ③ 正在经期中不预测（和旧行为一致）；手动设了周期长度时，有一条记录就能预测（不再要求 ≥2 条）。
+// overrides: { cycle, duration } 传 null 表示"该项按自动"，不传则用当前设置（供设置弹窗实时预览）
+function computePeriodPrediction(overrides = {}) {
+  const cycleSetting = "cycle" in overrides ? overrides.cycle : periodCycleLength;
+  const durationSetting = "duration" in overrides ? overrides.duration : periodDuration;
+
+  const sorted = sortPeriodCyclesByStart(periodCycles);
+  if (!sorted.length) return null;
+
+  const gaps = computePeriodCycleLengths(periodCycles, 10, 90);
+  const autoCycle = gaps.length ? Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length) : null;
+
+  const completed = periodCycles.filter(c => c.endDate);
+  let autoDuration = PERIOD_PREDICT_DEFAULT_DURATION;
+  if (completed.length) {
+    const durs = completed.map(c =>
+      Math.max(1, Math.round((new Date(c.endDate + "T00:00:00") - new Date(c.startDate + "T00:00:00")) / 86400000) + 1)
+    );
+    autoDuration = Math.round(durs.reduce((a, b) => a + b, 0) / durs.length);
+  }
+
+  const cycleLength = cycleSetting || autoCycle;
+  const duration = durationSetting || autoDuration;
+  const inProgress = !!getActivePeriod();
+
+  // 周期长度算不出来（记录不足且没手动设置）或正在经期中 → 不预测
+  if (!cycleLength || inProgress) {
+    return { start: null, end: null, cycleLength, duration, autoCycle, autoDuration, cycleManual: !!cycleSetting, durationManual: !!durationSetting, inProgress };
+  }
+
+  const ps = new Date(sorted[sorted.length - 1].startDate + "T00:00:00");
+  ps.setDate(ps.getDate() + cycleLength);
+  const pe = new Date(ps);
+  pe.setDate(pe.getDate() + duration - 1);
+
+  return {
+    start: formatDateStr(ps),
+    end: formatDateStr(pe),
+    cycleLength,
+    duration,
+    autoCycle,
+    autoDuration,
+    cycleManual: !!cycleSetting,
+    durationManual: !!durationSetting,
+    inProgress
+  };
+}
+
 // 获取日期范围内的所有日期字符串
 function getDatesInRange(startDate, endDate) {
   const dates = [];
@@ -6152,30 +6217,10 @@ function renderPeriodCalendar() {
   const daysInMonth = lastDay.getDate();
   const today = getToday();
 
-  // 预测下次经期：基于历史周期长度均值推算
-  let predictedStart = null, predictedEnd = null;
-  if (periodCycles.length >= 2 && !getActivePeriod()) {
-    const gaps = computePeriodCycleLengths(periodCycles, 10, 90);
-    if (gaps.length > 0) {
-      const avgCycle = Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length);
-      const completed = periodCycles.filter(c => c.endDate);
-      let avgDur = 5;
-      if (completed.length) {
-        const durs = completed.map(c =>
-          Math.round((new Date(c.endDate + "T00:00:00") - new Date(c.startDate + "T00:00:00")) / 86400000) + 1
-        );
-        avgDur = Math.round(durs.reduce((a, b) => a + b, 0) / durs.length);
-      }
-      const sorted = sortPeriodCyclesByStart(periodCycles);
-      const lastStart = sorted[sorted.length - 1].startDate;
-      const ps = new Date(lastStart + "T00:00:00");
-      ps.setDate(ps.getDate() + avgCycle);
-      const pe = new Date(ps);
-      pe.setDate(pe.getDate() + avgDur - 1);
-      predictedStart = formatDateStr(ps);
-      predictedEnd = formatDateStr(pe);
-    }
-  }
+  // 预测下次经期（手动设置优先，否则按历史均值推算）
+  const prediction = computePeriodPrediction();
+  const predictedStart = prediction ? prediction.start : null;
+  const predictedEnd = prediction ? prediction.end : null;
 
   // 前置空白填充
   for (let i = 0; i < startDay; i++) {
@@ -6321,17 +6366,26 @@ function renderPeriodCalendar() {
     });
   }
 
-  // 预测经期横幅
+  // 预测经期横幅（有记录就显示，右侧齿轮始终可进入预测设置）
   const banner = document.getElementById("periodPredictBanner");
   if (banner) {
-    if (predictedStart && predictedEnd) {
-      banner.style.display = "block";
-      banner.textContent = t("periodPredicted") + "：" + t("periodPredictRange", {
-        start: predictedStart.slice(5),
-        end: predictedEnd.slice(5)
-      });
-    } else {
+    const textEl = document.getElementById("periodPredictText");
+    if (!periodCycles.length) {
       banner.style.display = "none";
+    } else {
+      banner.style.display = "flex";
+      let msg;
+      if (predictedStart && predictedEnd) {
+        msg = t("periodPredicted") + "：" + t("periodPredictRange", {
+          start: predictedStart.slice(5),
+          end: predictedEnd.slice(5)
+        });
+      } else if (prediction && prediction.inProgress) {
+        msg = t("periodPredictInProgress");
+      } else {
+        msg = t("periodPredictNeedData");
+      }
+      if (textEl) textEl.textContent = msg;
     }
   }
 
@@ -7133,6 +7187,104 @@ function renderPeriodCycleTable() {
     });
   });
 }
+
+// ==================== 经期预测设置（周期长度 / 经期天数） ====================
+
+// 弹窗里的"预测结果"预览文案（含无预测时的原因说明）
+function periodPredictPreviewText(overrides) {
+  const p = computePeriodPrediction(overrides);
+  if (!p) return t("periodPredictNoRecord");
+  if (p.start && p.end) {
+    return t("periodPredicted") + "：" + t("periodPredictRange", {
+      start: p.start.slice(5),
+      end: p.end.slice(5)
+    });
+  }
+  if (p.inProgress) return t("periodPredictInProgress");
+  return t("periodPredictNeedData");
+}
+
+// 读取两个输入框：空 / 非法 → null（= 自动）
+function readPredictInputs() {
+  const parse = (id) => {
+    const el = document.getElementById(id);
+    const raw = el ? String(el.value).trim() : "";
+    if (!raw) return null;
+    const n = parseInt(raw, 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  return { cycle: parse("ppCycleInput"), duration: parse("ppDurationInput") };
+}
+
+function updatePeriodPredictPreview() {
+  const el = document.getElementById("ppPreview");
+  if (el) el.textContent = periodPredictPreviewText(readPredictInputs());
+}
+
+function openPeriodPredictModal() {
+  const modal = document.getElementById("periodPredictModal");
+  if (!modal) return;
+  const cycleEl = document.getElementById("ppCycleInput");
+  const durEl = document.getElementById("ppDurationInput");
+  if (cycleEl) cycleEl.value = periodCycleLength || "";
+  if (durEl) durEl.value = periodDuration || "";
+  // placeholder 显示"自动"会算出的值，让人知道留空会用什么
+  const auto = computePeriodPrediction({ cycle: null, duration: null });
+  if (cycleEl) cycleEl.placeholder = auto && auto.autoCycle ? String(auto.autoCycle) : t("periodPredictAuto");
+  if (durEl) durEl.placeholder = auto && auto.autoDuration ? String(auto.autoDuration) : String(PERIOD_PREDICT_DEFAULT_DURATION);
+  updatePeriodPredictPreview();
+  modal.classList.remove("hidden");
+}
+
+function closePeriodPredictModal() {
+  const modal = document.getElementById("periodPredictModal");
+  if (modal) modal.classList.add("hidden");
+}
+
+function savePeriodPredictSettings() {
+  // 保存后要重绘日历，会重载当天表单；有未保存的修改时先让用户保存，避免丢失
+  if (periodUnsaved) {
+    showToast(t("periodPleaseSaveFirst"));
+    return;
+  }
+  const { cycle, duration } = readPredictInputs();
+  periodCycleLength = cycle;
+  periodDuration = duration;
+  chrome.storage.local.set({ periodCycleLength: cycle, periodDuration: duration }, () => {
+    closePeriodPredictModal();
+    renderPeriodCalendar(); // 重算横幅文案 + 日历上的预测高亮
+    showToast(t("periodPredictSaved"));
+  });
+}
+
+(function bindPeriodPredictSettings() {
+  const modal = document.getElementById("periodPredictModal");
+  const gear = document.getElementById("periodPredictSettingsBtn");
+  if (gear) gear.addEventListener("click", openPeriodPredictModal);
+  if (!modal) return;
+  const closeBtn = document.getElementById("ppClose");
+  const cancelBtn = document.getElementById("ppCancel");
+  const saveBtn = document.getElementById("ppSave");
+  const resetBtn = document.getElementById("ppReset");
+  if (closeBtn) closeBtn.addEventListener("click", closePeriodPredictModal);
+  if (cancelBtn) cancelBtn.addEventListener("click", closePeriodPredictModal);
+  if (saveBtn) saveBtn.addEventListener("click", savePeriodPredictSettings);
+  // 「恢复自动」= 清空两项并立即保存
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      const cycleEl = document.getElementById("ppCycleInput");
+      const durEl = document.getElementById("ppDurationInput");
+      if (cycleEl) cycleEl.value = "";
+      if (durEl) durEl.value = "";
+      savePeriodPredictSettings();
+    });
+  }
+  modal.addEventListener("click", (e) => { if (e.target === modal) closePeriodPredictModal(); });
+  ["ppCycleInput", "ppDurationInput"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("input", updatePeriodPredictPreview);
+  });
+})();
 
 // 初始化经期记录功能
 function initPeriodTracker() {
