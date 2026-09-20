@@ -1,4 +1,4 @@
-import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX, badgeTextColorOn, customThemeDataAttr, randomPalette, isDullPalette } from './themes.js';
+import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX, badgeTextColorOn, customThemeDataAttr, randomPalette } from './themes.js';
 
 // 用户自定义主题：{ "custom:xxx": { label, anchors, dot, vars, bgGradient, ... } }
 // 声明在模块顶部，避免早于主题系统初始化的调用（如 updateBadge）触发 TDZ 报错
@@ -4990,9 +4990,13 @@ function updateCustomThemePreview() {
   if (dot) dot.style.background = built.dot;
   const nm = document.getElementById("ctPreviewName");
   if (nm) nm.textContent = String(anchors.name || "").trim() || t("customThemeDefaultName");
-  // 全是灰调色板 → 提示一句（只提示，绝不自动改用户颜色）
+  // 生成器自动补了强调色 → 说明一句（用户给的颜色都在，只是多了一个自动色）
   const tip = document.getElementById("ctTip");
-  if (tip) tip.textContent = isDullPalette(ctPalette) ? t("customThemeDullHint") : t("customThemeTip");
+  if (tip) {
+    tip.textContent = built.autoAccent
+      ? t("customThemeAutoAccentHint", { color: built.autoAccent.toUpperCase() })
+      : t("customThemeTip");
+  }
   // 把这次的分配结果记下来，后续增删颜色时沿用（角色稳定，不会互相抢）
   ctRoles = built.anchors.roles || {};
   applyThemeObject(built, built.dataTheme);

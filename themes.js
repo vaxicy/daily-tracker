@@ -1611,8 +1611,12 @@ function chromaOf(hex) {
 }
 
 // 注意：本文件的 HSL 里 h 是 0~1（不是 0~360），取色相距离要在这个刻度上环绕
+function hslOf(hex) {
+  return rgbToHsl(hexToRgb(hex));
+}
+
 function hueOf(hex) {
-  return rgbToHsl(hexToRgb(hex)).h;
+  return hslOf(hex).h;
 }
 
 function hueDistance(a, b) {
@@ -1634,15 +1638,32 @@ function pickBest(list, score) {
   return list.reduce((best, c) => (score(c) > score(best) ? c : best), list[0]);
 }
 
-// 调色板"灰不灰"：一个够鲜艳的颜色都没有（彩度全 < 0.25），并且整体偏暗或整体偏亮
-// （即"一坨暗暗的灰紫"或"一片浅白灰"）→ 主题会没重点、看着发灰。
-// 编辑器据此给一句提示；注意**不自动改用户颜色** —— 颜色始终由用户说了算。
-export function isDullPalette(colors) {
+// ==================== 自动补强调色（"任何颜色都好看"的关键） ====================
+// 预设主题的配方（38 个预设实测）：**明暗分层**才是关键（主色↔背景明度差 0.43~0.80，中位 0.57），
+// 彩度的中位只有 0.36（最低 plumwine 0.18 也好看）。所以：
+//   · 调色板"没有够鲜艳的颜色" 且 "明暗也挤在一起" → 主题必然糊 → 由主导色相自动补一个强调色
+//   · 补的强调色走"中和档"：彩度只有 0.35（≈ 预设中位），靠明度跳出来 —— 不是靠饱和度刺眼
+//   · 用户给的颜色一律保留原样，只是多了一个自动色
+export const AUTO_ACCENT_CHROMA = 0.35;   // HSL 饱和度（≈ 实测彩度 0.25）
+const AUTO_ACCENT_L_DARK_CANVAS = 0.64;   // 深色画布 → 用亮一档
+const AUTO_ACCENT_L_LIGHT_CANVAS = 0.46;  // 浅色画布 → 用沉一档
+
+// 需不需要自动补强调色：没有鲜艳色（彩度 ≥0.3）且明度跨度 <0.15（挤在一条带上）
+export function needsAutoAccent(colors) {
   const list = (Array.isArray(colors) ? colors : []).map(normalizeHex).filter(Boolean);
   if (list.length < 2) return false;
-  if (Math.max(...list.map(chromaOf)) >= 0.25) return false;
+  if (Math.max(...list.map(chromaOf)) >= 0.3) return false;
   const lums = list.map(relativeLuminance);
-  return Math.max(...lums) < 0.4 || Math.min(...lums) > 0.55;
+  return Math.max(...lums) - Math.min(...lums) < 0.15;
+}
+
+// 由主导色相（彩度最高的那个颜色）生成强调色；背景越深 → 补的色越亮，反之越沉
+function autoAccentFor(palette, bg) {
+  const dominant = pickBest(palette, chromaOf);
+  const { h } = hslOf(dominant);
+  const canvasDark = !bg || relativeLuminance(bg) < 0.5;
+  const c = hslToRgb({ h, s: AUTO_ACCENT_CHROMA, l: canvasDark ? AUTO_ACCENT_L_DARK_CANVAS : AUTO_ACCENT_L_LIGHT_CANVAS });
+  return rgbToHex(c.r, c.g, c.b);
 }
 
 export function resolvePalette(anchors = {}) {
@@ -1675,15 +1696,20 @@ export function resolvePalette(anchors = {}) {
     const cands = free.filter(isCanvasColor);
     if (cands.length) keep.bg = take(pickBest(cands, canvasScore));
   }
-  if (!keep.primary) {
+  // 自动补的强调色：调色板既没鲜艳色、又没明暗分层时，由主导色相补一个"中和档"的色当主色
+  // （用户给的颜色全部保留原样，只是多一个自动色；判定是确定性的，所以每次算出来都一样）
+  const autoAccent = needsAutoAccent(palette) ? autoAccentFor(palette, keep.bg || null) : null;
+  if (autoAccent) {
+    keep.primary = autoAccent;
+  } else if (!keep.primary) {
     // 没有空闲颜色时（比如用户把"主色"那个色块删掉了）就从别的角色里"抢"一个回来，
     // 否则主色会退化成背景色（两者同色 → 整个主题失去重点）
     const pool = free.length ? free : palette.filter((c) => c !== keep.bg);
     if (pool.length) {
-      const bgRef = keep.bg || null;
       const chosen = pickBest(
         pool,
-        (c) => chromaOf(c) * 2 + (bgRef ? Math.min(contrastRatio(c, bgRef), 6) / 6 : 0)
+        // 彩度主导；"与背景的对比"只做微弱 tie-break（权重给大了会让浅画布抢走主色）
+        (c) => chromaOf(c) * 4 + (keep.bg ? Math.min(contrastRatio(c, keep.bg), 6) / 6 * 0.3 : 0)
       );
       ["secondary", "accent"].forEach((r) => {
         if (keep[r] === chosen) delete keep[r];
@@ -1708,6 +1734,8 @@ export function resolvePalette(anchors = {}) {
     secondary,
     bg,
     accent: keep.accent || null,
+    // 自动补出来的强调色（没有就是 null）：编辑器用它给一句说明
+    autoAccent,
     // 只有"确实是调色板里的颜色"才回存角色；派生出来的不存，
     // 否则以后改主色时背景/副色不会跟着变（会留着旧值打架）
     roles: {
@@ -1868,6 +1896,8 @@ export function buildCustomTheme(anchors = {}) {
     darkText,
     // 存用户给的调色板 + 分配结果；派生出来的（不在调色板里的）角色不回存
     anchors: { palette: pal.palette, roles: pal.roles },
+    // 自动补出来的强调色（没补就是 null）：编辑器用它给一句说明
+    autoAccent: pal.autoAccent || null,
     vars,
     dot: `linear-gradient(135deg,${p},${primary2},${s})`,
     bgGradient: bgIsDark
