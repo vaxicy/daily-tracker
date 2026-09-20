@@ -4911,10 +4911,17 @@ function currentEditorAnchors() {
   };
 }
 
-// 对比度检查结果：全部通过 / 哪一项被自动校正成了什么颜色
+// 对比度检查结果：手动强调色只提示不改色；自动模式才可能上报"主色被推导校正"
 function renderContrastNote(built) {
   const el = document.getElementById("ctContrastNote");
   if (!el) return;
+  // 用户手选的强调色：原样使用，永不自动校正 —— 只在对比确实偏低时提示一下
+  if (!ctAccentAuto) {
+    const low = !!(built && built.accentLowContrast);
+    el.classList.toggle("fix", low);
+    el.textContent = low ? t("customThemeCheckAccentLow") : t("customThemeCheckOk");
+    return;
+  }
   const fixes = (built && built.contrastFixes) || [];
   if (!fixes.length) {
     el.classList.remove("fix");

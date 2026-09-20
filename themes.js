@@ -1623,12 +1623,14 @@ export function buildCustomTheme(anchors = {}) {
   // 强调色：所有「当文字/图形用」的颜色都由它派生 —— 日历色阶基准、图表柱子、强调文字。
   // 用户没给就自动用主色推导；给了也仍要过对比度检查，不达标就朝安全方向微调（并记下来给编辑器看）。
   // 没有它的话，浅淡主色会被硬压成发灰的颜色（用户反馈"黑不溜秋、不符合主题选色"）。
-  const accentSource = accentRaw || p;
-  const accent = readableOn(accentSource, cardBg);
-  // 对比度检查明细（编辑器会展示：通过 / 哪一项被自动校正成什么）
+  // 手动指定的强调色【一律原样使用，绝不自动校正】（用户要求）；只有自动模式才由主色推导
+  const accent = accentRaw || readableOn(p, cardBg);
+  const accentLowContrast = !!accentRaw && contrastRatio(accentRaw, cardBg) < 4.5;
+  // 对比度检查明细（编辑器会展示：通过 / 哪一项被自动校正成什么）。
+  // 只有"自动模式下的主色推导"会出现在这里 —— 用户手选的强调色永不校正、也就不上报。
   const contrastFixes = [];
-  if (contrastRatio(accentSource, cardBg) < 4.5) {
-    contrastFixes.push({ key: accentRaw ? "accent" : "primary", from: accentSource, to: accent });
+  if (!accentRaw && contrastRatio(p, cardBg) < 4.5) {
+    contrastFixes.push({ key: "primary", from: p, to: accent });
   }
   // 等级阶梯的基准色（"最强"那一档）= 强调色，再往卡片方向逐档混
   const lvBase = accent;
@@ -1713,8 +1715,10 @@ export function buildCustomTheme(anchors = {}) {
     dataTheme: bgIsDark ? "dark" : "custom",
     // 实际生效的文字方向（自动推导，浅底深字 / 深底浅字）
     darkText,
-    // 对比度检查：哪些项被自动校正过（编辑器用来显示"全部通过 / 已校正为 xxx"）
+    // 对比度检查：自动模式下哪些项被推导校正过（编辑器用来显示"全部通过 / 已校正为 xxx"）
     contrastFixes,
+    // 手动强调色的对比度是否偏低（只提示，不改色）
+    accentLowContrast,
     // 强调色只在用户真填了的时候存（留空 = 自动，不落库）
     anchors: accentRaw
       ? { primary: p, secondary: s, bg: g, accent: accentRaw }
