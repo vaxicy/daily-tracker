@@ -4323,11 +4323,13 @@
       .drink-lv:hover {
         transform: scaleY(1.35);
       }
-      .lv0 { background: color-mix(in srgb, var(--primary) 8%, transparent); }
-      .lv1 { background: color-mix(in srgb, var(--primary) 25%, transparent); }
-      .lv2 { background: color-mix(in srgb, var(--primary) 50%, transparent); }
-      .lv3 { background: color-mix(in srgb, var(--primary) 75%, transparent); }
-      .lv4 { background: linear-gradient(135deg, var(--primary), var(--primary2)); }
+      /* 等级色阶：自定义主题会给出 --lv0~--lv3（深色主题是"越深=越少"的亮度阶梯，
+         浅色主题等同于原来的透明阶梯），预设主题不定义 → 回退到原值，观感不变 */
+      .lv0 { background: var(--lv0, color-mix(in srgb, var(--primary) 8%, transparent)); }
+      .lv1 { background: var(--lv1, color-mix(in srgb, var(--primary) 25%, transparent)); }
+      .lv2 { background: var(--lv2, color-mix(in srgb, var(--primary) 50%, transparent)); }
+      .lv3 { background: var(--lv3, color-mix(in srgb, var(--primary) 75%, transparent)); }
+      .lv4 { background: var(--lv4, linear-gradient(135deg, var(--primary), var(--primary2))); }
 
       /* 仅柠檬黄：日历方块改用柔和奶薄荷绿阶，避免高饱和黄刺眼 */
       body[data-theme="lemon"] .drink-legend-bar .drink-lv.lv0,
@@ -4874,7 +4876,7 @@
         background: rgba(30,41,59,0.6);
       }
 
-      body[data-theme="dark"] .drink-legend-bar .drink-lv.lv0 {
+      body[data-theme="dark"]:not(.custom-theme) .drink-legend-bar .drink-lv.lv0 {
         background: rgba(148,163,184,0.15);
       }
 
@@ -5108,6 +5110,7 @@
       body[data-theme="dark"] .period-mood-btn {
         color: var(--text);
       }
+
 
       body[data-theme="dark"] .eat-stats-card {
         background: var(--card-bg, rgba(30,41,59,0.85));

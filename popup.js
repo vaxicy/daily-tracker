@@ -2243,12 +2243,14 @@ function getDrinkColor(count) {
     if (lv === 3) return "color-mix(in srgb, #4A50E0 75%, transparent)";
     return "linear-gradient(135deg, #FFDBFD, #4A50E0)";
   }
-  // 其他 20 个主题（含 dark）一律跟随主色 --primary / --primary2
-  if (lv === 0) return "color-mix(in srgb, var(--primary) 8%, transparent)";
-  if (lv === 1) return "color-mix(in srgb, var(--primary) 25%, transparent)";
-  if (lv === 2) return "color-mix(in srgb, var(--primary) 50%, transparent)";
-  if (lv === 3) return "color-mix(in srgb, var(--primary) 75%, transparent)";
-  return "linear-gradient(135deg, var(--primary), var(--primary2))";
+  // 其他主题（含 dark）一律跟随主色 --primary / --primary2。
+  // 自定义主题会给出 --lv0~--lv4（按亮度目标生成、保证档位可分），
+  // 预设主题不定义这些变量 → 回退到原来的透明阶梯，观感与以前完全一致。
+  if (lv === 0) return "var(--lv0, color-mix(in srgb, var(--primary) 8%, transparent))";
+  if (lv === 1) return "var(--lv1, color-mix(in srgb, var(--primary) 25%, transparent))";
+  if (lv === 2) return "var(--lv2, color-mix(in srgb, var(--primary) 50%, transparent))";
+  if (lv === 3) return "var(--lv3, color-mix(in srgb, var(--primary) 75%, transparent))";
+  return "var(--lv4, linear-gradient(135deg, var(--primary), var(--primary2)))";
 }
 
 function renderDrinkCalendar() {
@@ -2278,6 +2280,8 @@ function renderDrinkCalendar() {
   // 异步补 background + tooltip
   chrome.storage.local.get(["drinkRecords"], (data) => {
     const records = data.drinkRecords || {};
+    // 自定义主题会定义 --lv1 色阶（深色主题里 lv1 起就是浅色块），文字色要跟着换
+    const hasCustomLv = !!getComputedStyle(document.documentElement).getPropertyValue("--lv1").trim();
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${drinkCalYear}-${String(drinkCalMonth + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const cell = drinkCalendarDays.querySelector(`.day-cell[data-date="${dateStr}"]`);
@@ -2290,7 +2294,12 @@ function renderDrinkCalendar() {
       cell.style.background = bg;
       if (count > 0) {
         cell.style.fontWeight = "600";
-        cell.style.color = count >= 6 ? "#fff" : "var(--text)";
+        // 预设主题：≥6 杯白字（原规则）；自定义主题：lv1 起色块已离开卡片底色，
+        // 浅档（lv1/lv2）与深档（lv3/lv4）分别用生成器算好的字色
+        const lv = getDrinkLevel(count);
+        cell.style.color = hasCustomLv
+          ? (lv >= 3 ? "var(--lv-text-strong, #fff)" : "var(--lv-text, var(--text))")
+          : (count >= 6 ? "#fff" : "var(--text)");
       }
 
       cell.addEventListener("mouseenter", (e) => showDrinkTooltip(e, dateStr, dayRecords));

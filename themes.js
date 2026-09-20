@@ -1599,6 +1599,9 @@ export function buildCustomTheme(anchors = {}) {
   // 所以在深色主题里往白走、浅色主题里往黑走，逐档微调到 4.5:1。预设主题不定义这组变量，
   // CSS 里都用 var(--xxx-text, var(--xxx)) 回退，所以 38 个预设的观感完全不变。
   const asText = (c) => readableOn(c, cardBg);
+  // 浅色主题的等级阶梯基准色：先把主色压到在卡片上可读（≥4.5:1），
+  // 再往卡片方向逐档混 —— 这样即使是浅淡的主色（如浅黄）也能排出可见的 4 档。
+  const lvBase = asText(p);
 
   const vars = {
     "--text": text,
@@ -1614,6 +1617,25 @@ export function buildCustomTheme(anchors = {}) {
     "--pee2": secondary2,
     "--poop": poop,
     "--poop2": darkText ? "#6E5433" : tintHex("#6E5433", 0.15),
+    // 喝水等级色阶（日历方块 + 图例）。
+    // 关键：不能简单用「主色叠 N% 透明度」——当主色和卡片底色亮度接近时（深色主题常见），
+    // 25%/50%/75% 三档混出来几乎一样，图例和日历就糊成一片。
+    // 所以按亮度目标生成，保证相邻档位有可见跃升，并且都避开卡片底色附近（否则那一档会"消失"）。
+    // 深色主题：lv1 起就用浅色块（配深色数字），所以档位要比浅色主题更亮一档，
+    // 保证 4 档之间是肉眼可分的跃升；浅色主题：从淡到浓递进（配深色数字）
+    "--lv0": mixHex(cardBg, lvBase, bgIsDark ? 0.15 : 0.12),
+    "--lv1": mixHex(cardBg, lvBase, bgIsDark ? 0.45 : 0.35),
+    "--lv2": mixHex(cardBg, lvBase, bgIsDark ? 0.65 : 0.60),
+    "--lv3": mixHex(cardBg, lvBase, bgIsDark ? 0.85 : 0.85),
+    // lv4（满杯）：深色主题用浅色渐变，和深色数字保持可读；浅色主题维持原来的主色渐变
+    "--lv4": bgIsDark
+      ? `linear-gradient(135deg, ${mixHex(cardBg, lvBase, 0.7)}, ${lvBase})`
+      : `linear-gradient(135deg, ${p}, ${primary2})`,
+    // 等级块上的数字颜色：浅档（lv1/lv2）和深档（lv3/lv4）分别取对比更高的白/深字
+    "--lv-text": fillTextColorOn(mixHex(cardBg, lvBase, bgIsDark ? 0.65 : 0.60)),
+    "--lv-text-strong": fillTextColorOn(
+      bgIsDark ? mixHex(cardBg, lvBase, 0.85) : mixHex(p, primary2, 0.15)
+    ),
     "--period": period,
     "--period2": tintHex(period, 0.45),
     "--period-glow": hexWithAlpha(period, 0.42),
