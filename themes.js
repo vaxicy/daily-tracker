@@ -1504,9 +1504,11 @@ export function contrastWithDark(hex) {
   return (relativeLuminance(hex) + 0.05) / (relativeLuminance(BADGE_DARK_TEXT) + 0.05);
 }
 
-// 角标文字色：默认白字；只有浅到"白字基本看不见"（白字对比 < 1.4，约等于亮度 > 0.70）
-// 才换成深色字。参考：用户截图里的极浅色 1.04~1.24 用深字；粉色 #F9B2D7 是 1.70，仍用白字。
-const BADGE_DARK_TEXT_WHITE_CONTRAST_MAX = 1.4;
+// 角标文字色：默认白字，浅底色改用深色字（底色仍然原样，不压暗）。
+// 分界：白字对比 < 1.9（约等于亮度 > 0.50）就用深色字。
+// 参考实测：浅薰衣草 #D5BAE8 = 1.75 → 深字；亮蓝 #30AFFF = 2.41 → 白字；
+//          藕紫 #8D5F8C = 5.06 → 白字；更浅的（1.04~1.24）也是深字。
+const BADGE_DARK_TEXT_WHITE_CONTRAST_MAX = 1.9;
 export function badgeTextColorOn(bg) {
   return contrastWithWhite(bg) < BADGE_DARK_TEXT_WHITE_CONTRAST_MAX ? BADGE_DARK_TEXT : "#ffffff";
 }
@@ -1517,22 +1519,10 @@ export function fillTextColorOn(bg) {
   return contrastWithWhite(bg) >= contrastWithDark(bg) ? "#ffffff" : BADGE_DARK_TEXT;
 }
 
-// 角标底色：默认【原样用主色】；只有浅到"白字几乎看不见"（白字对比 < 1.6）时才
-// 保持同一色相 + 同一饱和度逐档压暗到白字达标（≥4.5）—— 用户要求这种极浅色用"深色角标"。
-// 参考：粉 #F9B2D7 白字对比 1.70 → 原样；浅薰衣草 #D8CCE8 是 1.57 → 压暗。
-const BADGE_PALE_WHITE_CONTRAST_MAX = 1.6;
+// 角标底色：永远【原样用主色】，一个色阶都不改（用户明确要求直接跟随主色）。
 export function badgeColorFor(primary) {
-  const rgb0 = hexToRgb(primary);
-  let hex = rgbToHex(rgb0.r, rgb0.g, rgb0.b);
-  if (contrastWithWhite(hex) >= BADGE_PALE_WHITE_CONTRAST_MAX) return hex;
-  const hsl = rgbToHsl(rgb0);
-  let l = hsl.l;
-  while (l > 0.16 && contrastWithWhite(hex) < 4.5) {
-    l -= 0.02;
-    const rgb = hslToRgb({ h: hsl.h, s: hsl.s, l });
-    hex = rgbToHex(rgb.r, rgb.g, rgb.b);
-  }
-  return hex;
+  const { r, g, b } = hexToRgb(primary);
+  return rgbToHex(r, g, b);
 }
 
 // WCAG 相对亮度（用于角标文字取黑/白、角标底色压暗收敛）
