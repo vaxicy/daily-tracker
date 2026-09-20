@@ -1591,7 +1591,9 @@ function contrastWithWhite(hex) {
 // anchors.base 已废弃（保留兼容：旧数据里可能还有，直接忽略）
 export function buildCustomTheme(anchors = {}) {
   const p = /^#[0-9a-fA-F]{6}$/.test(String(anchors.primary || "")) ? anchors.primary : "#0b6bff";
-  const s = /^#[0-9a-fA-F]{6}$/.test(String(anchors.secondary || "")) ? anchors.secondary : tintHex(p, 0.3);
+  // 副色不再由用户控制（编辑器只给 2 个颜色：主色 + 背景色），一律从主色推导 ——
+  // 这样改主色时副色会跟着一起变，不会留下旧副色跟新主色打架。
+  const s = tintHex(p, 0.3);
   const g = /^#[0-9a-fA-F]{6}$/.test(String(anchors.bg || "")) ? anchors.bg : tintHex(p, 0.88);
 
   // 背景明暗【完全由用户选的背景色决定】，不再由开关改写用户色卡
@@ -1698,7 +1700,8 @@ export function buildCustomTheme(anchors = {}) {
     dataTheme: bgIsDark ? "dark" : "custom",
     // 实际生效的文字方向（自动推导，浅底深字 / 深底浅字）
     darkText,
-    anchors: { primary: p, secondary: s, bg: g },
+    // 只存用户真正控制的两个颜色：副色是派生物，不落库（改主色时才能跟着一起变）
+    anchors: { primary: p, bg: g },
     vars,
     dot: `linear-gradient(135deg,${p},${primary2},${s})`,
     bgGradient: bgIsDark

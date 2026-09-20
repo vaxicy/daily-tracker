@@ -4895,11 +4895,9 @@ function applyTheme(themeId) {
 function currentEditorAnchors() {
   const nameEl = document.getElementById("ctName");
   const p = document.getElementById("ctPrimary");
-  const s = document.getElementById("ctSecondary");
   const g = document.getElementById("ctBg");
   return {
     primary: p ? p.value : "#0b6bff",
-    secondary: s ? s.value : "#8b5cf6",
     bg: g ? g.value : "#eaf5ff",
     name: nameEl ? nameEl.value : ""
   };
@@ -4923,14 +4921,12 @@ function openCustomThemeEditor(themeId) {
   if (!modal) return;
   editingThemeId = themeId || null;
   const rec = themeId ? customThemes[themeId] : null;
-  const a = (rec && rec.anchors) || { primary: "#0b6bff", secondary: "#8b5cf6", bg: "#eaf5ff" };
+  const a = (rec && rec.anchors) || { primary: "#0b6bff", bg: "#eaf5ff" };
   const nameEl = document.getElementById("ctName");
   const p = document.getElementById("ctPrimary");
-  const s = document.getElementById("ctSecondary");
   const g = document.getElementById("ctBg");
   if (nameEl) nameEl.value = rec ? rec.label : t("customThemeDefaultName");
   if (p) p.value = /^#[0-9a-fA-F]{6}$/.test(a.primary) ? a.primary : "#0b6bff";
-  if (s) s.value = /^#[0-9a-fA-F]{6}$/.test(a.secondary) ? a.secondary : "#8b5cf6";
   if (g) g.value = /^#[0-9a-fA-F]{6}$/.test(a.bg) ? a.bg : "#eaf5ff";
   modal.classList.remove("hidden");
   updateCustomThemePreview();
@@ -5317,7 +5313,6 @@ if (customTriggerEl && customDropdownEl) {
   if (!modal) return;
   const nameEl = document.getElementById("ctName");
   const primaryEl = document.getElementById("ctPrimary");
-  const secondaryEl = document.getElementById("ctSecondary");
   const bgEl = document.getElementById("ctBg");
   const closeBtn = document.getElementById("ctClose");
   const cancelBtn = document.getElementById("ctCancel");
@@ -5329,7 +5324,7 @@ if (customTriggerEl && customDropdownEl) {
   modal.addEventListener("click", (e) => {
     if (e.target === modal) closeCustomThemeEditor();
   });
-  [nameEl, primaryEl, secondaryEl, bgEl].forEach((el) => {
+  [nameEl, primaryEl, bgEl].forEach((el) => {
     if (el) el.addEventListener("input", updateCustomThemePreview);
   });
 })();
