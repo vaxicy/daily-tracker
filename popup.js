@@ -4631,6 +4631,8 @@ function normalizeCustomThemes(raw) {
 let appliedThemeVarKeys = [];
 function applyThemeObject(preset, dataTheme) {
   document.body.setAttribute("data-theme", dataTheme || "custom");
+  // 自定义主题标记：深色预设那些"写死的背景/星点"规则要跳过（背景必须用用户选的色卡）
+  document.body.classList.toggle("custom-theme", !!preset.custom);
   const nextKeys = Object.keys(preset.vars);
   appliedThemeVarKeys.forEach((k) => {
     if (!nextKeys.includes(k)) root.style.removeProperty(k);

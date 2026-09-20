@@ -4541,8 +4541,11 @@
         border-color: var(--card-border, rgba(148,163,184,0.2));
         color: var(--text, #e2e8f0);
       }
-      body[data-theme="dark"],
-      body[data-theme="dark"] .sidebar-panel {
+      /* 夜空黑预设专属的深蓝星点背景。
+         `:not(.custom-theme)` 很关键：自定义深色主题会复用 data-theme="dark" 拿组件覆盖，
+         但背景必须用它自己选的色卡（否则用户选的紫/绿底会被这套写死的深蓝盖掉）。 */
+      body[data-theme="dark"]:not(.custom-theme),
+      body[data-theme="dark"]:not(.custom-theme) .sidebar-panel {
         background:
           radial-gradient(120% 70% at 50% -10%, rgba(59,130,246,0.18), transparent 60%),
           radial-gradient(2px 2px at 20% 30%, rgba(255,255,255,0.25), transparent),
