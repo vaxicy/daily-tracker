@@ -1610,8 +1610,14 @@ function chromaOf(hex) {
   return (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
 }
 
+// 注意：本文件的 HSL 里 h 是 0~1（不是 0~360），取色相距离要在这个刻度上环绕
 function hueOf(hex) {
   return rgbToHsl(hexToRgb(hex)).h;
+}
+
+function hueDistance(a, b) {
+  const d = Math.abs(hueOf(a) - hueOf(b));
+  return Math.min(d, 1 - d) * 360;
 }
 
 // "像画布"的颜色：要么够淡、要么够深，而且不太艳（艳色当全屏底色会刺眼）
@@ -1675,10 +1681,10 @@ export function resolvePalette(anchors = {}) {
     }
   }
   if (!keep.secondary && free.length) {
-    keep.secondary = take(pickBest(free, (c) => {
-      const d = Math.abs(hueOf(c) - hueOf(keep.primary));
-      return Math.min(d, 360 - d) * (0.3 + Math.min(chromaOf(c), 0.5));
-    }));
+    // 撞色优先：与主色色相差越大越可能被选；乘彩度权重，避免把灰度色当成"撞色"
+    keep.secondary = take(
+      pickBest(free, (c) => hueDistance(c, keep.primary) * (0.3 + Math.min(chromaOf(c), 0.5)))
+    );
   }
   if (!keep.accent && free.length) keep.accent = take(free[0]);
 
@@ -1700,6 +1706,40 @@ export function resolvePalette(anchors = {}) {
       ...(keep.bg ? { bg: keep.bg } : {})
     }
   };
+}
+
+// 随机调色板（编辑器「随机」按钮）：先随机一个色相与明暗模式，再按
+// 「背景 + 主色 + 撞色副色(+点缀色)」生成 —— 不是纯随机 RGB，取值都落在舒服的区间里，
+// 所以出来的配色天生协调，且背景一定"像画布"（能被分配算法认出来）。
+export function randomPalette() {
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const rndInt = (a, b) => Math.floor(rnd(a, b + 1));
+  // 色相按"度数"写更直观，进来换算成 0~1（hslToRgb 用的是这个刻度）
+  const hsl = (deg, s, l) => {
+    const c = hslToRgb({ h: (((deg % 360) + 360) % 360) / 360, s: clamp01(s), l: clamp01(l) });
+    return rgbToHex(c.r, c.g, c.b);
+  };
+  const dark = Math.random() < 0.5; // 深色 / 浅色主题各一半
+  const baseHue = rndInt(0, 359);
+  const dir = Math.random() < 0.5 ? 1 : -1;
+
+  // 背景：同色相的极淡/极深色，饱和度压低（别抢戏，也不会变成艳色底）
+  const bg = dark
+    ? hsl(baseHue + rndInt(-40, 40), rnd(0.18, 0.4), rnd(0.10, 0.20))
+    : hsl(baseHue + rndInt(-40, 40), rnd(0.10, 0.35), rnd(0.88, 0.96));
+  // 主色：同色相家族里"能站住"的那个明度（深底要亮、浅底要沉）
+  const mainL = dark ? rnd(0.64, 0.78) : rnd(0.42, 0.56);
+  const primary = hsl(baseHue, rnd(0.55, 0.9), mainL);
+  // 副色：撞色 —— 色相偏 100~200 度（这就是"两个颜色一起撞色"）
+  const secondary = hsl(baseHue + dir * rndInt(100, 200), rnd(0.5, 0.9), mainL + rnd(-0.08, 0.08));
+
+  const palette = [primary, secondary];
+  // 一半概率再给一个点缀色（用在经期这类需要第三色的地方）
+  if (Math.random() < 0.5) {
+    palette.push(hsl(baseHue - dir * rndInt(120, 200), rnd(0.5, 0.85), mainL + rnd(-0.06, 0.06)));
+  }
+  palette.push(bg); // 背景放最后：前几个是"颜色"，最后一个是画布
+  return palette;
 }
 
 // 由调色板（最多 4 个颜色）生成完整主题（31 个 CSS 变量 + dot + bgGradient）

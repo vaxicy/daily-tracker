@@ -1,4 +1,4 @@
-import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX, badgeTextColorOn, customThemeDataAttr } from './themes.js';
+import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX, badgeTextColorOn, customThemeDataAttr, randomPalette } from './themes.js';
 
 // 用户自定义主题：{ "custom:xxx": { label, anchors, dot, vars, bgGradient, ... } }
 // 声明在模块顶部，避免早于主题系统初始化的调用（如 updateBadge）触发 TDZ 报错
@@ -5418,6 +5418,15 @@ if (customTriggerEl && customDropdownEl) {
         CT_NEW_COLOR_CANDIDATES.find((c) => !ctPalette.some((x) => x.toLowerCase() === c.toLowerCase())) ||
         CT_NEW_COLOR_CANDIDATES[0];
       ctPalette.push(next);
+      renderEditorPalette();
+    });
+  }
+  // 随机配色：换一组新的颜色（角色重新分配），可以反复点
+  const randomBtn = document.getElementById("ctRandomize");
+  if (randomBtn) {
+    randomBtn.addEventListener("click", () => {
+      ctPalette = randomPalette();
+      ctRoles = {};
       renderEditorPalette();
     });
   }
