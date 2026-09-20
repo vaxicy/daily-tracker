@@ -241,7 +241,9 @@ function renderTrend(canvasId, items, opts) {
   ctx.clearRect(0, 0, cssW, cssH);
 
   const styles = getComputedStyle(document.body);
-  const color = (opts.color || styles.getPropertyValue("--primary")).trim() || "#0b6bff";
+  const color = (opts.color
+    || styles.getPropertyValue("--primary-text")
+    || styles.getPropertyValue("--primary")).trim() || "#0b6bff";
   const muted = styles.getPropertyValue("--muted").trim() || "#9aa4b2";
 
   const data = Array.isArray(items) ? items : [];
@@ -311,10 +313,10 @@ function renderTrend(canvasId, items, opts) {
     }
     const h = Math.max(2, (d.count / max) * plotH);
     ctx.save();
-    // 不透明度随柱高递增（0.5 → 0.95）：柱子全是同一个主色，只有高度一个维度时
+    // 不透明度随柱高递增（0.58 → 1）：柱子全是同一个主色，只有高度一个维度时
     // 相邻同色柱很容易糊成一片色带；加上深浅层次后既拉开了对比，也让高低更直观。
-    // 今日保持满色，仍是最醒目的一根。
-    ctx.globalAlpha = isToday ? 1 : 0.5 + 0.45 * (d.count / max);
+    // 下限不取太低，否则深色主题里最矮的柱子会和卡片底色糊在一起。
+    ctx.globalAlpha = isToday ? 1 : 0.58 + 0.42 * (d.count / max);
     ctx.fillStyle = color;
     roundRectPath(ctx, x, baseY - h, barW, h, Math.min(3, barW / 2));
     ctx.fill();
@@ -2103,8 +2105,12 @@ function updateDrinkStats() {
     }
 
     // 喝水卡片没有周/月切换，用「本月」标注（与下方「本月」累计一致）
+    // 柱子用「在卡片底上可读」的主色变体（--primary-text，仅自定义主题提供）：
+    // 深色主题里主色本身常和卡片底色接近，直接用 --primary 画出来会发灰发淡。
+    const bodyStyles = getComputedStyle(document.body);
     renderTrend("drinkTrendCanvas", buildTrendData(records, mRange.start, mRange.end), {
-      color: getComputedStyle(document.body).getPropertyValue('--primary').trim(),
+      color: (bodyStyles.getPropertyValue('--primary-text').trim()
+        || bodyStyles.getPropertyValue('--primary').trim()),
       rangeLabel: t("month"),
     });
   });
