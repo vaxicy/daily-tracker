@@ -1511,6 +1511,12 @@ export function badgeTextColorOn(bg) {
   return contrastWithWhite(bg) < BADGE_DARK_TEXT_WHITE_CONTRAST_MAX ? BADGE_DARK_TEXT : "#ffffff";
 }
 
+// 填充色（按钮/选中块的底色）上的文字色：白字和深字里取对比更高的那个。
+// 注意与角标不同 —— 角标按用户偏好"默认白字"，按钮则以清晰为准（浅色填充必须换深字）。
+export function fillTextColorOn(bg) {
+  return contrastWithWhite(bg) >= contrastWithDark(bg) ? "#ffffff" : BADGE_DARK_TEXT;
+}
+
 // 角标底色：永远【原样用主色】，一个色阶都不改（用户明确要求直接跟随主色）。
 export function badgeColorFor(primary) {
   const { r, g, b } = hexToRgb(primary);
@@ -1529,6 +1535,36 @@ export function relativeLuminance(hex) {
 
 export function isLightColor(hex) {
   return relativeLuminance(hex) > 0.62;
+}
+
+// 两色对比度
+export function contrastRatio(a, b) {
+  const l1 = relativeLuminance(a);
+  const l2 = relativeLuminance(b);
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
+// 把 color 朝「更亮/更暗」方向逐档微调，直到在 surface 上达到 target 对比度 ——
+// 用于深色底上让主色/副色等「当文字用」时依然看得清（色相保留，只改明度）。
+export function readableOn(color, surface, target = 4.5) {
+  if (contrastRatio(color, surface) >= target) return color;
+  const toWhite = relativeLuminance(surface) < 0.5;
+  let out = color;
+  for (let i = 0; i < 24; i++) {
+    out = mixHex(out, toWhite ? "#ffffff" : "#000000", 0.08);
+    if (contrastRatio(out, surface) >= target) break;
+  }
+  return out;
+}
+
+// 自定义主题该挂哪个 data-theme：
+//   深色 → "dark"（复用 popup.html 里现成的 dark 覆盖层，卡片/输入框/按钮等才有深色规则）
+//   浅色 → "custom"（不套任何主题覆盖，纯靠变量驱动）
+// 依据【实际背景亮度】推导，不依赖存下来的字段 —— 旧数据/手改数据也能正确挂载。
+export function customThemeDataAttr(rec) {
+  if (!rec || !rec.custom) return null;
+  const bg = (rec.vars && rec.vars["--bg"]) || (rec.anchors && rec.anchors.bg);
+  return bg && !isLightColor(bg) ? "dark" : "custom";
 }
 
 // 与白字的对比度（角标默认白字）
@@ -1554,8 +1590,15 @@ export function buildCustomTheme(anchors = {}) {
   // 卡片跟着背景走（浅底更浅、深底更亮），不再混主色以免偏离用户色卡
   const cardBg = bgIsDark ? tintHex(g, 0.12) : tintHex(g, 0.62);
   const period = mixHex("#E0679E", p, 0.2);
+  const poop = darkText ? "#8A6E4A" : tintHex("#8A6E4A", 0.15);
   // 角标：保饱和度压暗（混黑会发灰）
   const badge = badgeColorFor(p);
+
+  // 语义色只当「填充」用时按原色（保饱和、保住用户色卡）；
+  // 但当「文字/图标」用时（日历标题、统计数字、周几…）必须保证在卡片底色上能看清，
+  // 所以在深色主题里往白走、浅色主题里往黑走，逐档微调到 4.5:1。预设主题不定义这组变量，
+  // CSS 里都用 var(--xxx-text, var(--xxx)) 回退，所以 38 个预设的观感完全不变。
+  const asText = (c) => readableOn(c, cardBg);
 
   const vars = {
     "--text": text,
@@ -1569,11 +1612,25 @@ export function buildCustomTheme(anchors = {}) {
     "--eat2": primary2,
     "--pee": s,
     "--pee2": secondary2,
-    "--poop": darkText ? "#8A6E4A" : tintHex("#8A6E4A", 0.15),
+    "--poop": poop,
     "--poop2": darkText ? "#6E5433" : tintHex("#6E5433", 0.15),
     "--period": period,
     "--period2": tintHex(period, 0.45),
     "--period-glow": hexWithAlpha(period, 0.42),
+    // 当文字用的语义色（深底提亮 / 浅底压暗，保证可读）
+    "--primary-text": asText(p),
+    "--secondary-text": asText(s),
+    "--eat-text": asText(p),
+    "--pee-text": asText(s),
+    "--poop-text": asText(poop),
+    "--period-text": asText(period),
+    // 填充色上的文字色（浅填充自动换深字，避免白字糊在浅底上）
+    "--on-primary": fillTextColorOn(p),
+    "--on-secondary": fillTextColorOn(s),
+    "--on-eat": fillTextColorOn(p),
+    "--on-pee": fillTextColorOn(s),
+    "--on-poop": fillTextColorOn(poop),
+    "--on-period": fillTextColorOn(period),
     "--card-bg": cardBg,
     "--card-border": hexWithAlpha(p, 0.16),
     "--input-bg": darkText ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.10)",

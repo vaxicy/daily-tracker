@@ -1,4 +1,4 @@
-import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX, badgeTextColorOn } from './themes.js';
+import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX, badgeTextColorOn, customThemeDataAttr } from './themes.js';
 
 // 用户自定义主题：{ "custom:xxx": { label, anchors, dot, vars, bgGradient, ... } }
 // 声明在模块顶部，避免早于主题系统初始化的调用（如 updateBadge）触发 TDZ 报错
@@ -4611,11 +4611,14 @@ function normalizeCustomThemes(raw) {
     if (!rec || typeof rec !== "object" || !rec.anchors) return;
     const built = buildCustomTheme(rec.anchors);
     out[id] = {
+      custom: true,
       label: String(rec.label || "").trim() || t("customThemeDefaultName"),
       anchors: built.anchors,
       dot: built.dot,
       vars: built.vars,
       bgGradient: built.bgGradient,
+      // 必须带上：applyTheme 靠它决定挂不挂 dark 覆盖层（丢了这个字段深色主题会变"白卡片"）
+      dataTheme: built.dataTheme,
       createdAt: typeof rec.createdAt === "number" ? rec.createdAt : Date.now()
     };
   });
@@ -4623,11 +4626,19 @@ function normalizeCustomThemes(raw) {
 }
 
 // 只写入 CSS 变量（不改动 currentThemeId），供应用主题与编辑器实时预览共用
+// 上一个主题设过、但当前主题没有的变量必须显式清掉：
+// 自定义主题会多出 --primary-text / --on-* 等派生变量，若残留到预设主题上会串味
+let appliedThemeVarKeys = [];
 function applyThemeObject(preset, dataTheme) {
   document.body.setAttribute("data-theme", dataTheme || "custom");
+  const nextKeys = Object.keys(preset.vars);
+  appliedThemeVarKeys.forEach((k) => {
+    if (!nextKeys.includes(k)) root.style.removeProperty(k);
+  });
   Object.entries(preset.vars).forEach(([k, v]) => {
     root.style.setProperty(k, v);
   });
+  appliedThemeVarKeys = nextKeys;
   bodyEl.style.background = preset.bgGradient;
 }
 
@@ -4838,7 +4849,10 @@ function applyTheme(themeId) {
   currentThemeId = themeId;
 
   // 深色自定义主题复用现成 dark 覆盖规则；浅色自定义主题走 custom（不套任何主题覆盖）
-  applyThemeObject(preset, preset.dataTheme || themeId);
+  // 不能只看 preset.dataTheme：早期存的自定义主题没这个字段，会退化成 "custom:xxx"，
+  // 导致 body[data-theme="dark"] 那层深色规则全部失效（卡片发白、浅色文字看不见）。
+  const dataTheme = preset.dataTheme || customThemeDataAttr(preset) || themeId;
+  applyThemeObject(preset, dataTheme);
 
   // 预设 trigger 固定显示"上次用过的预设"，避免被自定义主题改写后无从切回
   if (!preset.custom) currentPresetId = themeId;
@@ -4908,12 +4922,13 @@ function saveCustomTheme() {
   const id = editingThemeId || (CUSTOM_THEME_PREFIX + Date.now().toString(36));
   const prev = customThemes[id];
   customThemes[id] = {
+    custom: true,
     label,
-    base: built.base,
     anchors: built.anchors,
     dot: built.dot,
     vars: built.vars,
     bgGradient: built.bgGradient,
+    dataTheme: built.dataTheme,
     createdAt: (prev && prev.createdAt) || Date.now()
   };
   chrome.storage.local.set(

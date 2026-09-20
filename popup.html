@@ -157,7 +157,7 @@
         font-size: 13px;
         outline: none;
       }
-      .meal-input:focus { border-color: var(--eat); }
+      .meal-input:focus { border-color: var(--eat-text, var(--eat)); }
       .meal-input::placeholder { color: var(--muted); }
       .btn-eat {
         width: 100%;
@@ -165,7 +165,7 @@
         border-radius: 10px;
         border: none;
         background: linear-gradient(135deg, var(--eat), var(--eat2));
-        color: #fff;
+        color: var(--on-eat, #fff);
         font: inherit;
         font-size: 13px;
         font-weight: 700;
@@ -359,7 +359,7 @@
       }
       .rating-text {
         font-size: 11px;
-        color: var(--eat);
+        color: var(--eat-text, var(--eat));
         font-weight: 600;
         margin-left: 2px;
         line-height: 1.4;
@@ -406,13 +406,13 @@
         white-space: nowrap;
       }
       .fullness-btn:hover {
-        border-color: var(--eat);
-        color: var(--eat);
+        border-color: var(--eat-text, var(--eat));
+        color: var(--eat-text, var(--eat));
       }
       .fullness-btn.active {
         background: var(--eat);
-        color: #fff;
-        border-color: var(--eat);
+        color: var(--on-eat, #fff);
+        border-color: var(--eat-text, var(--eat));
         font-weight: 600;
       }
 
@@ -478,8 +478,8 @@
       }
       .meal-tag-btn.active {
         background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,191,36,0.1));
-        border-color: var(--eat);
-        color: var(--eat);
+        border-color: var(--eat-text, var(--eat));
+        color: var(--eat-text, var(--eat));
         font-weight: 600;
       }
       .meal-tag-del {
@@ -520,7 +520,7 @@
       .meal-tag-add-btn:hover {
         background: rgba(245,158,11,0.1);
         border-color: rgba(245,158,11,0.6);
-        color: var(--eat);
+        color: var(--eat-text, var(--eat));
       }
 
       /* 自定义标签弹窗 */
@@ -623,7 +623,7 @@
       }
       .emoji-btn:hover { background: rgba(245,158,11,0.15); transform: scale(1.06); }
       .emoji-btn.selected {
-        border-color: var(--eat);
+        border-color: var(--eat-text, var(--eat));
         background: rgba(245,158,11,0.15);
       }
       .tag-name-input {
@@ -637,7 +637,7 @@
         font-size: 12px;
         outline: none;
       }
-      .tag-name-input:focus { border-color: var(--eat); }
+      .tag-name-input:focus { border-color: var(--eat-text, var(--eat)); }
       .tag-modal-footer {
         display: flex;
         gap: 6px;
@@ -661,7 +661,7 @@
       .tag-modal-cancel:hover { background: rgba(12,42,77,0.12); }
       .tag-modal-confirm {
         background: linear-gradient(135deg, var(--eat), var(--eat2));
-        color: #fff;
+        color: var(--on-eat, #fff);
       }
       .tag-modal-confirm:hover { transform: translateY(-1px); }
 
@@ -808,7 +808,7 @@
         background: rgba(245,158,11,0.08);
         border-radius: 10px;
       }
-      .eat-stat-num { font-size: 20px; font-weight: 800; color: var(--eat); }
+      .eat-stat-num { font-size: 20px; font-weight: 800; color: var(--eat-text, var(--eat)); }
       .eat-stat-label { font-size: 10px; color: var(--muted); margin-top: 2px; }
 
       /* 饮食日历：按餐次着色 */
@@ -863,7 +863,7 @@
         text-align: center;
       }
       .eat-stats-body .stats-num {
-        color: var(--eat);
+        color: var(--eat-text, var(--eat));
         font-size: 36px;
         font-weight: 800;
         line-height: 1;
@@ -904,7 +904,7 @@
         white-space: nowrap;
       }
       .eat-stat-tag b {
-        color: var(--eat);
+        color: var(--eat-text, var(--eat));
         font-weight: 700;
       }
 
@@ -1016,7 +1016,7 @@
         font-weight: 800;
         font-size: 12px;
         background: linear-gradient(135deg, var(--primary), var(--primary2));
-        color: #fff;
+        color: var(--on-primary, #fff);
         box-shadow: 0 5px 16px rgba(11,107,255,0.25);
       }
 
@@ -1040,13 +1040,13 @@
         background: rgba(11,107,255,0.08);
         border-radius: 10px;
       }
-      .drink-stat-num { font-size: 16px; font-weight: 800; color: var(--primary); }
+      .drink-stat-num { font-size: 16px; font-weight: 800; color: var(--primary-text, var(--primary)); }
       .drink-stat-label { font-size: 10px; color: var(--muted); margin-top: 1px; }
       button { font: inherit; border: none; cursor: pointer; border-radius: 11px; padding: 10px 6px; font-weight: 700; font-size: 13px; transition: transform 100ms ease, opacity 100ms ease; }
       .btn-primary {
         position: relative;
         background: linear-gradient(135deg, var(--primary), var(--primary2));
-        color: #fff;
+        color: var(--on-primary, #fff);
         box-shadow: 0 5px 16px var(--primary-glow);
         overflow: hidden;
       }
@@ -1156,7 +1156,7 @@
         border-radius: 50%;
         border: none;
         background: rgba(11,107,255,0.06);
-        color: var(--primary);
+        color: var(--primary-text, var(--primary));
         font-size: 0;
         cursor: pointer;
         display: flex;
@@ -1334,7 +1334,7 @@
       /* lv4 满杯：红绿渐变底 + 白字兜底保可读 */
       body[data-theme="xmas"] #pageDrink .day-cell.today.lv4 {
         background: linear-gradient(135deg, var(--primary), var(--primary2));
-        color: #fff;
+        color: var(--on-primary, #fff);
         text-shadow: 0 1px 2px rgba(0,0,0,0.35);
       }
       body[data-theme="xmas"] #pagePee .day-cell.has-pee {
@@ -1381,7 +1381,7 @@
       /* lv4 满杯：洋红渐变底 + 白字兜底保可读 */
       body[data-theme="winerose"] #pageDrink .day-cell.today.lv4 {
         background: linear-gradient(135deg, var(--primary), var(--primary2));
-        color: #fff;
+        color: var(--on-primary, #fff);
         text-shadow: 0 1px 2px rgba(0,0,0,0.35);
       }
       body[data-theme="winerose"] #pagePee .day-cell.has-pee {
@@ -1404,11 +1404,11 @@
       #pageEat .calendar-header .calendar-title {
         font-size: 15px;
         font-weight: 700;
-        color: var(--eat);
+        color: var(--eat-text, var(--eat));
       }
       #pageEat .nav-btn {
         background: rgba(245,158,11,0.1);
-        color: var(--eat);
+        color: var(--eat-text, var(--eat));
       }
       #pageEat .nav-btn:hover {
         background: rgba(245,158,11,0.2);
@@ -1434,17 +1434,17 @@
       #pagePee .calendar-header .calendar-title {
         font-size: 15px;
         font-weight: 700;
-        color: var(--pee);
+        color: var(--pee-text, var(--pee));
       }
       #pagePee .nav-btn {
         background: rgba(16,185,129,0.1);
-        color: var(--pee);
+        color: var(--pee-text, var(--pee));
       }
       #pagePee .nav-btn:hover {
         background: rgba(16,185,129,0.2);
       }
       #pagePee .weekday {
-        color: var(--pee);
+        color: var(--pee-text, var(--pee));
       }
 
       /* Bristol 分类型着色 */
@@ -1543,7 +1543,7 @@
         font-weight: 700;
         font-size: 13px;
         background: linear-gradient(135deg, var(--secondary), var(--secondary2));
-        color: #fff;
+        color: var(--on-secondary, #fff);
         box-shadow: 0 4px 14px rgba(139,92,246,0.3);
         white-space: nowrap;
         border: none;
@@ -1657,13 +1657,13 @@
         white-space: nowrap;
       }
       .poop-amount-btn:hover {
-        border-color: var(--poop);
-        color: var(--poop);
+        border-color: var(--poop-text, var(--poop));
+        color: var(--poop-text, var(--poop));
       }
       .poop-amount-btn.active {
         background: var(--poop);
-        color: #fff;
-        border-color: var(--poop);
+        color: var(--on-poop, #fff);
+        border-color: var(--poop-text, var(--poop));
         font-weight: 600;
       }
       /* 大便颜色选择器 */
@@ -1701,7 +1701,7 @@
         box-shadow: 0 1px 4px rgba(0,0,0,0.2);
       }
       .poop-color-btn.active {
-        border-color: var(--poop);
+        border-color: var(--poop-text, var(--poop));
         border-width: 3px;
         box-shadow: 0 0 0 2px rgba(124,58,237,0.25);
       }
@@ -1720,7 +1720,7 @@
         box-shadow: 0 1px 4px rgba(0,0,0,0.2);
       }
       .poop-color-btn-sm.active {
-        border-color: var(--poop);
+        border-color: var(--poop-text, var(--poop));
         border-width: 3px;
         /* 选中态要有明显光环：以前只改 border，被按钮上的行内 border 覆盖后毫无反馈 */
         box-shadow: 0 0 0 2px color-mix(in srgb, var(--poop) 45%, transparent);
@@ -1728,7 +1728,7 @@
       }
       /* 尿液颜色小圆点：选中态同样给光环（与大便颜色统一） */
       .pee-color-btn-sm.active {
-        border-color: var(--pee);
+        border-color: var(--pee-text, var(--pee));
         border-width: 3px;
         box-shadow: 0 0 0 2px color-mix(in srgb, var(--pee) 45%, transparent);
       }
@@ -1748,9 +1748,9 @@
         transition: all 0.15s ease;
       }
       .edit-tag-btn.active {
-        border-color: var(--eat);
+        border-color: var(--eat-text, var(--eat));
         background: rgba(245, 158, 11, 0.12);
-        color: var(--eat);
+        color: var(--eat-text, var(--eat));
       }
       .edit-fullness-btn {
         padding: 2px 5px;
@@ -1765,8 +1765,8 @@
       }
       .edit-fullness-btn.active {
         background: var(--eat);
-        color: #fff;
-        border-color: var(--eat);
+        color: var(--on-eat, #fff);
+        border-color: var(--eat-text, var(--eat));
       }
       /* 大便颜色显示区（已选颜色） */
       .poop-color-display {
@@ -1833,13 +1833,13 @@
         white-space: nowrap;
       }
       .poop-amount-btn-sm:hover {
-        border-color: var(--poop);
-        color: var(--poop);
+        border-color: var(--poop-text, var(--poop));
+        color: var(--poop-text, var(--poop));
       }
       .poop-amount-btn-sm.active {
         background: var(--poop);
-        color: #fff;
-        border-color: var(--poop);
+        color: var(--on-poop, #fff);
+        border-color: var(--poop-text, var(--poop));
         font-weight: 600;
       }
       /* 尿量选择器 */
@@ -1875,13 +1875,13 @@
         white-space: nowrap;
       }
       .pee-amount-btn:hover {
-        border-color: var(--pee);
-        color: var(--pee);
+        border-color: var(--pee-text, var(--pee));
+        color: var(--pee-text, var(--pee));
       }
       .pee-amount-btn.active {
         background: var(--pee);
-        color: #fff;
-        border-color: var(--pee);
+        color: var(--on-pee, #fff);
+        border-color: var(--pee-text, var(--pee));
         font-weight: 600;
       }
       /* 编辑弹窗中的小号尿量按钮 */
@@ -1898,13 +1898,13 @@
         white-space: nowrap;
       }
       .pee-amount-btn-sm:hover {
-        border-color: var(--pee);
-        color: var(--pee);
+        border-color: var(--pee-text, var(--pee));
+        color: var(--pee-text, var(--pee));
       }
       .pee-amount-btn-sm.active {
         background: var(--pee);
-        color: #fff;
-        border-color: var(--pee);
+        color: var(--on-pee, #fff);
+        border-color: var(--pee-text, var(--pee));
         font-weight: 600;
       }
       /* 尿液颜色选择器 */
@@ -1940,7 +1940,7 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       }
       .pee-color-btn.active {
-        border-color: var(--pee);
+        border-color: var(--pee-text, var(--pee));
         box-shadow: 0 0 0 2px rgba(16,185,129,0.3);
         transform: scale(1.1);
       }
@@ -1957,7 +1957,7 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       }
       .pee-color-btn-sm.active {
-        border-color: var(--pee);
+        border-color: var(--pee-text, var(--pee));
         box-shadow: 0 0 0 2px rgba(16,185,129,0.3);
         transform: scale(1.1);
       }
@@ -1971,7 +1971,7 @@
         border-radius: 50%;
         border: none;
         background: rgba(139,92,246,0.1);
-        color: var(--secondary);
+        color: var(--secondary-text, var(--secondary));
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -2027,10 +2027,10 @@
       .today-records-icon { font-size: 18px; }
       .today-records-title strong {
         font-weight: 700;
-        color: var(--secondary);
+        color: var(--secondary-text, var(--secondary));
       }
       .today-records-title strong.pee-count {
-        color: var(--pee);
+        color: var(--pee-text, var(--pee));
       }
       .today-records-list {
         max-height: 200px;
@@ -2055,14 +2055,14 @@
         margin-bottom: 0;
       }
       .record-time {
-        color: var(--secondary);
+        color: var(--secondary-text, var(--secondary));
         font-weight: 600;
         min-width: 50px;
         flex-shrink: 0;
         font-size: 11px;
       }
       .record-time.pee-time {
-        color: var(--pee);
+        color: var(--pee-text, var(--pee));
       }
       .record-remark {
         color: var(--text);
@@ -2138,7 +2138,7 @@
         text-align: center;
       }
       .stats-card.poop-stats .stats-num {
-        color: var(--poop);
+        color: var(--poop-text, var(--poop));
         font-size: 36px;
       }
       .stats-card.poop-stats .stats-label {
@@ -2173,7 +2173,7 @@
         font-size: 11px;
       }
       .stats-detail-item .detail-val {
-        color: var(--secondary);
+        color: var(--secondary-text, var(--secondary));
         font-weight: 700;
       }
       .stats-card.poop-stats .stats-detail-item {
@@ -2181,7 +2181,7 @@
         border-color: color-mix(in srgb, var(--poop), transparent 88%);
       }
       .stats-card.poop-stats .stats-detail-item .detail-val {
-        color: var(--poop);
+        color: var(--poop-text, var(--poop));
       }
       .stats-title {
         font-size: 11px;
@@ -2209,7 +2209,7 @@
       }
       .stats-toggle-btn.active {
         background: linear-gradient(135deg, var(--secondary), var(--secondary2));
-        color: #fff;
+        color: var(--on-secondary, #fff);
         border-color: transparent;
       }
       .stats-toggle-btn.pee-toggle.active {
@@ -2248,7 +2248,7 @@
       .drink-stat-val {
         font-size: 20px;
         font-weight: 800;
-        color: var(--primary);
+        color: var(--primary-text, var(--primary));
         line-height: 1.25;
       }
       .drink-stat-val.editable {
@@ -2304,7 +2304,7 @@
         border-radius: 50%;
         border: none;
         background: rgba(11,107,255,0.1);
-        color: var(--primary);
+        color: var(--primary-text, var(--primary));
         font-size: 22px;
         font-weight: 700;
         cursor: pointer;
@@ -2328,7 +2328,7 @@
       .drink-edit-counter .counter-num {
         font-size: 28px;
         font-weight: 800;
-        color: var(--primary);
+        color: var(--primary-text, var(--primary));
         min-width: 40px;
       }
       .drink-edit-actions {
@@ -2347,24 +2347,24 @@
       }
       .drink-edit-confirm {
         background: linear-gradient(135deg, var(--primary), var(--primary2));
-        color: #fff;
+        color: var(--on-primary, #fff);
       }
       .drink-edit-cancel {
         background: rgba(12,42,77,0.06);
         color: var(--muted);
       }
       .stats-num.drink-num {
-        color: var(--primary);
+        color: var(--primary-text, var(--primary));
       }
       .stats-num {
         font-size: 32px;
         font-weight: 800;
-        color: var(--secondary);
+        color: var(--secondary-text, var(--secondary));
         text-align: center;
         line-height: 1;
       }
       .stats-num.pee-num {
-        color: var(--pee);
+        color: var(--pee-text, var(--pee));
       }
 
       /* ============ 经期记录页面 ============ */
@@ -2435,13 +2435,13 @@
         white-space: nowrap;
       }
       .period-symptom-btn:hover {
-        border-color: var(--period);
-        color: var(--period);
+        border-color: var(--period-text, var(--period));
+        color: var(--period-text, var(--period));
       }
       .period-symptom-btn.active {
         background: var(--period);
-        color: #fff;
-        border-color: var(--period);
+        color: var(--on-period, #fff);
+        border-color: var(--period-text, var(--period));
         font-weight: 600;
       }
 
@@ -2475,10 +2475,10 @@
       }
       .period-mood-btn:hover {
         transform: scale(1.08);
-        border-color: var(--period);
+        border-color: var(--period-text, var(--period));
       }
       .period-mood-btn.active {
-        border-color: var(--period);
+        border-color: var(--period-text, var(--period));
         background: color-mix(in srgb, var(--period) 12%, transparent);
         transform: scale(1.08);
         box-shadow: 0 0 0 2px color-mix(in srgb, var(--period) 10%, transparent);
@@ -2528,8 +2528,8 @@
       }
       .period-symptom-btn.active {
         background: color-mix(in srgb, var(--period) 15%, transparent);
-        border-color: var(--period);
-        color: var(--period);
+        border-color: var(--period-text, var(--period));
+        color: var(--period-text, var(--period));
         font-weight: 600;
         box-shadow: 0 0 0 2px color-mix(in srgb, var(--period) 8%, transparent);
       }
@@ -2612,7 +2612,7 @@
         user-select: none;
       }
       .period-slider-ticks span:hover { transform: translateX(-50%) scale(1.25); }
-      .period-slider-ticks span.active { transform: translateX(-50%) scale(1.25); color: var(--period); }
+      .period-slider-ticks span.active { transform: translateX(-50%) scale(1.25); color: var(--period-text, var(--period)); }
 
       .period-remark-input {
         width: 100%;
@@ -2626,7 +2626,7 @@
         outline: none;
         margin: 6px 0;
       }
-      .period-remark-input:focus { border-color: var(--period); }
+      .period-remark-input:focus { border-color: var(--period-text, var(--period)); }
       .period-remark-input::placeholder { color: var(--muted); }
 
       .btn-period {
@@ -2636,7 +2636,7 @@
         border-radius: 12px;
         border: none;
         background: linear-gradient(135deg, var(--period), var(--period2));
-        color: #fff;
+        color: var(--on-period, #fff);
         font: inherit;
         font-size: 14px;
         font-weight: 700;
@@ -2722,7 +2722,7 @@
         color: var(--text);
       }
       .period-status-text.active {
-        color: var(--period);
+        color: var(--period-text, var(--period));
       }
       .period-status-divider {
         height: 1px;
@@ -2784,7 +2784,7 @@
       .period-stat-value {
         font-size: 16px;
         font-weight: 700;
-        color: var(--period);
+        color: var(--period-text, var(--period));
       }
       .period-stat-sub {
         font-size: 9px;
@@ -2911,7 +2911,7 @@
       }
       .tl-dot.active {
         background: transparent;
-        border-color: var(--period);
+        border-color: var(--period-text, var(--period));
         animation: tl-pulse 1.8s ease-in-out infinite;
       }
       @keyframes tl-pulse {
@@ -2961,7 +2961,7 @@
       }
       .tl-card-title {
         font-weight: 700;
-        color: var(--period);
+        color: var(--period-text, var(--period));
         font-size: 12px;
         margin-bottom: 2px;
       }
@@ -3038,7 +3038,7 @@
         cursor: pointer;
         transition: color 0.15s, transform 0.15s;
       }
-      .period-predict-gear:hover { color: var(--period); transform: translateY(-50%) scale(1.15); }
+      .period-predict-gear:hover { color: var(--period-text, var(--period)); transform: translateY(-50%) scale(1.15); }
 
 
       .day-cell {
@@ -3132,7 +3132,7 @@
         background: color-mix(in srgb, var(--period) 8%, transparent);
       }
       .period-blood-btn.selected {
-        border-color: var(--period);
+        border-color: var(--period-text, var(--period));
         background: color-mix(in srgb, var(--period) 10%, transparent);
       }
       .period-blood-swatch {
@@ -3143,7 +3143,7 @@
         box-sizing: border-box;
       }
       .period-blood-btn.selected .period-blood-swatch {
-        border-color: var(--period);
+        border-color: var(--period-text, var(--period));
         box-shadow: 0 0 0 2px color-mix(in srgb, var(--period) 30%, transparent);
       }
       .period-blood-name {
@@ -3152,7 +3152,7 @@
         line-height: 1;
       }
       .period-blood-btn.selected .period-blood-name {
-        color: var(--period);
+        color: var(--period-text, var(--period));
         font-weight: 600;
       }
       /* 经期记录 tooltip */
@@ -3251,14 +3251,14 @@
       }
       .tooltip-poop-count {
         font-size: 12px;
-        color: var(--secondary);
+        color: var(--secondary-text, var(--secondary));
         font-weight: 600;
       }
       .tooltip-poop-count.pee-count {
-        color: var(--pee);
+        color: var(--pee-text, var(--pee));
       }
       .tooltip-poop-count.eat-count {
-        color: var(--eat);
+        color: var(--eat-text, var(--eat));
       }
       .tooltip-records {
         max-height: 160px;
@@ -3556,7 +3556,7 @@
       }
       .donate-qr-tab.active {
         background: var(--primary);
-        color: #fff;
+        color: var(--on-primary, #fff);
       }
       .donate-qr-panel { display: none; }
       .donate-qr-panel.active { display: block; }
@@ -3645,7 +3645,7 @@
       }
       .edit-save-btn-primary {
         background: var(--primary) !important;
-        color: #fff !important;
+        color: var(--on-primary, #fff) !important;
         font-size: 13px !important;
         font-weight: 700 !important;
         padding: 8px 12px !important;
@@ -3691,7 +3691,7 @@
       }
       .edit-btn-edit {
         background: rgba(11,107,255,0.1);
-        color: var(--primary);
+        color: var(--primary-text, var(--primary));
       }
       .edit-btn-edit:hover {
         background: rgba(11,107,255,0.2);
@@ -3720,7 +3720,7 @@
         border-radius: 10px;
         background: rgba(139,92,246,0.10);
         border: 1px solid rgba(139,92,246,0.20);
-        color: var(--secondary);
+        color: var(--secondary-text, var(--secondary));
         font-size: 11px;
         font-weight: 500;
       }
@@ -3749,13 +3749,13 @@
         line-height: 1;
       }
       .bristol-btn:hover {
-        border-color: var(--secondary);
+        border-color: var(--secondary-text, var(--secondary));
         background: rgba(139,92,246,0.10);
       }
       .bristol-btn.active {
-        border-color: var(--secondary);
+        border-color: var(--secondary-text, var(--secondary));
         background: var(--secondary);
-        color: #fff;
+        color: var(--on-secondary, #fff);
         box-shadow: 0 2px 8px rgba(139,92,246,0.3);
       }
       /* 编辑弹窗 Bristol 按钮按类型着色 - 与主界面保持一致 */
@@ -3795,7 +3795,7 @@
         outline: none;
       }
       .edit-input:focus {
-        border-color: var(--primary);
+        border-color: var(--primary-text, var(--primary));
       }
       .edit-save-btn {
         width: 100%;
@@ -3803,7 +3803,7 @@
         border-radius: 8px;
         border: none;
         background: var(--primary);
-        color: #fff;
+        color: var(--on-primary, #fff);
         font: inherit;
         font-size: 12px;
         font-weight: 600;
@@ -3831,7 +3831,7 @@
         padding: 20px 0;
       }
       .edit-empty.add-mode {
-        color: var(--primary);
+        color: var(--primary-text, var(--primary));
         font-weight: 600;
       }
 
@@ -4021,10 +4021,10 @@
       }
       .theme-trigger:hover,
       .theme-dropdown.open .theme-trigger {
-        border-color: var(--primary);
+        border-color: var(--primary-text, var(--primary));
         box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 15%, transparent);
       }
-      .theme-trigger:focus { outline: none; border-color: var(--primary); }
+      .theme-trigger:focus { outline: none; border-color: var(--primary-text, var(--primary)); }
       .theme-swatch {
         width: 14px;
         height: 14px;
@@ -4048,7 +4048,7 @@
       }
       .theme-dropdown.open .theme-chevron {
         transform: rotate(180deg);
-        color: var(--primary);
+        color: var(--primary-text, var(--primary));
       }
       .theme-menu {
         position: absolute;
@@ -4097,7 +4097,7 @@
       }
       .theme-item.active {
         background: color-mix(in srgb, var(--primary) 12%, transparent);
-        color: var(--primary);
+        color: var(--primary-text, var(--primary));
       }
       .theme-item:focus { outline: none; }
       .theme-item .theme-dot {
@@ -4125,7 +4125,7 @@
         border-radius: 8px;
         border: 1px solid rgba(11,107,255,0.25);
         background: rgba(11,107,255,0.05);
-        color: var(--primary);
+        color: var(--primary-text, var(--primary));
         font-size: 11px;
         font-weight: 600;
         cursor: pointer;
@@ -4133,7 +4133,7 @@
       }
       .backup-btn:hover {
         background: rgba(11,107,255,0.12);
-        border-color: var(--primary);
+        border-color: var(--primary-text, var(--primary));
       }
 
       /* CSV 模块选择浮层 */
@@ -4162,7 +4162,7 @@
         border-radius: 8px;
         border: 1px solid rgba(11,107,255,0.25);
         background: var(--card-bg, #fff);
-        color: var(--primary);
+        color: var(--primary-text, var(--primary));
         font-size: 11px;
         font-weight: 600;
         cursor: pointer;
@@ -4287,12 +4287,12 @@
       }
       #pageDrink .nav-btn {
         background: rgba(11,107,255,0.08);
-        color: var(--primary);
+        color: var(--primary-text, var(--primary));
       }
       #pageDrink .nav-btn:hover {
         background: rgba(11,107,255,0.2);
       }
-      .drink-wd { color: var(--primary); }
+      .drink-wd { color: var(--primary-text, var(--primary)); }
 
       /* 喝水图例 */
       .drink-legend {
@@ -4339,7 +4339,7 @@
       body[data-theme="lemon"] .drink-legend-bar .drink-lv.lv3,
       body[data-theme="lemon"] .lv3 { background: color-mix(in srgb, var(--secondary) 85%, transparent); }
       body[data-theme="lemon"] .drink-legend-bar .drink-lv.lv4,
-      body[data-theme="lemon"] .lv4 { background: linear-gradient(135deg, var(--secondary), var(--secondary2)); color: #fff; text-shadow: 0 1px 2px rgba(60,110,90,0.5); }
+      body[data-theme="lemon"] .lv4 { background: linear-gradient(135deg, var(--secondary), var(--secondary2)); color: var(--on-secondary, #fff); text-shadow: 0 1px 2px rgba(60,110,90,0.5); }
       body[data-theme="lemon"] #pageDrink .day-cell.today {
         color: var(--text);
         font-weight: 700;
@@ -4350,7 +4350,7 @@
       /* 仅柠檬黄：主按钮用奶薄荷绿底 + 白字（阴影托底保证可读） */
       body[data-theme="lemon"] .btn-primary {
         background: linear-gradient(135deg, #7FBFA6, var(--secondary));
-        color: #fff;
+        color: var(--on-secondary, #fff);
         text-shadow: 0 1px 2px rgba(60,110,90,0.5);
         box-shadow: 0 5px 16px rgba(127,191,166,0.4);
       }
@@ -4450,7 +4450,7 @@
       }
       #pageDrink .day-cell.today.lv4 {
         background: linear-gradient(135deg, var(--primary), var(--primary2));
-        color: #fff;
+        color: var(--on-primary, #fff);
         text-shadow: 0 1px 2px rgba(0,0,0,0.35);
         transform: scale(1.08);
         z-index: 5;
@@ -4761,7 +4761,7 @@
         color: var(--text, #e2e8f0);
       }
       body[data-theme="dark"] .period-status-text.active {
-        color: var(--period);
+        color: var(--period-text, var(--period));
       }
       body[data-theme="dark"] .period-status-divider {
         background: rgba(148,163,184,0.1);
@@ -4778,7 +4778,7 @@
         border: 1px solid rgba(148,163,184,0.12);
       }
       body[data-theme="dark"] .period-stat-label { color: var(--muted, #94a3b8); }
-      body[data-theme="dark"] .period-stat-value { color: var(--period); }
+      body[data-theme="dark"] .period-stat-value { color: var(--period-text, var(--period)); }
 
       /* 趋势条形图（夜空黑：bar-track 变深灰、bar-label 变浅） */
       body[data-theme="dark"] .bar-track {
@@ -5026,7 +5026,7 @@
       }
       body[data-theme="dark"] .stats-toggle-btn.active {
         background: linear-gradient(135deg, var(--secondary), var(--secondary2));
-        color: #fff;
+        color: var(--on-secondary, #fff);
         border-color: transparent;
       }
       body[data-theme="dark"] .stats-toggle-btn.pee-toggle.active {
@@ -5048,14 +5048,14 @@
       }
       body[data-theme="dark"] .poop-amount-btn:hover,
       body[data-theme="dark"] .poop-amount-btn-sm:hover {
-        border-color: var(--poop);
-        color: var(--poop);
+        border-color: var(--poop-text, var(--poop));
+        color: var(--poop-text, var(--poop));
       }
       body[data-theme="dark"] .poop-amount-btn.active,
       body[data-theme="dark"] .poop-amount-btn-sm.active {
         background: var(--poop);
-        color: #fff;
-        border-color: var(--poop);
+        color: var(--on-poop, #fff);
+        border-color: var(--poop-text, var(--poop));
       }
       body[data-theme="dark"] .poop-color-row {
         background: rgba(148,163,184,0.08);
@@ -5080,14 +5080,30 @@
       }
       body[data-theme="dark"] .pee-amount-btn:hover,
       body[data-theme="dark"] .pee-amount-btn-sm:hover {
-        border-color: var(--pee);
-        color: var(--pee);
+        border-color: var(--pee-text, var(--pee));
+        color: var(--pee-text, var(--pee));
       }
       body[data-theme="dark"] .pee-amount-btn.active,
       body[data-theme="dark"] .pee-amount-btn-sm.active {
         background: var(--pee);
-        color: #fff;
-        border-color: var(--pee);
+        color: var(--on-pee, #fff);
+        border-color: var(--pee-text, var(--pee));
+      }
+
+      /* 暗色主题 - 文字可读性补强（暂停态计时器 / 页面副标题 / 预测设置齿轮 / 心情按钮） */
+      body[data-theme="dark"] .timer.paused {
+        color: color-mix(in srgb, var(--text) 78%, transparent);
+      }
+      body[data-theme="dark"] .header-sub,
+      body[data-theme="dark"] .eat-sub,
+      body[data-theme="dark"] .period-sub {
+        color: color-mix(in srgb, var(--text) 78%, transparent);
+      }
+      body[data-theme="dark"] .period-predict-gear {
+        color: color-mix(in srgb, var(--text) 80%, transparent);
+      }
+      body[data-theme="dark"] .period-mood-btn {
+        color: var(--text);
       }
 
       body[data-theme="dark"] .eat-stats-card {
@@ -5124,13 +5140,13 @@
         color: rgba(226,232,240,0.7);
       }
       body[data-theme="dark"] .fullness-btn:hover {
-        border-color: var(--eat);
-        color: var(--eat);
+        border-color: var(--eat-text, var(--eat));
+        color: var(--eat-text, var(--eat));
       }
       body[data-theme="dark"] .fullness-btn.active {
         background: var(--eat);
-        color: #fff;
-        border-color: var(--eat);
+        color: var(--on-eat, #fff);
+        border-color: var(--eat-text, var(--eat));
       }
 
       body[data-theme="dark"] .custom-apply {
@@ -5196,7 +5212,7 @@
       .reminder-section { margin-top:4px; margin-bottom:4px; }
       .sidebar-add-btn {
         background: none; border: none; font-size: 16px;
-        cursor: pointer; color: var(--eat);
+        cursor: pointer; color: var(--eat-text, var(--eat));
         padding: 2px 6px; border-radius: 4px; transition: background 0.2s;
       }
       .sidebar-add-btn:hover { background: rgba(245,158,11,0.1); }
@@ -5251,7 +5267,7 @@
         border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;
         transition: border-color 0.2s;
       }
-      .reminder-input:focus { border-color: var(--eat); }
+      .reminder-input:focus { border-color: var(--eat-text, var(--eat)); }
       .reminder-icon-grid { display: flex; flex-wrap: wrap; gap: 4px; }
       .reminder-icon-btn {
         width: 32px; height: 32px; border-radius: 6px;
@@ -5259,15 +5275,15 @@
         font-size: 16px; cursor: pointer; display: flex;
         align-items: center; justify-content: center; transition: all 0.15s;
       }
-      .reminder-icon-btn:hover { border-color: var(--eat); background: rgba(245,158,11,0.08); }
-      .reminder-icon-btn.active { border-color: var(--eat); background: rgba(245,158,11,0.15); }
+      .reminder-icon-btn:hover { border-color: var(--eat-text, var(--eat)); background: rgba(245,158,11,0.08); }
+      .reminder-icon-btn.active { border-color: var(--eat-text, var(--eat)); background: rgba(245,158,11,0.15); }
       .reminder-times-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
       .reminder-time-row { display: flex; align-items: center; gap: 6px; }
       .reminder-time-input {
         padding: 4px 8px; border: 1px solid rgba(12,42,77,0.15);
         border-radius: 6px; font-size: 12px; outline: none; transition: border-color 0.2s;
       }
-      .reminder-time-input:focus { border-color: var(--eat); }
+      .reminder-time-input:focus { border-color: var(--eat-text, var(--eat)); }
       .reminder-time-remove {
         background: none; border: none; cursor: pointer;
         color: #EF4444; font-size: 14px; padding: 2px 4px; border-radius: 4px; transition: background 0.2s;
@@ -5278,7 +5294,7 @@
         border-radius: 6px; padding: 4px 8px; font-size: 11px;
         color: var(--muted); cursor: pointer; width: 100%; transition: all 0.2s;
       }
-      .reminder-add-time-btn:hover { border-color: var(--eat); color: var(--eat); }
+      .reminder-add-time-btn:hover { border-color: var(--eat-text, var(--eat)); color: var(--eat-text, var(--eat)); }
       .reminder-modal-footer {
         display: flex; gap: 6px; padding: 12px 16px;
         border-top: 1px solid rgba(12,42,77,0.1); flex-shrink: 0;
@@ -5292,7 +5308,7 @@
       .reminder-modal-confirm {
         flex: 1; padding: 6px 12px; border-radius: 8px; border: none;
         background: linear-gradient(135deg, var(--eat), var(--eat2));
-        color: #fff; font-size: 13px; cursor: pointer; transition: all 0.2s;
+        color: var(--on-eat, #fff); font-size: 13px; cursor: pointer; transition: all 0.2s;
       }
       .reminder-modal-confirm:hover { transform: translateY(-1px); }
 
@@ -5317,7 +5333,7 @@
       }
       [data-theme="forest"] .period-mood-btn.active {
         background: rgba(5,150,105,0.12);
-        border-color: var(--period);
+        border-color: var(--period-text, var(--period));
         box-shadow: 0 0 0 3px rgba(5,150,105,0.1);
       }
       [data-theme="forest"] .period-symptom-btn {
@@ -5326,8 +5342,8 @@
       }
       [data-theme="forest"] .period-symptom-btn.active {
         background: rgba(5,150,105,0.15);
-        border-color: var(--period);
-        color: var(--period);
+        border-color: var(--period-text, var(--period));
+        color: var(--period-text, var(--period));
         box-shadow: 0 0 0 2px rgba(5,150,105,0.08);
       }
       [data-theme="forest"] .day-cell.period-predicted { background: repeating-linear-gradient(45deg, rgba(5,150,105,0.12), rgba(5,150,105,0.12) 5px, rgba(5,150,105,0.22) 5px, rgba(5,150,105,0.22) 10px); border-color: rgba(5,150,105,0.6); }
@@ -5359,11 +5375,11 @@
         background: rgba(5,150,105,0.1);
       }
       [data-theme="forest"] .period-blood-btn.selected {
-        border-color: var(--period);
+        border-color: var(--period-text, var(--period));
         background: rgba(5,150,105,0.1);
       }
       [data-theme="forest"] .period-blood-btn.selected .period-blood-name {
-        color: var(--period);
+        color: var(--period-text, var(--period));
       }
       /* 森林绿主题 - Slider */
       [data-theme="forest"] .period-slider-wrap {
@@ -5405,7 +5421,7 @@
         color: var(--text, #0a2923);
       }
       [data-theme="forest"] .period-status-text.active {
-        color: var(--period);
+        color: var(--period-text, var(--period));
       }
       [data-theme="forest"] .period-status-divider {
         background: rgba(5,150,105,0.1);
@@ -5820,7 +5836,7 @@
       }
 
       body[data-theme="winerose"] .period-status-text.active {
-        color: var(--period);
+        color: var(--period-text, var(--period));
       }
 
       body[data-theme="winerose"] .period-status-divider {
@@ -5840,7 +5856,7 @@
 
       body[data-theme="winerose"] .period-stat-label { color: var(--muted, #C9BDD1); }
 
-      body[data-theme="winerose"] .period-stat-value { color: var(--period); }
+      body[data-theme="winerose"] .period-stat-value { color: var(--period-text, var(--period)); }
 
       body[data-theme="winerose"] .bar-track {
         background: rgba(255,255,255,0.07);
@@ -6061,7 +6077,7 @@
 
       body[data-theme="winerose"] .stats-toggle-btn.active {
         background: linear-gradient(135deg, var(--secondary), var(--secondary2));
-        color: #fff;
+        color: var(--on-secondary, #fff);
         border-color: transparent;
       }
 
@@ -6087,15 +6103,15 @@
 
       body[data-theme="winerose"] .poop-amount-btn:hover,
       body[data-theme="winerose"] .poop-amount-btn-sm:hover {
-        border-color: var(--poop);
-        color: var(--poop);
+        border-color: var(--poop-text, var(--poop));
+        color: var(--poop-text, var(--poop));
       }
 
       body[data-theme="winerose"] .poop-amount-btn.active,
       body[data-theme="winerose"] .poop-amount-btn-sm.active {
         background: var(--poop);
-        color: #fff;
-        border-color: var(--poop);
+        color: var(--on-poop, #fff);
+        border-color: var(--poop-text, var(--poop));
       }
 
       body[data-theme="winerose"] .poop-color-row {
@@ -6127,15 +6143,15 @@
 
       body[data-theme="winerose"] .pee-amount-btn:hover,
       body[data-theme="winerose"] .pee-amount-btn-sm:hover {
-        border-color: var(--pee);
-        color: var(--pee);
+        border-color: var(--pee-text, var(--pee));
+        color: var(--pee-text, var(--pee));
       }
 
       body[data-theme="winerose"] .pee-amount-btn.active,
       body[data-theme="winerose"] .pee-amount-btn-sm.active {
         background: var(--pee);
-        color: #fff;
-        border-color: var(--pee);
+        color: var(--on-pee, #fff);
+        border-color: var(--pee-text, var(--pee));
       }
 
       body[data-theme="winerose"] .eat-stats-card {
@@ -6172,14 +6188,14 @@
       }
 
       body[data-theme="winerose"] .fullness-btn:hover {
-        border-color: var(--eat);
-        color: var(--eat);
+        border-color: var(--eat-text, var(--eat));
+        color: var(--eat-text, var(--eat));
       }
 
       body[data-theme="winerose"] .fullness-btn.active {
         background: var(--eat);
-        color: #fff;
-        border-color: var(--eat);
+        color: var(--on-eat, #fff);
+        border-color: var(--eat-text, var(--eat));
       }
 
       body[data-theme="winerose"] .custom-apply {
@@ -6444,7 +6460,7 @@
       <!-- 喝水日历 -->
       <div class="card drink-calendar-card">
         <div class="calendar-header">
-          <div class="calendar-title" id="drinkCalendarTitle" style="color:var(--primary);"></div>
+          <div class="calendar-title" id="drinkCalendarTitle" style="color: var(--primary-text, var(--primary));"></div>
           <div class="calendar-nav">
             <button class="nav-btn drink-cal-nav" id="drinkPrevMonth"></button>
             <button class="nav-btn drink-cal-nav" id="drinkNextMonth"></button>
@@ -6644,9 +6660,9 @@
         <div class="stats-num pee-num" id="peeStatsCount">0</div>
         <div class="stats-label" id="peeStatsLabel" data-i18n="times">次</div>
         <div class="stats-detail" id="peeStatsDetail" style="margin-top:8px;font-size:11px;color:var(--muted);line-height:1.8;">
-          <div><span data-i18n="dailyAvg">日均</span>: <strong id="peeDailyAvg" style="color:var(--pee);">0</strong> <span data-i18n="times">次</span></div>
-          <div><span data-i18n="maxInterval">最大间隔</span>: <strong id="peeMaxInterval" style="color:var(--pee);">--</strong></div>
-          <div><span data-i18n="minInterval">最小间隔</span>: <strong id="peeMinInterval" style="color:var(--pee);">--</strong></div>
+          <div><span data-i18n="dailyAvg">日均</span>: <strong id="peeDailyAvg" style="color: var(--pee-text, var(--pee));">0</strong> <span data-i18n="times">次</span></div>
+          <div><span data-i18n="maxInterval">最大间隔</span>: <strong id="peeMaxInterval" style="color: var(--pee-text, var(--pee));">--</strong></div>
+          <div><span data-i18n="minInterval">最小间隔</span>: <strong id="peeMinInterval" style="color: var(--pee-text, var(--pee));">--</strong></div>
         </div>
       </div>
     </div>
@@ -7004,7 +7020,7 @@
         </div>
         <div class="feedback-divider" style="height:1px;background:rgba(12,42,77,0.08);margin:0 0 10px;"></div>
         <div class="feedback-line" style="font-size:10.5px;color:var(--muted);" data-i18n="feedbackDesc">遇到问题或有功能建议？欢迎发送邮件反馈：</div>
-        <a class="feedback-email" href="mailto:huangzero2004@gmail.com?subject=Daily%20Tracker%20Feedback" target="_blank" style="display:inline-block;margin-top:3px;font-size:12px;font-weight:700;color:var(--eat);text-decoration:none;cursor:pointer;">huangzero2004@gmail.com</a>
+        <a class="feedback-email" href="mailto:huangzero2004@gmail.com?subject=Daily%20Tracker%20Feedback" target="_blank" style="display:inline-block;margin-top:3px;font-size:12px;font-weight:700;color: var(--eat-text, var(--eat));text-decoration:none;cursor:pointer;">huangzero2004@gmail.com</a>
       </div>
     </div>
 
@@ -7225,7 +7241,7 @@
     }
     .inline-confirm-btn.cancel { background: rgba(12,42,77,0.08); color: var(--text); }
     .inline-confirm-btn.cancel:hover { background: rgba(12,42,77,0.14); }
-    .inline-confirm-btn.confirm { background: linear-gradient(135deg, var(--eat), var(--eat2)); color: #fff; box-shadow: 0 2px 8px rgba(245,158,11,0.3); }
+    .inline-confirm-btn.confirm { background: linear-gradient(135deg, var(--eat), var(--eat2)); color: var(--on-eat, #fff); box-shadow: 0 2px 8px rgba(245,158,11,0.3); }
     .inline-confirm-btn.confirm:hover { transform: translateY(-1px); }
     body[data-theme="dark"] .inline-confirm-box { background: #1e293b; }
     body[data-theme="dark"] .inline-confirm-btn.cancel { background: rgba(148,163,184,0.15); color: var(--text, #e2e8f0); }
@@ -7296,12 +7312,12 @@
     }
     .theme-act:hover {
       background: color-mix(in srgb, var(--primary) 15%, transparent);
-      color: var(--primary);
+      color: var(--primary-text, var(--primary));
     }
-    .theme-item-add .theme-label { color: var(--primary); }
+    .theme-item-add .theme-label { color: var(--primary-text, var(--primary)); }
     .theme-item-add .theme-dot-add {
       display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: 700; color: var(--primary);
+      font-size: 12px; font-weight: 700; color: var(--primary-text, var(--primary));
       background: color-mix(in srgb, var(--primary) 12%, transparent);
     }
     .theme-item-empty { cursor: default; color: var(--muted); font-weight: 500; }
@@ -7319,7 +7335,7 @@
       background: var(--input-bg, rgba(255,255,255,0.8));
       color: var(--text);
     }
-    .ct-row input[type="text"]:focus { outline: none; border-color: var(--primary); }
+    .ct-row input[type="text"]:focus { outline: none; border-color: var(--primary-text, var(--primary)); }
     .ct-row input[type="color"] {
       width: 44px; height: 26px; padding: 0;
       border: 1px solid var(--card-border, rgba(12,42,77,0.15));
@@ -7338,7 +7354,7 @@
     }
     .ct-preview-btn {
       padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: 600;
-      color: #fff; background: linear-gradient(135deg, var(--primary), var(--primary2));
+      color: var(--on-primary, #fff); background: linear-gradient(135deg, var(--primary), var(--primary2));
     }
     .ct-tip { font-size: 10px; color: var(--muted); line-height: 1.4; }
     .ct-btns { margin-top: 12px; }
@@ -7403,7 +7419,7 @@
       color: var(--text);
       font-family: inherit;
     }
-    .pp-num:focus { outline: none; border-color: var(--period); }
+    .pp-num:focus { outline: none; border-color: var(--period-text, var(--period)); }
     .pp-num::placeholder { color: var(--muted); font-weight: 400; }
     /* 原生上下箭头完整居中显示（默认高度会随输入框被压扁） */
     .pp-num::-webkit-inner-spin-button { opacity: 1; height: 22px; margin: 0; }
@@ -7424,7 +7440,7 @@
       color: var(--muted); font-size: 11px; cursor: pointer;
       text-decoration: underline; padding: 2px 0;
     }
-    .pp-reset:hover { color: var(--period); }
+    .pp-reset:hover { color: var(--period-text, var(--period)); }
   </style>
   <div class="badge-modal-overlay hidden" id="periodPredictModal">
     <div class="badge-modal">
