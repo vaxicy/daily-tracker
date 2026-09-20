@@ -7385,12 +7385,18 @@
     /* 经期预测设置：周期长度 / 经期天数，留空 = 按历史平均 */
     .pp-row {
       display: flex; align-items: center; justify-content: space-between;
-      gap: 10px; margin-bottom: 10px;
+      gap: 10px; margin-bottom: 12px;
       font-size: 12px; font-weight: 600; color: var(--text);
     }
     .pp-field { display: flex; align-items: center; gap: 6px; font-weight: 500; color: var(--muted); }
+    .pp-field .pp-unit { min-width: 14px; text-align: left; }
     .pp-num {
-      width: 66px; padding: 6px 8px; font-size: 12px; text-align: center;
+      box-sizing: border-box;
+      width: 78px;
+      /* 高度交给 height（配合 line-height:normal），别用上下 padding —— 原生箭头会被压扁/裁掉 */
+      height: 30px;
+      padding: 0 4px 0 8px;
+      font-size: 13px; line-height: normal; text-align: center;
       border-radius: 8px;
       border: 1px solid var(--card-border, rgba(12,42,77,0.15));
       background: var(--input-bg, rgba(255,255,255,0.8));
@@ -7399,6 +7405,8 @@
     }
     .pp-num:focus { outline: none; border-color: var(--period); }
     .pp-num::placeholder { color: var(--muted); font-weight: 400; }
+    /* 原生上下箭头完整居中显示（默认高度会随输入框被压扁） */
+    .pp-num::-webkit-inner-spin-button { opacity: 1; height: 22px; margin: 0; }
     .pp-preview {
       margin: 10px 0 6px; padding: 8px 10px; border-radius: 10px;
       background: color-mix(in srgb, var(--period) 10%, transparent);
@@ -7406,10 +7414,15 @@
       color: var(--text); font-size: 12px; font-weight: 600; text-align: center;
     }
     .pp-tip { font-size: 10px; color: var(--muted); line-height: 1.45; margin-bottom: 2px; }
+    /* 底部一行：恢复自动靠左，取消/保存靠右 */
+    .pp-actions {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 8px; margin-top: 14px;
+    }
     .pp-reset {
-      margin-top: 6px; border: none; background: transparent;
+      margin-right: auto; border: none; background: transparent;
       color: var(--muted); font-size: 11px; cursor: pointer;
-      text-decoration: underline; padding: 0;
+      text-decoration: underline; padding: 2px 0;
     }
     .pp-reset:hover { color: var(--period); }
   </style>
@@ -7424,23 +7437,23 @@
           <span data-i18n="periodPredictCycleLabel">周期长度</span>
           <span class="pp-field">
             <input type="number" class="pp-num" id="ppCycleInput" min="10" max="120" step="1" />
-            <span data-i18n="periodBarChartDay">天</span>
+            <span class="pp-unit" data-i18n="periodBarChartDay">天</span>
           </span>
         </label>
         <label class="pp-row">
           <span data-i18n="periodPredictDurationLabel">经期天数</span>
           <span class="pp-field">
             <input type="number" class="pp-num" id="ppDurationInput" min="1" max="15" step="1" />
-            <span data-i18n="periodBarChartDay">天</span>
+            <span class="pp-unit" data-i18n="periodBarChartDay">天</span>
           </span>
         </label>
         <div class="pp-preview" id="ppPreview"></div>
         <div class="pp-tip" data-i18n="periodPredictAutoHint">留空 = 按历史平均推算</div>
-        <div class="inline-confirm-btns" style="margin-top:12px;">
+        <div class="pp-actions">
+          <button type="button" class="pp-reset" id="ppReset" data-i18n="periodPredictResetAuto">恢复自动</button>
           <button class="inline-confirm-btn cancel" id="ppCancel" data-i18n="cancel">取消</button>
           <button class="inline-confirm-btn confirm" id="ppSave" data-i18n="save">保存</button>
         </div>
-        <button type="button" class="pp-reset" id="ppReset" data-i18n="periodPredictResetAuto">恢复自动</button>
       </div>
     </div>
   </div>
