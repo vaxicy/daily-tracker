@@ -4085,6 +4085,8 @@
         align-items: center;
         gap: 8px;
         padding: 8px 10px;
+        /* 行与行之间留出间距：深色主题每行都有底色，贴在一起会糊成一大块 */
+        margin-bottom: 4px;
         border-radius: 8px;
         cursor: pointer;
         font-size: 12px;
@@ -4092,6 +4094,8 @@
         color: var(--text);
         transition: background 0.15s ease, color 0.15s ease;
       }
+      /* 最后一行不留间距，菜单底部才不会多出一段空隙 */
+      .theme-item:last-child { margin-bottom: 0; }
       .theme-item:hover {
         background: var(--hover-bg, rgba(12,42,77,0.06));
       }
@@ -7314,8 +7318,11 @@
       flex-shrink: 0; width: 20px; height: 20px;
       border: none; border-radius: 6px; background: transparent;
       color: var(--muted); font-size: 11px; line-height: 1; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
       transition: background 0.15s ease, color 0.15s ease;
     }
+    /* 图标用内联 SVG：不依赖字体，避免 ✎ 这类字符在部分字体里渲染成乱码 */
+    .theme-act svg { width: 12px; height: 12px; display: block; }
     .theme-act:hover {
       background: color-mix(in srgb, var(--primary) 15%, transparent);
       color: var(--primary-text, var(--primary));

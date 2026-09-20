@@ -4781,7 +4781,10 @@ function renderCustomOptions() {
     editBtn.className = "theme-act";
     editBtn.dataset.act = "edit";
     editBtn.title = t("customThemeEdit");
-    editBtn.textContent = "✎";
+    // 用内联 SVG 铅笔：✎ 在部分字体里会渲染成乱码
+    editBtn.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M4 20h4l10-10a2.83 2.83 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>';
     const delBtn = document.createElement("button");
     delBtn.type = "button";
     delBtn.className = "theme-act";
