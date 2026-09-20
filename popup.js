@@ -286,9 +286,13 @@ function renderTrend(canvasId, items, opts) {
   }
 
   // 柱子：今日实色，其余半透明；0 值画小圆点
-  // 柱宽设上限并整体居中，避免数据点很少时（如月初）一根柱子撑满整行
+  // 柱宽设上限并整体居中，避免数据点很少时（如月初）一根柱子撑满整行。
+  // 柱间距按柱宽自适应（而不是固定 1px）：所有柱子都是同一个主色，间距太窄时
+  // 相邻同色柱子会糊成一条色带（自定义主题下尤其明显），这里保证至少 2px、通常 3~4px。
   const n = data.length;
-  const gap = n > 14 ? 1 : 2;
+  // 间距随柱子数量收缩，但永远留出可见缝隙：一天/一周/半月 4px，整月 3px。
+  // 取固定档位（而不是按柱宽迭代）是为了避免"间距↔柱宽"互相影响导致溢出画布。
+  const gap = n <= 1 ? 0 : n > 26 ? 3 : 4;
   const barW = Math.min(18, Math.max(2, (plotW - (n - 1) * gap) / n));
   const groupW = n * barW + (n - 1) * gap;
   const offset = Math.max(0, (plotW - groupW) / 2);
@@ -307,9 +311,12 @@ function renderTrend(canvasId, items, opts) {
     }
     const h = Math.max(2, (d.count / max) * plotH);
     ctx.save();
-    ctx.globalAlpha = isToday ? 1 : 0.5;
+    // 不透明度随柱高递增（0.5 → 0.95）：柱子全是同一个主色，只有高度一个维度时
+    // 相邻同色柱很容易糊成一片色带；加上深浅层次后既拉开了对比，也让高低更直观。
+    // 今日保持满色，仍是最醒目的一根。
+    ctx.globalAlpha = isToday ? 1 : 0.5 + 0.45 * (d.count / max);
     ctx.fillStyle = color;
-    roundRectPath(ctx, x, baseY - h, barW, h, 3);
+    roundRectPath(ctx, x, baseY - h, barW, h, Math.min(3, barW / 2));
     ctx.fill();
     ctx.restore();
   });
