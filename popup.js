@@ -1,4 +1,4 @@
-import { THEME_PRESETS, buildCustomTheme, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX, badgeTextColorOn, customThemeDataAttr, randomPalette } from './themes.js';
+import { THEME_PRESETS, buildCustomTheme, resolveAnchors, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX, badgeTextColorOn, customThemeDataAttr, randomThemeColors, auditThemeColors } from './themes.js';
 
 // 用户自定义主题：{ "custom:xxx": { label, anchors, dot, vars, bgGradient, ... } }
 // 声明在模块顶部，避免早于主题系统初始化的调用（如 updateBadge）触发 TDZ 报错
@@ -2560,8 +2560,9 @@ function updateBadge() {
       }
 
       var txt = count > 99 ? "99+" : String(count);
-      // 与 background.js 保持同一规则：浅色角标用深色字，绿色主题特殊处理
-      var badgeTextColor = (theme === "greenplum") ? "#450C3F" : badgeTextColorOn(themeColor);
+      // 与 background.js 保持同一规则：自定义主题可单独指定文字色，否则浅色角标用深色字，绿色主题特殊处理
+      var badgeTextColor =
+        theme === "greenplum" ? "#450C3F" : themeBadgeTextColor(theme, data.customThemes);
       chrome.action.setBadgeText({ text: txt });
       chrome.action.setBadgeBackgroundColor({ color: themeColor });
       if (chrome.action.setBadgeTextColor) {
@@ -4593,7 +4594,7 @@ chrome.storage.onChanged.addListener((changes) => {
 
 // ==================== 主题系统 ====================
 // 预设主题：在 themes.js 的 THEME_PRESETS 追加 + 在 i18n.js 补翻译，下拉框自动渲染。
-// 自定义主题：存在 storage.local.customThemes，由 buildCustomTheme 从 3 个锚点色生成 31 个变量。
+// 自定义主题：存在 storage.local.customThemes，由 buildCustomTheme 从 4 个锚点色（背景主/副 + 按钮主/副）生成全部变量。
 
 // 预设主题角标色（从 THEME_PRESETS 自动派生，消除双表维护）
 const THEME_BADGE_COLOR = Object.fromEntries(
@@ -4607,6 +4608,13 @@ function themeBadgeColor(themeId, customs) {
   const rec = (customs || customThemes)[themeId];
   if (rec && rec.vars && rec.vars["--badge"]) return rec.vars["--badge"];
   return "#0b6bff";
+}
+
+// 角标文字色：自定义主题里单独指定过就用它（原样），否则按角标底色自动取白/深字
+function themeBadgeTextColor(themeId, customs) {
+  const rec = (customs || customThemes)[themeId];
+  const custom = rec && rec.vars && rec.vars["--badge-text"];
+  return custom || badgeTextColorOn(themeBadgeColor(themeId, customs));
 }
 
 const root = document.documentElement;
@@ -4898,91 +4906,89 @@ function applyTheme(themeId) {
 
 // ==================== 自定义主题编辑器 ====================
 
-// ==================== 调色板（2~4 个颜色，角色由生成器自动分配） ====================
+// ==================== 4 个锚点色（背景主/副 + 按钮主/副） ====================
+// 用户指谁就是谁（不再"智能分配"角色）；文字色与其余派生值由 themes.js 按对比度算出来。
 
-let ctPalette = []; // 用户给的原始颜色（顺序即用户所见）
-// 已经定好的角色分配（编辑器里必须沿用）：新增一个颜色时它会补到"空角色"上，
-// 而不是按规则重排 —— 否则用户加个颜色就会把原来的主色/背景抢走（踩过）
-let ctRoles = {};
+const CT_COLOR_FIELDS = [
+  ["ctBgMain", "bg"],       // 背景主色
+  ["ctBgSub", "bg2"],       // 背景副色
+  ["ctBtnMain", "primary"], // 按钮主色
+  ["ctBtnSub", "primary2"]  // 按钮副色
+];
 
-// 新增色块时的候选：挑第一个还没用到的，保证一加就能看出区别
-const CT_NEW_COLOR_CANDIDATES = ["#e0679e", "#0bbf9c", "#f5a524", "#7c5cff", "#3fa9f5"];
+// 老主题可能存过第 4 个"点缀色"（经期色）：编辑时悄悄带过去，用户没动色就不该把它丢掉
+let ctEditingAccent = null;
+// 角标色／角标文字色是否"自动"（true = 自动派生；用户改过色块就变 false）
+let ctBadgeAuto = true;
+let ctBadgeTextAuto = true;
 
 const isHexColor = (v) => /^#[0-9a-fA-F]{6}$/.test(String(v || ""));
 
-// 从已存主题的 anchors 还原出调色板（兼容老格式 {primary, secondary, bg}）
-function editorPaletteFromAnchors(a) {
-  const out = [];
-  const push = (c) => {
-    if (!isHexColor(c)) return;
-    const v = String(c).toLowerCase();
-    if (!out.some((x) => x.toLowerCase() === v)) out.push(String(c));
+function setEditorColor(id, color) {
+  const el = document.getElementById(id);
+  if (el && isHexColor(color)) el.value = color;
+}
+
+// 角标两个色块：自动模式下回显"算出来的那个色"，并把「自动」按钮点亮
+function syncEditorBadge(anchors, built) {
+  const setRow = (inputId, autoBtnId, auto, color) => {
+    const input = document.getElementById(inputId);
+    const btn = document.getElementById(autoBtnId);
+    if (btn) btn.classList.toggle("active", auto);
+    if (auto && input && isHexColor(color)) input.value = color;
   };
-  if (a && Array.isArray(a.palette)) a.palette.forEach(push);
-  if (!out.length && a) {
-    const roles = a.roles || {};
-    push(roles.primary || a.primary);
-    push(roles.secondary || a.secondary);
-    push(roles.accent || a.accent);
-    push(roles.bg || a.bg);
-  }
-  // 至少要两个颜色（只有一个时由它淡出背景）
-  if (out.length === 1) out.push("#eaf5ff");
-  if (!out.length) return ["#0b6bff", "#eaf5ff"];
-  return out.slice(0, 4);
+  setRow("ctBadge", "ctBadgeAuto", ctBadgeAuto, built.vars["--badge"]);
+  setRow("ctBadgeText", "ctBadgeTextAuto", ctBadgeTextAuto, built.vars["--badge-text"]);
 }
 
-// 老主题（只存了 primary/bg 这类字段、没有 roles）也要把角色带过来
-function editorRolesFromAnchors(a) {
-  if (!a) return {};
-  if (a.roles && Object.keys(a.roles).length) return Object.assign({}, a.roles);
-  const out = {};
-  ["primary", "secondary", "accent", "bg"].forEach((role) => {
-    if (isHexColor(a[role])) out[role] = a[role];
-  });
-  return out;
-}
-
+// 编辑器 → 锚点（4 个颜色 + 名称 + 老主题保留的点缀色 + 单独指定过的角标色/角标文字色）
 function currentEditorAnchors() {
+  const anchors = {};
+  CT_COLOR_FIELDS.forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (el) anchors[key] = el.value;
+  });
+  if (isHexColor(ctEditingAccent)) anchors.accent = ctEditingAccent;
+  const badgeEl = document.getElementById("ctBadge");
+  if (!ctBadgeAuto && badgeEl && isHexColor(badgeEl.value)) anchors.badge = badgeEl.value;
+  const badgeTextEl = document.getElementById("ctBadgeText");
+  if (!ctBadgeTextAuto && badgeTextEl && isHexColor(badgeTextEl.value)) anchors.badgeText = badgeTextEl.value;
   const nameEl = document.getElementById("ctName");
-  return {
-    palette: ctPalette.slice(),
-    roles: Object.assign({}, ctRoles),
-    name: nameEl ? nameEl.value : ""
-  };
+  anchors.name = nameEl ? nameEl.value : "";
+  return anchors;
 }
 
-// 渲染色块行：2~4 个；多于 2 个时每个色块右上角出现 ✕
-function renderEditorPalette() {
-  const box = document.getElementById("ctPalette");
-  if (!box) return;
-  box.innerHTML = "";
-  ctPalette.forEach((color, i) => {
-    const wrap = document.createElement("span");
-    wrap.className = "ct-swatch";
-    const input = document.createElement("input");
-    input.type = "color";
-    input.value = color;
-    input.dataset.index = String(i);
-    wrap.appendChild(input);
-    if (ctPalette.length > 2) {
-      const del = document.createElement("button");
-      del.type = "button";
-      del.className = "ct-swatch-del";
-      del.dataset.index = String(i);
-      del.textContent = "✕";
-      del.title = t("customThemeRemoveColor");
-      wrap.appendChild(del);
-    }
-    box.appendChild(wrap);
-  });
-  const addBtn = document.getElementById("ctAddColor");
-  if (addBtn) addBtn.style.display = ctPalette.length >= 4 ? "none" : "";
+// 一键填满 4 个色槽（角标色/文字色的"自动"状态保持用户原样）
+function applyEditorColors(colors) {
+  setEditorColor("ctBgMain", colors.bg);
+  setEditorColor("ctBgSub", colors.bg2);
+  setEditorColor("ctBtnMain", colors.primary);
+  setEditorColor("ctBtnSub", colors.primary2);
   updateCustomThemePreview();
 }
 
+// 配色体检条：只针对用户自己调出来的颜色提示 + 给一键修正
+function updateAuditUI(anchors) {
+  const box = document.getElementById("ctAudit");
+  const text = document.getElementById("ctAuditText");
+  const fixBtn = document.getElementById("ctAuditFix");
+  if (!box || !text) return;
+  const report = auditThemeColors(anchors);
+  if (report.ok) {
+    box.className = "ct-audit ok";
+    text.textContent = t("customThemeAuditOk");
+    if (fixBtn) fixBtn.style.display = "none";
+    return;
+  }
+  box.className = "ct-audit warn";
+  text.textContent = report.issues.includes("mainBg")
+    ? t("customThemeAuditMainBg")
+    : t("customThemeAuditBtnSub");
+  if (fixBtn) fixBtn.style.display = "";
+}
+
 // 实时预览：生成结果直接套到 popup 上，所见即所得
-// 文字深浅由生成器按背景亮度自动分配（浅底深字 / 深底浅字），编辑器不再提供开关
+// 文字深浅与文字色由生成器按背景 / 按钮色自动分配，编辑器不提供开关
 function updateCustomThemePreview() {
   const anchors = currentEditorAnchors();
   const built = buildCustomTheme(anchors);
@@ -4990,15 +4996,8 @@ function updateCustomThemePreview() {
   if (dot) dot.style.background = built.dot;
   const nm = document.getElementById("ctPreviewName");
   if (nm) nm.textContent = String(anchors.name || "").trim() || t("customThemeDefaultName");
-  // 生成器自动补了强调色 → 说明一句（用户给的颜色都在，只是多了一个自动色）
-  const tip = document.getElementById("ctTip");
-  if (tip) {
-    tip.textContent = built.autoAccent
-      ? t("customThemeAutoAccentHint", { color: built.autoAccent.toUpperCase() })
-      : t("customThemeTip");
-  }
-  // 把这次的分配结果记下来，后续增删颜色时沿用（角色稳定，不会互相抢）
-  ctRoles = built.anchors.roles || {};
+  syncEditorBadge(anchors, built);
+  updateAuditUI(anchors);
   applyThemeObject(built, built.dataTheme);
   return built;
 }
@@ -5010,10 +5009,19 @@ function openCustomThemeEditor(themeId) {
   const rec = themeId ? customThemes[themeId] : null;
   const nameEl = document.getElementById("ctName");
   if (nameEl) nameEl.value = rec ? rec.label : t("customThemeDefaultName");
-  ctPalette = editorPaletteFromAnchors(rec ? rec.anchors : null);
-  ctRoles = editorRolesFromAnchors(rec ? rec.anchors : null);
+  // 把（可能是老格式的）锚点展开成 4 个颜色回显
+  const a = resolveAnchors(rec ? rec.anchors : null);
+  setEditorColor("ctBgMain", a.bg);
+  setEditorColor("ctBgSub", a.bg2);
+  setEditorColor("ctBtnMain", a.primary);
+  setEditorColor("ctBtnSub", a.primary2);
+  ctEditingAccent = a.accent || null;
+  ctBadgeAuto = !isHexColor(a.badge);
+  if (!ctBadgeAuto) setEditorColor("ctBadge", a.badge);
+  ctBadgeTextAuto = !isHexColor(a.badgeText);
+  if (!ctBadgeTextAuto) setEditorColor("ctBadgeText", a.badgeText);
   modal.classList.remove("hidden");
-  renderEditorPalette();
+  updateCustomThemePreview();
 }
 
 function closeCustomThemeEditor() {
@@ -5396,8 +5404,6 @@ if (customTriggerEl && customDropdownEl) {
   const modal = document.getElementById("customThemeModal");
   if (!modal) return;
   const nameEl = document.getElementById("ctName");
-  const paletteBox = document.getElementById("ctPalette");
-  const addColorBtn = document.getElementById("ctAddColor");
   const closeBtn = document.getElementById("ctClose");
   const cancelBtn = document.getElementById("ctCancel");
   const saveBtn = document.getElementById("ctSave");
@@ -5409,38 +5415,52 @@ if (customTriggerEl && customDropdownEl) {
     if (e.target === modal) closeCustomThemeEditor();
   });
   if (nameEl) nameEl.addEventListener("input", updateCustomThemePreview);
-  // 色块是动态渲染的，所以用事件委托
-  if (paletteBox) {
-    paletteBox.addEventListener("input", (e) => {
-      const input = e.target;
-      if (!input || input.type !== "color") return;
-      ctPalette[Number(input.dataset.index)] = input.value;
-      updateCustomThemePreview();
-    });
-    paletteBox.addEventListener("click", (e) => {
-      const del = e.target && e.target.closest ? e.target.closest(".ct-swatch-del") : null;
-      if (!del || ctPalette.length <= 2) return;
-      ctPalette.splice(Number(del.dataset.index), 1);
-      renderEditorPalette();
-    });
-  }
-  if (addColorBtn) {
-    addColorBtn.addEventListener("click", () => {
-      if (ctPalette.length >= 4) return;
-      const next =
-        CT_NEW_COLOR_CANDIDATES.find((c) => !ctPalette.some((x) => x.toLowerCase() === c.toLowerCase())) ||
-        CT_NEW_COLOR_CANDIDATES[0];
-      ctPalette.push(next);
-      renderEditorPalette();
-    });
-  }
-  // 随机配色：换一组新的颜色（角色重新分配），可以反复点
+  // 4 个取色器都是静态的，直接逐个绑定；用户一动手就不再算"预设原样"
+  CT_COLOR_FIELDS.forEach(([id]) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("input", updateCustomThemePreview);
+  });
+  // 随机配色：换一组新的 4 个锚点色，可以反复点（角标两个色保持用户自己的设置）
   const randomBtn = document.getElementById("ctRandomize");
   if (randomBtn) {
-    randomBtn.addEventListener("click", () => {
-      ctPalette = randomPalette();
-      ctRoles = {};
-      renderEditorPalette();
+    randomBtn.addEventListener("click", () => applyEditorColors(randomThemeColors()));
+  }
+  // 角标色 / 角标文字色：改一次就转"手动"（原样用你选的色），点「自动」回到派生值
+  const badgeInput = document.getElementById("ctBadge");
+  if (badgeInput) {
+    badgeInput.addEventListener("input", () => {
+      ctBadgeAuto = false;
+      updateCustomThemePreview();
+    });
+  }
+  const badgeAutoBtn = document.getElementById("ctBadgeAuto");
+  if (badgeAutoBtn) {
+    badgeAutoBtn.addEventListener("click", () => {
+      ctBadgeAuto = true;
+      updateCustomThemePreview();
+    });
+  }
+  const badgeTextInput = document.getElementById("ctBadgeText");
+  if (badgeTextInput) {
+    badgeTextInput.addEventListener("input", () => {
+      ctBadgeTextAuto = false;
+      updateCustomThemePreview();
+    });
+  }
+  const badgeTextAutoBtn = document.getElementById("ctBadgeTextAuto");
+  if (badgeTextAutoBtn) {
+    badgeTextAutoBtn.addEventListener("click", () => {
+      ctBadgeTextAuto = true;
+      updateCustomThemePreview();
+    });
+  }
+  // 一键修正：只按预设定律改被点名的地方（亮度分层 / 按钮副色），其余保持用户原样
+  const auditFixBtn = document.getElementById("ctAuditFix");
+  if (auditFixBtn) {
+    auditFixBtn.addEventListener("click", () => {
+      const report = auditThemeColors(currentEditorAnchors());
+      if (!report.fixed) return;
+      applyEditorColors(report.fixed);
     });
   }
 })();

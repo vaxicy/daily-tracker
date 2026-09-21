@@ -57,16 +57,21 @@ function actionSetBadgeTextColor(color) {
 // chrome.action 的外观修改会在浏览器重启后被清空，且异步读取期间存在空窗，
 // 因此把主题派生的角标色缓存进 storage，SW 每次唤醒先立即上色。
 const BADGE_COLOR_CACHE_KEY = 'badgeColorCache';
-// 白/深字自动取对比更高的那个（浅色角标底也能直接用主色，文字改用深色）
-function badgeTextColorFor(theme, color) {
-  if (theme === 'greenplum') return '#450C3F';
-  return badgeTextColorOn(color || '#0b6bff');
+// 白/深字自动取对比更高的那个（浅色角标底也能直接用主色，文字改用深色）。
+// 自定义主题里用户可以单独指定角标文字色（vars['--badge-text']），指定了就原样用。
+function customBadgeText(theme, customThemes) {
+  const rec = customThemes && customThemes[theme];
+  return (rec && rec.vars && rec.vars['--badge-text']) || null;
 }
-function applyBadgeColor(theme, color) {
+function badgeTextColorFor(theme, color, customThemes) {
+  if (theme === 'greenplum') return '#450C3F';
+  return customBadgeText(theme, customThemes) || badgeTextColorOn(color || '#0b6bff');
+}
+function applyBadgeColor(theme, color, customThemes) {
   if (!color) return;
   chrome.action.setBadgeBackgroundColor({ color });
   if (chrome.action.setBadgeTextColor) {
-    chrome.action.setBadgeTextColor({ color: badgeTextColorFor(theme || 'default', color) });
+    chrome.action.setBadgeTextColor({ color: badgeTextColorFor(theme || 'default', color, customThemes) });
   }
 }
 
@@ -77,7 +82,7 @@ chrome.storage.local.get([BADGE_COLOR_CACHE_KEY, 'selectedTheme', 'customThemes'
   const theme = (data && data.selectedTheme) || 'default';
   lastKnownTheme = theme;
   const cachedColor = c && c.theme === theme ? c.color : null;
-  applyBadgeColor(theme, cachedColor || resolveBadgeColor(theme, data && data.customThemes));
+  applyBadgeColor(theme, cachedColor || resolveBadgeColor(theme, data && data.customThemes), data && data.customThemes);
 });
 
 async function updateBadge() {
@@ -142,7 +147,7 @@ async function updateBadge() {
   }
 
   const txt = count > 99 ? '99+' : String(count);
-  const badgeTextColor = badgeTextColorFor(theme, themeColor);
+  const badgeTextColor = badgeTextColorFor(theme, themeColor, data.customThemes);
   await actionSetBadgeText(txt);
   await actionSetBadgeBackgroundColor(themeColor);
   await actionSetBadgeTextColor(badgeTextColor);
@@ -260,10 +265,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
       const t = (changes.selectedTheme && changes.selectedTheme.newValue) || currentThemeFromCache();
       const presetColor = THEME_BADGE_COLOR[t];
       if (presetColor) {
-        applyBadgeColor(t, presetColor);
+        applyBadgeColor(t, presetColor, null);
       } else {
         chrome.storage.local.get(['customThemes'], (d) => {
-          applyBadgeColor(t, resolveBadgeColor(t, d && d.customThemes));
+          applyBadgeColor(t, resolveBadgeColor(t, d && d.customThemes), d && d.customThemes);
         });
       }
     }

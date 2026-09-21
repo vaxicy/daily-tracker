@@ -7352,43 +7352,77 @@
       color: var(--text);
     }
     .ct-row input[type="text"]:focus { outline: none; border-color: var(--primary-text, var(--primary)); }
+    /* 4 个锚点色取色器（背景主/副 + 按钮主/副）：指谁就是谁，文字自动生成 */
     .ct-row input[type="color"] {
-      width: 44px; height: 26px; padding: 0;
+      width: 52px; height: 28px; padding: 0;
       border: 1px solid var(--card-border, rgba(12,42,77,0.15));
       border-radius: 6px; background: none; cursor: pointer;
     }
-    /* 调色板：2~4 个色块（角色由生成器自动分配，界面上不区分谁是谁） */
-    .ct-palette-row { align-items: center; }
-    .ct-palette {
-      display: flex; flex-wrap: wrap; gap: 8px;
-      justify-content: flex-end; flex: 1; min-width: 0;
+    /* 4 个色两列排（每格：标签在上、色块在下），比 4 行省一半高度 */
+    .ct-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 9px 10px; margin: 2px 0 10px;
     }
-    .ct-swatch { position: relative; display: inline-flex; }
-    .ct-swatch input[type="color"] {
-      width: 46px; height: 30px; padding: 0;
+    .ct-cell { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .ct-cell > span {
+      font-size: 11px; font-weight: 600; color: var(--text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .ct-cell input[type="color"] {
+      width: 100%; height: 26px; padding: 0;
       border: 1px solid var(--card-border, rgba(12,42,77,0.15));
       border-radius: 8px; background: none; cursor: pointer;
     }
-    .ct-swatch-del {
-      position: absolute; top: -6px; right: -6px;
-      width: 16px; height: 16px; padding: 0; line-height: 1;
-      border: none; border-radius: 50%;
-      background: var(--card-border, rgba(12,42,77,0.35));
-      color: var(--card-bg, #fff);
-      font-size: 9px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .ct-swatch-del:hover { background: var(--period, #e0679e); color: #fff; }
-    .ct-palette-actions { display: flex; gap: 8px; margin: 0 0 12px; }
-    .ct-add-color {
-      flex: 1; padding: 6px 10px;
-      border: 1px dashed var(--card-border, rgba(12,42,77,0.25));
+    /* 角标色：单独一行（可以选"自动"，即跟随按钮主色） */
+    .ct-badge-ctrl { display: flex; align-items: center; gap: 6px; }
+    .ct-auto-btn {
+      padding: 4px 10px;
+      border: 1px solid var(--card-border, rgba(12,42,77,0.25));
       border-radius: 8px; background: transparent;
-      color: var(--muted); font-size: 11px; font-weight: 600;
+      color: var(--muted); font-size: 10px; font-weight: 600;
       font-family: inherit; cursor: pointer;
-      transition: color 0.15s, border-color 0.15s;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
-    .ct-add-color:hover { color: var(--primary-text, var(--primary)); border-color: var(--primary-text, var(--primary)); }
+    .ct-auto-btn.active {
+      background: color-mix(in srgb, var(--primary) 14%, transparent);
+      border-color: color-mix(in srgb, var(--primary) 34%, transparent);
+      color: var(--primary-text, var(--primary));
+    }
+    .ct-actions { display: flex; gap: 8px; margin: 2px 0 12px; }
+    /* 随机：未悬浮也有圆角底，别只是一圈虚线 */
+    .ct-act-btn {
+      flex: 1; padding: 7px 10px;
+      border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--primary) 10%, transparent);
+      color: var(--primary-text, var(--primary)); font-size: 11px; font-weight: 600;
+      font-family: inherit; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .ct-act-btn:hover {
+      background: color-mix(in srgb, var(--primary) 18%, transparent);
+      border-color: color-mix(in srgb, var(--primary) 36%, transparent);
+    }
+    .ct-act-btn:active { transform: translateY(1px); }
+    /* 配色体检：绿点 = 健康，黄点 = 提示 + 一键修正 */
+    .ct-audit {
+      display: flex; align-items: center; gap: 6px;
+      margin: 0 0 10px; font-size: 10px; line-height: 1.4;
+      color: var(--muted);
+    }
+    .ct-audit::before {
+      content: ""; flex-shrink: 0; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--primary, #16a34a);
+    }
+    .ct-audit.warn { color: var(--text); }
+    .ct-audit.warn::before { background: var(--period, #d97706); }
+    .ct-audit-fix {
+      flex-shrink: 0; margin-left: auto; padding: 3px 8px;
+      border: 1px solid currentColor; border-radius: 6px;
+      background: transparent; color: inherit;
+      font-size: 10px; font-weight: 600; font-family: inherit; cursor: pointer;
+    }
+    .ct-audit-fix:hover { background: color-mix(in srgb, var(--primary) 14%, transparent); }
     .ct-preview {
       display: flex; align-items: center; gap: 8px;
       padding: 8px 10px; border-radius: 10px; margin: 12px 0 8px;
@@ -7418,20 +7452,51 @@
           <span data-i18n="customThemeName">名称</span>
           <input type="text" id="ctName" maxlength="12" data-i18n-placeholder="customThemeNamePlaceholder" />
         </label>
-        <div class="ct-row ct-palette-row">
-          <span data-i18n="customThemePalette">颜色</span>
-          <span class="ct-palette" id="ctPalette"></span>
+        <div class="ct-grid">
+          <label class="ct-cell">
+            <span data-i18n="customThemeBgMain">背景主色</span>
+            <input type="color" id="ctBgMain" />
+          </label>
+          <label class="ct-cell">
+            <span data-i18n="customThemeBgSub">背景副色</span>
+            <input type="color" id="ctBgSub" />
+          </label>
+          <label class="ct-cell">
+            <span data-i18n="customThemeBtnMain">按钮主色</span>
+            <input type="color" id="ctBtnMain" />
+          </label>
+          <label class="ct-cell">
+            <span data-i18n="customThemeBtnSub">按钮副色</span>
+            <input type="color" id="ctBtnSub" />
+          </label>
         </div>
-        <div class="ct-palette-actions">
-          <button type="button" class="ct-add-color" id="ctAddColor" data-i18n="customThemeAddColor">＋ 添加颜色</button>
-          <button type="button" class="ct-add-color" id="ctRandomize" data-i18n="customThemeRandom">随机</button>
+        <div class="ct-row">
+          <span data-i18n="customThemeBadge">角标色</span>
+          <span class="ct-badge-ctrl">
+            <button type="button" class="ct-auto-btn active" id="ctBadgeAuto" data-i18n="customThemeBadgeAuto">自动</button>
+            <input type="color" id="ctBadge" />
+          </span>
+        </div>
+        <div class="ct-row">
+          <span data-i18n="customThemeBadgeText">角标文字色</span>
+          <span class="ct-badge-ctrl">
+            <button type="button" class="ct-auto-btn active" id="ctBadgeTextAuto" data-i18n="customThemeBadgeAuto">自动</button>
+            <input type="color" id="ctBadgeText" />
+          </span>
+        </div>
+        <div class="ct-actions">
+          <button type="button" class="ct-act-btn" id="ctRandomize" data-i18n="customThemeRandom">随机</button>
+        </div>
+        <div class="ct-audit ok" id="ctAudit">
+          <span id="ctAuditText"></span>
+          <button type="button" class="ct-audit-fix" id="ctAuditFix" data-i18n="customThemeAuditFix">按主题惯例修正</button>
         </div>
         <div class="ct-preview">
           <span class="ct-preview-dot" id="ctPreviewDot"></span>
           <span class="ct-preview-name" id="ctPreviewName"></span>
           <span class="ct-preview-btn" data-i18n="customThemePreview">预览</span>
         </div>
-        <div class="ct-tip" id="ctTip" data-i18n="customThemeTip">选 2~4 个颜色，自动分配背景 / 主色 / 副色（对比度自动校验）</div>
+        <div class="ct-tip" id="ctTip" data-i18n="customThemeTip">背景与按钮各选两个颜色，文字色按按钮色和背景自动生成（对比度自动校验）</div>
         <div class="inline-confirm-btns ct-btns">
           <button class="inline-confirm-btn cancel" id="ctCancel" data-i18n="cancel">取消</button>
           <button class="inline-confirm-btn confirm" id="ctSave" data-i18n="save">保存</button>

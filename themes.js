@@ -1410,12 +1410,12 @@ export const THEME_PRESETS = {
 };
 
 // ==================== 自定义主题支持 ====================
-// 设计：用户只选 3 个锚点色（主色/副色/背景），其余 30 个变量由本模块推导。
+// 设计：用户只选 4 个锚点色（背景主色/背景副色 + 按钮主色/按钮副色），其余变量由本模块推导。
 // 约定：
-// 1. 颜色严格按用户色卡 —— 背景色原样使用，不改写亮度；
-// 2. 明暗（卡片/输入框/表面/文字）全部由背景色自身亮度自动推导：
-//    浅色主题 → 深色字，深色主题 → 浅色字，用户不需要选；
-// 3. 角标用「保饱和度压暗」而不是混黑，避免发灰。
+// 1. 颜色严格按用户色卡 —— 4 个色原样使用，绝不自动"校正"；
+// 2. 明暗（卡片/输入框/表面）由背景色自身亮度自动推导：浅底深字、深底浅字，用户不需要选；
+// 3. 文字色按「按钮主色 + 背景色」现算：先取该明暗方向上的主色变体，再保证在背景上 ≥4.5:1；
+// 4. 角标用「保饱和度压暗」而不是混黑，避免发灰。
 // 这样用户永远搭不出「浅底浅字看不见」「角标灰扑扑」的破主题。
 
 export const CUSTOM_THEME_PREFIX = "custom:";
@@ -1513,10 +1513,17 @@ export function badgeTextColorOn(bg) {
   return contrastWithWhite(bg) < BADGE_DARK_TEXT_WHITE_CONTRAST_MAX ? BADGE_DARK_TEXT : "#ffffff";
 }
 
-// 填充色（按钮/选中块的底色）上的文字色：白字和深字里取对比更高的那个。
-// 注意与角标不同 —— 角标按用户偏好"默认白字"，按钮则以清晰为准（浅色填充必须换深字）。
-export function fillTextColorOn(bg) {
-  return contrastWithWhite(bg) >= contrastWithDark(bg) ? "#ffffff" : BADGE_DARK_TEXT;
+// 填充色上的文字色：**默认白字**，只有"特别特别浅"的填充才换深字。
+// 用户明确要求（2026-09-21）："这里的文字应该用白色，除非特别特别浅"。实测样本（PIL 量的截图）：
+//   我喝了按钮：淡黄绿主色 #D9E7AF(白字对比 1.31)、渐变端 #ECBBBD 1.69 / #E7C4B7 1.62 → 白字；
+//   日历深/中橄榄格 3.92 / 2.26 → 白字；日历浅格 #F2F4EA 1.11 → 深字（"这个浅度用深色字就是对的"）。
+// 按钮这类填充分界取 1.2（≈ 亮度 0.825，几乎白到看不出字了才换深字）；
+// 日历色块数字单独留一档（1.9），免得浅色格子上白字发虚。
+// 注意与角标分开：角标阈值固定 1.9（用户另一次要求）。
+const FILL_TEXT_WHITE_CONTRAST_MAX = 1.2;
+const LEVEL_TEXT_WHITE_CONTRAST_MAX = 1.9;
+export function fillTextColorOn(bg, whiteContrastMax = FILL_TEXT_WHITE_CONTRAST_MAX) {
+  return contrastWithWhite(bg) < whiteContrastMax ? BADGE_DARK_TEXT : "#ffffff";
 }
 
 // 角标底色：永远【原样用主色】，一个色阶都不改（用户明确要求直接跟随主色）。
@@ -1590,13 +1597,13 @@ function contrastWithWhite(hex) {
   return 1.05 / (relativeLuminance(hex) + 0.05);
 }
 
-// ==================== 调色板 → 角色分配（智能分配，不需要用户指定谁是谁） ====================
-// 用户最多给 4 个颜色，谁当背景/主色/副色/点缀由对比度 + 饱和度测试决定：
-//   · 背景：挑"像画布"的那个（够淡或够深、且不太艳）；一个都不像就由主色淡出来 —— 绝不让艳色当全屏底
-//   · 主色：剩下里最鲜艳的（撞色时它就是主角）
-//   · 副色：剩下里与主色色相差最大的（撞色优先，两个颜色才"撞"得起来）
-//   · 点缀色（第 4 个）：剩下的那个，用在经期这类需要第三种颜色的地方
-// 已定好的角色（老数据 / 上次的分配结果）只要色值还在调色板里就沿用，观感不会跳。
+// ==================== 自定义主题锚点（4 个颜色，逐项可控） ====================
+// 编辑器里只有 4 个取色器，用户指谁就是谁（不再"智能分配"角色）：
+//   bg / bg2            = 背景主色 / 背景副色 → 页面背景渐变的两端
+//   primary / primary2  = 按钮主色 / 按钮副色 → 主按钮渐变的两端，副色同时是"副色"语义色（如厕/大便）
+// 其余一律派生（文字、卡片、输入框、等级色阶、角标…）。
+// 老数据（{palette, roles} 或 {primary, secondary, bg}）会被映射到这套锚点，
+// 映射规则刻意与旧版推导一致 —— 用户已有主题的观感不能因为改版而变。
 function normalizeHex(v) {
   const s = String(v || "");
   if (!/^#[0-9a-fA-F]{6}$/.test(s)) return null;
@@ -1604,24 +1611,41 @@ function normalizeHex(v) {
   return rgbToHex(r, g, b);
 }
 
+// 随机配色（编辑器「随机」按钮）：随机一个色相与明暗模式，产出配套的 4 个锚点色。
+// 按钮副色故意撞色（色相偏 100~200°）：按钮渐变才有层次，副色语义（如厕/大便）也和主色分得开。
+export function randomThemeColors() {
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const rndInt = (a, b) => Math.floor(rnd(a, b + 1));
+  // 色相按"度数"写更直观，进来换算成 0~1（hslToRgb 用的是这个刻度）
+  const hsl = (deg, s, l) => {
+    const c = hslToRgb({ h: (((deg % 360) + 360) % 360) / 360, s: clamp01(s), l: clamp01(l) });
+    return rgbToHex(c.r, c.g, c.b);
+  };
+  const dark = Math.random() < 0.5; // 深色 / 浅色主题各一半
+  const baseHue = rndInt(0, 359);
+  const dir = Math.random() < 0.5 ? 1 : -1;
+
+  // 背景主/副色：同色相的极淡（浅色主题）或极深（深色主题）两档，副色再偏一点色相/明度，
+  // 页面渐变就有层次；彩度压低但别压成灰（饱和度太低会得到一个"灰底"主题）。
+  const bgHue = baseHue + rndInt(-30, 30);
+  const bg = dark
+    ? hsl(bgHue, rnd(0.3, 0.55), rnd(0.10, 0.18))
+    : hsl(bgHue, rnd(0.12, 0.38), rnd(0.90, 0.97));
+  const bg2 = dark
+    ? hsl(bgHue + dir * rndInt(15, 45), rnd(0.3, 0.55), rnd(0.20, 0.30))
+    : hsl(bgHue + dir * rndInt(15, 45), rnd(0.12, 0.38), rnd(0.80, 0.90));
+  // 按钮主色：同色相家族里"能站住"的那个明度（深底要亮、浅底要沉）
+  const mainL = dark ? rnd(0.64, 0.78) : rnd(0.40, 0.54);
+  const primary = hsl(baseHue, rnd(0.65, 0.95), mainL);
+  const primary2 = hsl(baseHue + dir * rndInt(100, 200), rnd(0.6, 0.95), mainL + rnd(-0.08, 0.08));
+  return { bg, bg2, primary, primary2 };
+}
+
+// —— 下面几个只服务"老数据"：跟着旧版规则挑一个"像画布"的颜色当背景 ——
 // 彩度（max-min）：比 HSL 的 S 稳 —— HSL 的 S 在接近纯白/纯黑时会虚高到 1
 function chromaOf(hex) {
   const { r, g, b } = hexToRgb(hex);
   return (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
-}
-
-// 注意：本文件的 HSL 里 h 是 0~1（不是 0~360），取色相距离要在这个刻度上环绕
-function hslOf(hex) {
-  return rgbToHsl(hexToRgb(hex));
-}
-
-function hueOf(hex) {
-  return hslOf(hex).h;
-}
-
-function hueDistance(a, b) {
-  const d = Math.abs(hueOf(a) - hueOf(b));
-  return Math.min(d, 1 - d) * 360;
 }
 
 // "像画布"的颜色：要么够淡、要么够深，而且不太艳（艳色当全屏底色会刺眼）
@@ -1638,172 +1662,188 @@ function pickBest(list, score) {
   return list.reduce((best, c) => (score(c) > score(best) ? c : best), list[0]);
 }
 
-// ==================== 自动补强调色（"任何颜色都好看"的关键） ====================
-// 预设主题的配方（38 个预设实测）：**明暗分层**才是关键（主色↔背景明度差 0.43~0.80，中位 0.57），
-// 彩度的中位只有 0.36（最低 plumwine 0.18 也好看）。所以：
-//   · 调色板"没有够鲜艳的颜色" 且 "明暗也挤在一起" → 主题必然糊 → 由主导色相自动补一个强调色
-//   · 补的强调色走"中和档"：彩度只有 0.35（≈ 预设中位），靠明度跳出来 —— 不是靠饱和度刺眼
-//   · 用户给的颜色一律保留原样，只是多了一个自动色
-export const AUTO_ACCENT_CHROMA = 0.35;   // HSL 饱和度（≈ 实测彩度 0.25）
-const AUTO_ACCENT_L_DARK_CANVAS = 0.64;   // 深色画布 → 用亮一档
-const AUTO_ACCENT_L_LIGHT_CANVAS = 0.46;  // 浅色画布 → 用沉一档
+// 锚点解析：把新格式（4 色）/ 老格式（palette+roles 或 primary/secondary/bg）统一成 6 个色
+//   primary / primary2 / secondary / secondary2 / bg / bg2
+// 另返回 legacy（老格式）与 accent（老格式可能存的第 4 色，用来驱动经期色）。
+export function resolveAnchors(anchors = {}) {
+  const raw = anchors && typeof anchors === "object" ? anchors : {};
+  const roles = raw.roles && typeof raw.roles === "object" ? raw.roles : {};
+  const palette = Array.isArray(raw.palette) ? raw.palette.map(normalizeHex).filter(Boolean) : [];
+  const pick = (...vals) => vals.map(normalizeHex).find(Boolean) || null;
 
-// 需不需要自动补强调色：没有鲜艳色（彩度 ≥0.3）且明度跨度 <0.15（挤在一条带上）
-export function needsAutoAccent(colors) {
-  const list = (Array.isArray(colors) ? colors : []).map(normalizeHex).filter(Boolean);
-  if (list.length < 2) return false;
-  if (Math.max(...list.map(chromaOf)) >= 0.3) return false;
-  const lums = list.map(relativeLuminance);
-  return Math.max(...lums) - Math.min(...lums) < 0.15;
+  // bg2 只存在于新格式：用它区分新旧 —— 老主题继续走旧公式，观感不会悄悄变
+  const bg2Key = normalizeHex(raw.bg2);
+  const legacy = !bg2Key;
+
+  const primary = pick(raw.primary, roles.primary, palette[0]) || "#0b6bff";
+  // 背景：优先用户存的；没有就按老规则挑一个"像画布"的色，再没有就由主色淡出来
+  let bg = pick(raw.bg, roles.bg);
+  if (!bg) {
+    const cands = palette.filter(isCanvasColor);
+    bg = cands.length ? pickBest(cands, canvasScore) : tintHex(primary, 0.88);
+  }
+  const primary2 = pick(raw.primary2) || tintHex(primary, 0.45);
+  // 副色：新格式就是"按钮副色"；老格式用存的副色，没有就由主色淡出一档（与旧版一致）
+  const secondary = legacy ? (pick(raw.secondary, roles.secondary) || tintHex(primary, 0.3)) : primary2;
+  const secondary2 = tintHex(secondary, 0.4);
+  // 背景副色：新格式用用户选的；老格式取旧版渐变末端的那个色（打开编辑器时能直接看到"现在是什么色"）
+  const bg2 = bg2Key || mixHex(bg, primary, isLightColor(bg) ? 0.18 : 0.14);
+  // 经期色：老主题可能存了第 4 个颜色（旧版"点缀色"）→ 沿用；新格式没有 → 由主色混一档粉（旧版兜底）
+  const accent =
+    pick(raw.accent, roles.accent) ||
+    palette.find((c) => ![primary, secondary, bg].some((k) => k.toLowerCase() === c.toLowerCase())) ||
+    null;
+
+  return {
+    primary,
+    primary2,
+    secondary,
+    secondary2,
+    bg,
+    bg2,
+    accent,
+    // 角标色 / 角标文字色：用户单独指定过就用它，没指定（null）时自动派生
+    badge: pick(raw.badge) || null,
+    badgeText: pick(raw.badgeText) || null,
+    legacy
+  };
 }
 
-// 由主导色相（彩度最高的那个颜色）生成强调色；背景越深 → 补的色越亮，反之越沉
-function autoAccentFor(palette, bg) {
-  const dominant = pickBest(palette, chromaOf);
-  const { h } = hslOf(dominant);
-  const canvasDark = !bg || relativeLuminance(bg) < 0.5;
-  const c = hslToRgb({ h, s: AUTO_ACCENT_CHROMA, l: canvasDark ? AUTO_ACCENT_L_DARK_CANVAS : AUTO_ACCENT_L_LIGHT_CANVAS });
+// ==================== 配色体检（按预设惯例）+ 一键修正 ====================
+// 38 个预设全量实测：
+//   · 主色↔背景 的相对亮度差 = 0.08~0.85，**90% 都在 0.36 以上（中位 0.61）** —— 这就是
+//     "跳出来"的关键；差太小（同时对比 <2.4）时按钮/色阶就糊在背景上，看着又脏又平。
+//   · 按钮副色：预设里要么跟主色同色系（色相 ≤45°），要么明暗明显拉开；两头都不占
+//     （大撞色 + 明暗接近）就会浑成一团。
+// 体检结果**只提示 + 提供一键修正，绝不自动改用户选的颜色**（这是本项目的硬规则）。
+const AUDIT_MIN_MAIN_BG_LUM = 0.35;      // 主色↔背景 亮度差下限（预设 90% 分位之上）
+const AUDIT_MIN_MAIN_BG_CONTRAST = 2.4;  // 亮度差不够时用对比度兜底（深色主题靠这条）
+const AUDIT_FIX_MAIN_BG_LUM = 0.45;      // 一键修正的目标（预设 25% 分位 0.43 之上，留点余量）
+const AUDIT_MAX_BTN_HUE = 60;            // 按钮副色的色相距离上限
+const AUDIT_MIN_BTN_LUM = 0.12;          // 按钮副色的亮度差下限
+const AUDIT_FIX_BTN_LUM = 0.21;          // 一键修正的目标 ≈ 预设中位 0.21
+
+// HSL 小工具（本文件 h 是 0~1 刻度）
+function hslParts(hex) {
+  const c = rgbToHsl(hexToRgb(hex));
+  return { h: c.h, s: c.s, l: c.l };
+}
+
+function withHsl(h, s, l) {
+  const c = hslToRgb({ h: ((h % 1) + 1) % 1, s: clamp01(s), l: clamp01(l) });
   return rgbToHex(c.r, c.g, c.b);
 }
 
-export function resolvePalette(anchors = {}) {
-  let palette = Array.isArray(anchors.palette) ? anchors.palette.map(normalizeHex).filter(Boolean) : [];
-  if (!palette.length) {
-    // 老格式：{primary, secondary, bg} → 当成一串颜色看待
-    palette = [anchors.primary, anchors.secondary, anchors.accent, anchors.bg].map(normalizeHex).filter(Boolean);
-  }
-  palette = palette.filter((c, i) => palette.findIndex((x) => x.toLowerCase() === c.toLowerCase()) === i);
-  if (palette.length === 1) palette = palette.concat(tintHex(palette[0], 0.88));
-  if (!palette.length) palette = ["#0b6bff", "#eaf5ff"];
-
-  // 继承已有角色（色值必须仍在调色板里）
-  const prev = anchors.roles || {};
-  const keep = {};
-  ["bg", "primary", "secondary", "accent"].forEach((role) => {
-    const want = normalizeHex(prev[role]) || normalizeHex(anchors[role]);
-    if (!want) return;
-    const hit = palette.find((c) => c.toLowerCase() === want.toLowerCase());
-    if (hit) keep[role] = hit;
-  });
-  const free = palette.filter((c) => !Object.values(keep).some((k) => k.toLowerCase() === c.toLowerCase()));
-  const take = (c) => {
-    const i = free.indexOf(c);
-    if (i >= 0) free.splice(i, 1);
-    return c;
-  };
-
-  if (!keep.bg) {
-    const cands = free.filter(isCanvasColor);
-    if (cands.length) keep.bg = take(pickBest(cands, canvasScore));
-  }
-  // 自动补的强调色：调色板既没鲜艳色、又没明暗分层时，由主导色相补一个"中和档"的色当主色
-  // （用户给的颜色全部保留原样，只是多一个自动色；判定是确定性的，所以每次算出来都一样）
-  const autoAccent = needsAutoAccent(palette) ? autoAccentFor(palette, keep.bg || null) : null;
-  if (autoAccent) {
-    keep.primary = autoAccent;
-  } else if (!keep.primary) {
-    // 没有空闲颜色时（比如用户把"主色"那个色块删掉了）就从别的角色里"抢"一个回来，
-    // 否则主色会退化成背景色（两者同色 → 整个主题失去重点）
-    const pool = free.length ? free : palette.filter((c) => c !== keep.bg);
-    if (pool.length) {
-      const chosen = pickBest(
-        pool,
-        // 彩度主导；"与背景的对比"只做微弱 tie-break（权重给大了会让浅画布抢走主色）
-        (c) => chromaOf(c) * 4 + (keep.bg ? Math.min(contrastRatio(c, keep.bg), 6) / 6 * 0.3 : 0)
-      );
-      ["secondary", "accent"].forEach((r) => {
-        if (keep[r] === chosen) delete keep[r];
-      });
-      keep.primary = take(chosen);
-    }
-  }
-  if (!keep.secondary && free.length) {
-    // 撞色优先：与主色色相差越大越可能被选；乘彩度权重，避免把灰度色当成"撞色"
-    keep.secondary = take(
-      pickBest(free, (c) => hueDistance(c, keep.primary) * (0.3 + Math.min(chromaOf(c), 0.5)))
-    );
-  }
-  if (!keep.accent && free.length) keep.accent = take(free[0]);
-
-  const primary = keep.primary || palette[0];
-  const secondary = keep.secondary || tintHex(primary, 0.3);
-  const bg = keep.bg || tintHex(primary, 0.88);
-  return {
-    palette,
-    primary,
-    secondary,
-    bg,
-    accent: keep.accent || null,
-    // 自动补出来的强调色（没有就是 null）：编辑器用它给一句说明
-    autoAccent,
-    // 只有"确实是调色板里的颜色"才回存角色；派生出来的不存，
-    // 否则以后改主色时背景/副色不会跟着变（会留着旧值打架）
-    roles: {
-      primary,
-      ...(keep.secondary ? { secondary: keep.secondary } : {}),
-      ...(keep.accent ? { accent: keep.accent } : {}),
-      ...(keep.bg ? { bg: keep.bg } : {})
-    }
-  };
+function hueGap(a, b) {
+  const d = Math.abs(hslParts(a).h - hslParts(b).h);
+  return Math.min(d, 1 - d) * 360;
 }
 
-// 随机调色板（编辑器「随机」按钮）：先随机一个色相与明暗模式，再按
-// 「背景 + 主色 + 撞色副色(+点缀色)」生成 —— 不是纯随机 RGB，取值都落在舒服的区间里，
-// 所以出来的配色天生协调，且背景一定"像画布"（能被分配算法认出来）。
-export function randomPalette() {
-  const rnd = (a, b) => a + Math.random() * (b - a);
-  const rndInt = (a, b) => Math.floor(rnd(a, b + 1));
-  // 色相按"度数"写更直观，进来换算成 0~1（hslToRgb 用的是这个刻度）
-  const hsl = (deg, s, l) => {
-    const c = hslToRgb({ h: (((deg % 360) + 360) % 360) / 360, s: clamp01(s), l: clamp01(l) });
-    return rgbToHex(c.r, c.g, c.b);
-  };
-  const dark = Math.random() < 0.5; // 深色 / 浅色主题各一半
-  const baseHue = rndInt(0, 359);
-  const dir = Math.random() < 0.5 ? 1 : -1;
-
-  // 背景：同色相的极淡/极深色（彩度压低但别压成灰 —— 饱和度太低会得到一个"灰底"主题）
-  const bg = dark
-    ? hsl(baseHue + rndInt(-40, 40), rnd(0.3, 0.55), rnd(0.12, 0.22))
-    : hsl(baseHue + rndInt(-40, 40), rnd(0.12, 0.38), rnd(0.88, 0.96));
-  // 主色：同色相家族里"能站住"的那个明度（深底要亮、浅底要沉）
-  const mainL = dark ? rnd(0.64, 0.78) : rnd(0.42, 0.56);
-  const primary = hsl(baseHue, rnd(0.65, 0.95), mainL);
-  // 副色：撞色 —— 色相偏 100~200 度（这就是"两个颜色一起撞色"）
-  const secondary = hsl(baseHue + dir * rndInt(100, 200), rnd(0.6, 0.95), mainL + rnd(-0.08, 0.08));
-
-  const palette = [primary, secondary];
-  // 一半概率再给一个点缀色（用在经期这类需要第三色的地方）
-  if (Math.random() < 0.5) {
-    palette.push(hsl(baseHue - dir * rndInt(120, 200), rnd(0.5, 0.85), mainL + rnd(-0.06, 0.06)));
+// 保留色相与饱和度，把明度二分到"相对亮度 = target"（相对亮度对明度单调，二分 18 次足够）
+// 只改明度、不动 h/s —— 与 readableOn 同源，所以调完还是用户选的那个色系，不会发灰。
+function withLuminance(hex, target) {
+  const { h, s } = hslParts(hex);
+  if (relativeLuminance(withHsl(h, s, 0)) > target) return withHsl(h, s, 0);
+  if (relativeLuminance(withHsl(h, s, 1)) < target) return withHsl(h, s, 1);
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 18; i++) {
+    const mid = (lo + hi) / 2;
+    if (relativeLuminance(withHsl(h, s, mid)) < target) lo = mid;
+    else hi = mid;
   }
-  palette.push(bg); // 背景放最后：前几个是"颜色"，最后一个是画布
-  return palette;
+  return withHsl(h, s, (lo + hi) / 2);
 }
 
-// 由调色板（最多 4 个颜色）生成完整主题（31 个 CSS 变量 + dot + bgGradient）
-// anchors 兼容三种形态：{palette, roles}（新）/ {primary, secondary, bg}（老）/ {primary, bg}
+// 把 color 沿"原本那一侧"推离 ref，直到亮度差 ≥ minDiff；这一侧够不到就换另一侧
+function pushAway(color, ref, minDiff) {
+  const r = relativeLuminance(ref);
+  const sign = relativeLuminance(color) >= r ? 1 : -1;
+  for (const dir of [sign, -sign]) {
+    const target = r + dir * minDiff;
+    if (target <= 0.02 || target >= 0.98) continue;
+    const out = withLuminance(color, target);
+    if (Math.abs(relativeLuminance(out) - r) >= minDiff - 0.02) return out;
+  }
+  return color;
+}
+
+// 按钮副色：拉回主色同色系，并把明暗差做成"淡/深一档"（≈预设中位 0.21）
+function normalizeButtonSub(primary, primary2) {
+  const base =
+    hueGap(primary, primary2) <= AUDIT_MAX_BTN_HUE
+      ? primary2
+      : withHsl(hslParts(primary).h, hslParts(primary2).s, hslParts(primary2).l);
+  const ref = relativeLuminance(primary);
+  const dir = relativeLuminance(base) >= ref ? 1 : -1;
+  const target = ref + dir * AUDIT_FIX_BTN_LUM;
+  if (target <= 0.02 || target >= 0.98) return pushAway(base, primary, AUDIT_FIX_BTN_LUM);
+  return withLuminance(base, target);
+}
+
+// 体检：返回 { ok, issues, metrics, fixed }。fixed 只改被点名的地方，其余原样。
+export function auditThemeColors(colors = {}) {
+  const bg = normalizeHex(colors.bg);
+  const primary = normalizeHex(colors.primary);
+  if (!bg || !primary) return { ok: true, issues: [], metrics: {}, fixed: null };
+  const bg2 = normalizeHex(colors.bg2) || bg;
+  const primary2 = normalizeHex(colors.primary2) || tintHex(primary, 0.45);
+
+  const mainBgLum = Math.abs(relativeLuminance(primary) - relativeLuminance(bg));
+  const mainBgContrast = contrastRatio(primary, bg);
+  const btnHue = hueGap(primary, primary2);
+  const btnLum = Math.abs(relativeLuminance(primary) - relativeLuminance(primary2));
+
+  const issues = [];
+  if (mainBgLum < AUDIT_MIN_MAIN_BG_LUM && mainBgContrast < AUDIT_MIN_MAIN_BG_CONTRAST) issues.push("mainBg");
+  if (btnHue > AUDIT_MAX_BTN_HUE && btnLum < AUDIT_MIN_BTN_LUM) issues.push("btnSub");
+  const metrics = { mainBgLum, mainBgContrast, btnHue, btnLum };
+  if (!issues.length) return { ok: true, issues, metrics, fixed: null };
+
+  let fixedPrimary = primary;
+  let fixedPrimary2 = primary2;
+  if (issues.includes("mainBg")) {
+    fixedPrimary = pushAway(primary, bg, AUDIT_FIX_MAIN_BG_LUM);
+    // 主色动了以后，按钮副色若不再"同色系且分得开"就顺手补一档；原来没问题就保持原样
+    const stillOk =
+      hueGap(fixedPrimary, primary2) <= AUDIT_MAX_BTN_HUE &&
+      Math.abs(relativeLuminance(fixedPrimary) - relativeLuminance(primary2)) >= AUDIT_MIN_BTN_LUM;
+    if (!stillOk) fixedPrimary2 = normalizeButtonSub(fixedPrimary, primary2);
+  } else if (issues.includes("btnSub")) {
+    fixedPrimary2 = normalizeButtonSub(fixedPrimary, primary2);
+  }
+  return { ok: false, issues, metrics, fixed: { bg, bg2, primary: fixedPrimary, primary2: fixedPrimary2 } };
+}
+
+// ==================== 由 4 个锚点色生成完整主题 ====================
+// 31+ 个 CSS 变量 + dot + bgGradient
+// anchors 兼容：{bg, bg2, primary, primary2}（新）/ {palette, roles}（老）/ {primary, secondary, bg}（更老）
 export function buildCustomTheme(anchors = {}) {
-  const pal = resolvePalette(anchors);
-  const p = pal.primary;
-  const s = pal.secondary;
-  const g = pal.bg;
+  const a = resolveAnchors(anchors);
+  const p = a.primary;
+  const p2 = a.primary2;
+  const s = a.secondary;
+  const s2 = a.secondary2;
+  const g = a.bg;
+  const g2 = a.bg2;
 
   // 背景明暗【完全由用户选的背景色决定】，不再由开关改写用户色卡
   const bgIsDark = !isLightColor(g);
   // 文字深浅【全自动】：深色主题出浅色字，浅色主题出深色字（用户无需选择）
   const darkText = !bgIsDark;
 
-  const text = darkText ? shadeHex(p, 0.68) : tintHex(p, 0.9);
-  const primary2 = tintHex(p, 0.45);
-  const secondary2 = tintHex(s, 0.4);
+  // 文字色【按按钮主色 + 背景色自动生成】：先按背景明暗取按钮主色的一个变体（浅底往深走、
+  // 深底往亮走），再逐档微调到在背景上 ≥4.5:1 —— 保证"任何时候都看得见"。
+  // readableOn 只改明度、保留色相与饱和度，所以文字仍然是用户选的那个色系，不会发灰。
+  const text = readableOn(darkText ? shadeHex(p, 0.68) : tintHex(p, 0.9), g);
   // 卡片跟着背景走（浅底更浅、深底更亮），不再混主色以免偏离用户色卡
   const cardBg = bgIsDark ? tintHex(g, 0.12) : tintHex(g, 0.62);
-  // 经期色：调色板给了第 4 个颜色就用它（撞色），否则沿用"粉与主色混一档"
-  const period = pal.accent || mixHex("#E0679E", p, 0.2);
+  // 经期色：老主题存了第 4 个颜色就用它（撞色），否则沿用"粉与主色混一档"
+  const period = a.accent || mixHex("#E0679E", p, 0.2);
   const poop = darkText ? "#8A6E4A" : tintHex("#8A6E4A", 0.15);
-  // 角标：保饱和度压暗（混黑会发灰）
-  const badge = badgeColorFor(p);
+  // 角标：用户单独指定过就用它（原样，绝不校正）；没指定则跟随主色（保饱和度压暗，混黑会发灰）。
+  // 角标文字色同理：指定过就原样，没指定按底色自动取白／深字（白字默认，极浅底才用深字）。
+  const badge = a.badge || badgeColorFor(p);
+  const badgeText = a.badgeText || badgeTextColorOn(badge);
 
   // 语义色只当「填充」用时按原色（保饱和、保住用户色卡）；
   // 但当「文字/图标」用时（日历标题、统计数字、周几…）必须保证在卡片底色上能看清，
@@ -1814,8 +1854,13 @@ export function buildCustomTheme(anchors = {}) {
   // readableOn 只改明度、保留色相与饱和度，所以浅淡主色也能排出可见的 4 档而不是一片灰。
   const lvBase = asText(p);
   // 四档从卡片底单调递进：浅色主题越深=喝得越多，深色主题越亮=喝得越多。
-  // 全部由同一个基准色推出来，保证单调、不会出现"第 5 档比第 4 档还浅"的错乱。
-  const lvTint = (r) => mixHex(cardBg, lvBase, r);
+  // 关键：按【相对亮度】等分，而不是按固定混合比例 —— 混合是在 sRGB 里线性做的，
+  // 相对亮度却不是线性的，跨色相的两个颜色（比如粉底 + 橄榄绿按钮）混出来会出现
+  // "第 2 档比第 1 档还浅"，四档就糊了（实测约 20% 的随机配色会踩到）。
+  // 色相/饱和度仍取自混合结果，所以观感不变，只是亮度被精确钉在等分点上。
+  const cardL = relativeLuminance(cardBg);
+  const baseL = relativeLuminance(lvBase);
+  const lvTint = (r) => withLuminance(mixHex(cardBg, lvBase, r), cardL + (baseL - cardL) * r);
   // 浅色主题的档位停在"深色数字仍舒服"的范围内（否则最深的格子上深字会发虚）；
   // 深色主题则要走到浅色区，好让深色字在每一档都清楚。
   const lv0c = lvTint(bgIsDark ? 0.15 : 0.10);
@@ -1827,14 +1872,14 @@ export function buildCustomTheme(anchors = {}) {
     "--text": text,
     "--muted": hexWithAlpha(text, 0.6),
     "--primary": p,
-    "--primary2": primary2,
+    "--primary2": p2,
     "--primary-glow": hexWithAlpha(p, 0.45),
     "--secondary": s,
-    "--secondary2": secondary2,
+    "--secondary2": s2,
     "--eat": p,
-    "--eat2": primary2,
+    "--eat2": p2,
     "--pee": s,
-    "--pee2": secondary2,
+    "--pee2": s2,
     "--poop": poop,
     "--poop2": darkText ? "#6E5433" : tintHex("#6E5433", 0.15),
     // 喝水等级色阶（日历方块 + 图例）。
@@ -1851,9 +1896,9 @@ export function buildCustomTheme(anchors = {}) {
     "--lv4": `linear-gradient(135deg, ${lv3c}, ${lvBase})`,
     // 等级块上的数字颜色：按"实际填充色"取对比更高的白/深字。
     // lv4 是渐变（lv3 → 基准色），要按渐变最深的那一端判，所以单独一路。
-    "--lv-text": fillTextColorOn(lv2c),
-    "--lv-text-strong": fillTextColorOn(lv3c),
-    "--lv-text-max": fillTextColorOn(lvBase),
+    "--lv-text": fillTextColorOn(lv2c, LEVEL_TEXT_WHITE_CONTRAST_MAX),
+    "--lv-text-strong": fillTextColorOn(lv3c, LEVEL_TEXT_WHITE_CONTRAST_MAX),
+    "--lv-text-max": fillTextColorOn(lvBase, LEVEL_TEXT_WHITE_CONTRAST_MAX),
     "--period": period,
     "--period2": tintHex(period, 0.45),
     "--period-glow": hexWithAlpha(period, 0.42),
@@ -1884,6 +1929,8 @@ export function buildCustomTheme(anchors = {}) {
     "--scrollbar-hover": shadeHex(p, 0.15),
     "--bg": g,
     "--badge": badge,
+    // 角标文字色（background.js / popup.js 读它来 setBadgeTextColor；CSS 里不用）
+    "--badge-text": badgeText,
     "--toast-bg": "color-mix(in srgb, var(--primary) 85%, black)",
     "--toast-text": "#ffffff"
   };
@@ -1894,15 +1941,27 @@ export function buildCustomTheme(anchors = {}) {
     dataTheme: bgIsDark ? "dark" : "custom",
     // 实际生效的文字方向（自动推导，浅底深字 / 深底浅字）
     darkText,
-    // 存用户给的调色板 + 分配结果；派生出来的（不在调色板里的）角色不回存
-    anchors: { palette: pal.palette, roles: pal.roles },
-    // 自动补出来的强调色（没补就是 null）：编辑器用它给一句说明
-    autoAccent: pal.autoAccent || null,
+    // 新格式回存 4 个锚点色（+ 用户另存过的点缀色/角标色）；老格式原样回存 —— 否则
+    // "打开一次就换配色"（老主题的背景渐变走的是旧公式，一旦被写成新格式就会微微变样）
+    anchors: a.legacy
+      ? Object.assign({}, anchors)
+      : {
+          bg: g,
+          bg2: g2,
+          primary: p,
+          primary2: p2,
+          ...(a.accent ? { accent: a.accent } : {}),
+          ...(a.badge ? { badge: a.badge } : {}),
+          ...(a.badgeText ? { badgeText: a.badgeText } : {})
+        },
     vars,
-    dot: `linear-gradient(135deg,${p},${primary2},${s})`,
-    bgGradient: bgIsDark
-      ? `linear-gradient(150deg, ${shadeHex(g, 0.3)} 0%, ${g} 55%, ${mixHex(g, p, 0.14)} 100%)`
-      : `linear-gradient(150deg, ${tintHex(g, 0.6)} 0%, ${g} 55%, ${mixHex(g, p, 0.18)} 100%)`
+    dot: `linear-gradient(135deg,${p},${p2},${a.legacy ? s : g})`,
+    // 背景渐变：老格式沿用旧公式（用户已有主题的底色不变），新格式直接铺用户选的两个背景色
+    bgGradient: a.legacy
+      ? bgIsDark
+        ? `linear-gradient(150deg, ${shadeHex(g, 0.3)} 0%, ${g} 55%, ${mixHex(g, p, 0.14)} 100%)`
+        : `linear-gradient(150deg, ${tintHex(g, 0.6)} 0%, ${g} 55%, ${mixHex(g, p, 0.18)} 100%)`
+      : `linear-gradient(150deg, ${g} 0%, ${mixHex(g, g2, 0.5)} 55%, ${g2} 100%)`
   };
 }
 
