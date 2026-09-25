@@ -2831,9 +2831,13 @@ function renderPoopCalendar() {
       if (!cell) continue;
       if (records[dateStr]) {
         cell.classList.add("has-poop");
-        const firstRec = records[dateStr][0];
-        if (firstRec && firstRec.bristolType) {
-          cell.classList.add("bristol-" + firstRec.bristolType);
+        // Bristol 上色规则：用【第一条选了 Bristol 的记录】的颜色 ——
+        // 同一天多条时第 1 条没选就顺延到第 2 条；两个都选了取第 1 条的；全都没选则不上色。
+        // （以前只看 records[0]，所以「第 1 条没选、第 2 条选了」的日子整格不上色）
+        const dayRecords = Array.isArray(records[dateStr]) ? records[dateStr] : [];
+        const bristolRec = dayRecords.find((r) => r && r.bristolType);
+        if (bristolRec) {
+          cell.classList.add("bristol-" + bristolRec.bristolType);
         }
       }
       cell.addEventListener("mouseenter", (e) => showPoopTooltip(e, dateStr));
@@ -5750,6 +5754,7 @@ function renderLangOptions() {
     { id: "ja", label: t("langJa") },
     { id: "ko", label: t("langKo") },
     { id: "fr", label: t("langFr") },
+    { id: "ru", label: t("langRu") },
   ];
   LANGS.forEach(l => {
     const item = document.createElement("div");
@@ -5785,12 +5790,13 @@ function selectLang(lang) {
     : lang === "ko" ? t("langKo")
     : lang === "es" ? t("langEs")
     : lang === "fr" ? t("langFr")
+    : lang === "ru" ? t("langRu")
     : t("langEn");
   showToast(t("toastDefaultLang", { lang: langName }));
   // 同步刷新语言下拉、角标内容标签、喝水动态状态、bristol 选择器
   renderLangOptions();
   const lt = document.getElementById("langTriggerLabel");
-  if (lt) lt.textContent = t("lang" + (lang === "zh" ? "Zh" : lang === "ja" ? "Ja" : lang === "ko" ? "Ko" : lang === "es" ? "Es" : lang === "fr" ? "Fr" : "En"));
+  if (lt) lt.textContent = t("lang" + (lang === "zh" ? "Zh" : lang === "ja" ? "Ja" : lang === "ko" ? "Ko" : lang === "es" ? "Es" : lang === "fr" ? "Fr" : lang === "ru" ? "Ru" : "En"));
   updateBadgeContentLabel();
   applyRunningUI(isRunning);
   applyNotifUI(notifToggle?.checked);
@@ -5854,7 +5860,7 @@ loadLanguage(() => {
   // 渲染语言下拉并同步触发按钮文案
   renderLangOptions();
   const lt = document.getElementById("langTriggerLabel");
-  if (lt) lt.textContent = t("lang" + (currentLang === "zh" ? "Zh" : currentLang === "es" ? "Es" : currentLang === "ja" ? "Ja" : currentLang === "ko" ? "Ko" : currentLang === "fr" ? "Fr" : "En"));
+  if (lt) lt.textContent = t("lang" + (currentLang === "zh" ? "Zh" : currentLang === "es" ? "Es" : currentLang === "ja" ? "Ja" : currentLang === "ko" ? "Ko" : currentLang === "fr" ? "Fr" : currentLang === "ru" ? "Ru" : "En"));
   applyI18n();
   // 动态渲染区域按已确定的语言重渲染一次：首次打开时它们可能与 loadTheme /
   // loadDefaultTab 抢跑，导致非中文界面出现中文文案（主题名、默认首页等）
@@ -7690,6 +7696,8 @@ function exportCsv(module) {
         ? { breakfast: "아침", lunch: "점심", dinner: "저녁", snack: "간식" }
         : currentLang === "fr"
         ? { breakfast: "Petit-déjeuner", lunch: "Déjeuner", dinner: "Dîner", snack: "Encas" }
+        : currentLang === "ru"
+        ? { breakfast: "Завтрак", lunch: "Обед", dinner: "Ужин", snack: "Перекус" }
         : { breakfast: "早餐", lunch: "午餐", dinner: "晚餐", snack: "加餐" };
       headers = ["日期", "时间", "餐型", "评分", "饱腹度", "标签", "备注"];
       const records = rec || {};

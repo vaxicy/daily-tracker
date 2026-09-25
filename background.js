@@ -180,6 +180,36 @@ const BG_I18N = {
     reminderNotifBody: "Time to {label}!",
     reminderButton: "Got it",
   },
+  es: {
+    notifTitle: "Recordatorio de agua 💧",
+    notifBody: "¡Es hora de beber agua! Mantente hidratado para sentirte mejor.",
+    notifDrank: "He bebido ✓",
+    notifSkip: "Omitir",
+    testNotifTitle: "Notificación de prueba 🔔",
+    testNotifBody: "Esta es una notificación de prueba para verificar que todo funciona.",
+    reminderNotifBody: "¡Es hora de {label}!",
+    reminderButton: "Entendido",
+  },
+  ja: {
+    notifTitle: "水分補給のリマインダー 💧",
+    notifBody: "水分補給の時間です！しっかり飲んで元気に過ごしましょう。",
+    notifDrank: "飲みました ✓",
+    notifSkip: "スキップ",
+    testNotifTitle: "テスト通知 🔔",
+    testNotifBody: "機能が正常に動作するか確認するためのテスト通知です。",
+    reminderNotifBody: "{label}の時間です！",
+    reminderButton: "了解",
+  },
+  ko: {
+    notifTitle: "물 마시기 알림 💧",
+    notifBody: "물 마실 시간이에요! 수분을 채워 더 건강하게 지내요.",
+    notifDrank: "마셨어요 ✓",
+    notifSkip: "건너뛰기",
+    testNotifTitle: "테스트 알림 🔔",
+    testNotifBody: "기능이 정상 작동하는지 확인하는 테스트 알림입니다.",
+    reminderNotifBody: "{label} 할 시간이에요!",
+    reminderButton: "확인",
+  },
   fr: {
     notifTitle: "Rappel de boisson 💧",
     notifBody: "Il est temps de boire ! Restez hydraté pour votre santé.",
@@ -189,6 +219,16 @@ const BG_I18N = {
     testNotifBody: "Ceci est une notification de test pour vérifier le bon fonctionnement.",
     reminderNotifBody: "C'est l'heure de {label} !",
     reminderButton: "Compris",
+  },
+  ru: {
+    notifTitle: "Напоминание о воде 💧",
+    notifBody: "Пора пить воду! Поддерживайте водный баланс, чтобы чувствовать себя лучше.",
+    notifDrank: "Я выпил ✓",
+    notifSkip: "Пропустить",
+    testNotifTitle: "Тестовое уведомление 🔔",
+    testNotifBody: "Это тестовое уведомление для проверки работы функций.",
+    reminderNotifBody: "Пора: {label}!",
+    reminderButton: "Понятно",
   }
 };
 

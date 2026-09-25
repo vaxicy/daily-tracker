@@ -1,0 +1,10 @@
+{
+  "name": {
+    "message": "Daily Habit Tracker - Полезные привычки",
+    "description": "Extension name"
+  },
+  "description": {
+    "message": "Записывайте питание, воду, стул, мочеиспускание и цикл. Приватный трекер привычек: данные хранятся локально.",
+    "description": "Extension description"
+  }
+}

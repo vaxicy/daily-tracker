@@ -123,20 +123,20 @@ ICONS = {"apps": icon_apps, "globe": icon_globe, "enter": icon_enter, "lock": ic
 CONTENT = {
     "zh": {
         "title": "个性化 & 隐私",
-        "subtitle": "30+ 款主题、六语界面、Enter 快捷、数据本地保存",
+        "subtitle": "30+ 款主题、七语界面、Enter 快捷、数据本地保存",
         "cards": [
             ("多主题风格", "30+ 款主题一键切换", "apps"),
-            ("六语界面", "中 / 英 / 西 / 日 / 韩 / 法", "globe"),
+            ("七语界面", "中 / 英 / 西 / 日 / 韩 / 法 / 俄", "globe"),
             ("Enter 快捷打卡", "任一模块按 Enter 直接记录", "enter"),
             ("本地存储", "无感联网，隐私自己掌控", "lock"),
         ],
     },
     "en": {
         "title": "Personalize & Privacy",
-        "subtitle": "30+ themes, six languages, Enter shortcut, all data stays local",
+        "subtitle": "30+ themes, seven languages, Enter shortcut, all data stays local",
         "cards": [
             ("Many Themes", "30+ themes, one tap away", "apps"),
-            ("Six Languages", "ZH / EN / ES / JA / KO / FR", "globe"),
+            ("Seven Languages", "ZH / EN / ES / JA / KO / FR / RU", "globe"),
             ("Enter Shortcut", "Log in any module with Enter", "enter"),
             ("Local Storage", "No internet, data stays local", "lock"),
         ],
