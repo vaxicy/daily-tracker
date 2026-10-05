@@ -1,4 +1,4 @@
-import { THEME_PRESETS, buildCustomTheme, resolveAnchors, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX, badgeTextColorOn, customThemeDataAttr, randomThemeColors, auditThemeColors } from './themes.js';
+import { THEME_PRESETS, buildCustomTheme, resolveAnchors, getThemePreset, themeDisplayName, CUSTOM_THEME_PREFIX, badgeTextColorOn, customThemeDataAttr, randomThemeColors, auditThemeColors, themeColorsFromSeed } from './themes.js';
 
 // 用户自定义主题：{ "custom:xxx": { label, anchors, dot, vars, bgGradient, ... } }
 // 声明在模块顶部，避免早于主题系统初始化的调用（如 updateBadge）触发 TDZ 报错
@@ -4925,6 +4925,9 @@ let ctEditingAccent = null;
 // 角标色／角标文字色是否"自动"（true = 自动派生；用户改过色块就变 false）
 let ctBadgeAuto = true;
 let ctBadgeTextAuto = true;
+// 「适配浏览器主题」的种子色（存在 storage.browserSeedColor）：取一次色，以后一键生成整套。
+// Chrome 没有读浏览器主题色的 API，所以只能"记住一次"。
+let ctBrowserSeed = null;
 
 const isHexColor = (v) => /^#[0-9a-fA-F]{6}$/.test(String(v || ""));
 
@@ -4969,6 +4972,64 @@ function applyEditorColors(colors) {
   setEditorColor("ctBtnMain", colors.primary);
   setEditorColor("ctBtnSub", colors.primary2);
   updateCustomThemePreview();
+}
+
+// ==================== 适配浏览器主题（点一下 = 取色 + 生成整套） ====================
+// Chrome 不开放读取浏览器主题色的 API，所以只能靠屏幕取色器点一下
+// （Chrome 工具栏/新标签页背景就是主题色）。取到的色会存进 storage 并显示在按钮下方，
+// 作为"上次取的颜色"记录；再点一次按钮就重新取 —— 只留这一个入口，
+// 免得「适配」和「重新取色」两个按钮都像在取色，让人误会哪个才生效。
+function syncSeedHint() {
+  const text = document.getElementById("ctSeedText");
+  if (text) {
+    text.textContent = ctBrowserSeed
+      ? t("customThemeSeedIs", { color: ctBrowserSeed.toUpperCase() })
+      : t("customThemeSeedNone");
+  }
+}
+
+function loadBrowserSeed(cb) {
+  chrome.storage.local.get(["browserSeedColor"], (d) => {
+    ctBrowserSeed = isHexColor(d && d.browserSeedColor) ? String(d.browserSeedColor).toLowerCase() : null;
+    syncSeedHint();
+    if (cb) cb();
+  });
+}
+
+// 用记好的种子色生成整套。浅色/深色由【吸到的那个色】本身决定：
+// 浅色种子 → 浅色主题，深色种子 → 深色主题（主要作用在背景上）；
+// 不再跟随系统深浅 —— 系统深色 + Chrome 主题浅色时，跟随系统会与用户预期相反。
+function fitBrowserTheme() {
+  if (!isHexColor(ctBrowserSeed)) return false;
+  const colors = themeColorsFromSeed(ctBrowserSeed);
+  if (!colors) return false;
+  // 角标色/角标文字色也要一起适配：重置回「自动」→ 跟随这次派生出来的按钮主色。
+  // 不重置的话，主题里存过的旧角标色会留着一个跟新配色完全不搭的颜色
+  // （用户实测踩过：角标一直是 #9A3F3F 砖红，来自早已删掉的「预设色卡」时代）。
+  ctBadgeAuto = true;
+  ctBadgeTextAuto = true;
+  applyEditorColors(colors);
+  showToast(t("customThemeFitDone", { color: ctBrowserSeed.toUpperCase() }));
+  return true;
+}
+
+// 屏幕取色（EyeDropper）：必须在用户点击的手势里同步调用，否则浏览器会拒绝打开
+function pickBrowserSeed() {
+  if (typeof window.EyeDropper !== "function") {
+    showToast(t("customThemePickUnsupported"));
+    return;
+  }
+  new window.EyeDropper().open().then((res) => {
+    const hex = String((res && res.sRGBHex) || "").toLowerCase();
+    if (!isHexColor(hex)) return;
+    ctBrowserSeed = hex;
+    chrome.storage.local.set({ browserSeedColor: hex });
+    syncSeedHint();
+    showToast(t("customThemeSeedRemembered", { color: hex.toUpperCase() }));
+    fitBrowserTheme();
+  }).catch(() => {
+    // 用户取消取色：什么都不做
+  });
 }
 
 // 配色体检条：只针对用户自己调出来的颜色提示 + 给一键修正
@@ -5025,6 +5086,7 @@ function openCustomThemeEditor(themeId) {
   ctBadgeTextAuto = !isHexColor(a.badgeText);
   if (!ctBadgeTextAuto) setEditorColor("ctBadgeText", a.badgeText);
   modal.classList.remove("hidden");
+  loadBrowserSeed();
   updateCustomThemePreview();
 }
 
@@ -5424,6 +5486,20 @@ if (customTriggerEl && customDropdownEl) {
     const el = document.getElementById(id);
     if (el) el.addEventListener("input", updateCustomThemePreview);
   });
+  // 适配浏览器主题：点一下直接进取色（每次都能重取），取完立刻生成整套。
+  // 取色必须在点击手势里同步调用，否则浏览器拒绝打开取色器。
+  const fitBtn = document.getElementById("ctBrowserFit");
+  if (fitBtn) {
+    fitBtn.addEventListener("click", () => {
+      if (typeof window.EyeDropper === "function") {
+        pickBrowserSeed();
+      } else if (isHexColor(ctBrowserSeed)) {
+        fitBrowserTheme(); // 老浏览器不支持取色器：退化成用上次记下的色
+      } else {
+        showToast(t("customThemePickUnsupported"));
+      }
+    });
+  }
   // 随机配色：换一组新的 4 个锚点色，可以反复点（角标两个色保持用户自己的设置）
   const randomBtn = document.getElementById("ctRandomize");
   if (randomBtn) {

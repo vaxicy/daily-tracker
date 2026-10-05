@@ -7404,6 +7404,11 @@
       border-color: color-mix(in srgb, var(--primary) 36%, transparent);
     }
     .ct-act-btn:active { transform: translateY(1px); }
+    /* 浏览器主题色提示行（只有一行小字：没取过显示引导，取过显示上次取到的色） */
+    .ct-seed {
+      margin: -6px 0 10px; font-size: 10px; line-height: 1.4;
+      color: var(--muted);
+    }
     /* 配色体检：绿点 = 健康，黄点 = 提示 + 一键修正 */
     .ct-audit {
       display: flex; align-items: center; gap: 6px;
@@ -7485,7 +7490,11 @@
           </span>
         </div>
         <div class="ct-actions">
+          <button type="button" class="ct-act-btn" id="ctBrowserFit" data-i18n="customThemeFitChrome">适配浏览器主题</button>
           <button type="button" class="ct-act-btn" id="ctRandomize" data-i18n="customThemeRandom">随机</button>
+        </div>
+        <div class="ct-seed">
+          <span class="ct-seed-text" id="ctSeedText"></span>
         </div>
         <div class="ct-audit ok" id="ctAudit">
           <span id="ctAuditText"></span>

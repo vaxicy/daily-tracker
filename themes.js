@@ -1641,6 +1641,51 @@ export function randomThemeColors() {
   return { bg, bg2, primary, primary2 };
 }
 
+// ==================== 从「浏览器主题色」种子派生 4 个锚点 ====================
+// 为什么需要"种子色"：Chrome **没有**读浏览器主题色的 API（theme.getCurrent 是 Firefox 专有），
+// 扩展也不能截浏览器 UI（chrome:// 页面不可访问）。所以走「取一次 → 记住 → 以后一键」：
+// 种子色由屏幕取色（EyeDropper）得到并存进 storage，之后点一下按钮就重新生成整套；
+// 同时按 prefers-color-scheme 自动出浅色/深色两套，Chrome 换深浅时跟着换。
+// 派生规则：**保留种子的色相**，只把明度钉到预设惯例的档位（背景极淡、按钮跳得出来），
+// 饱和度按档位缩放（按钮提一档，否则灰工具栏会派生出"一坨灰"的按钮），
+// 最后交给 auditThemeColors 验收 —— 所以出来的一定满足明暗分层与对比度，不会糊。
+const SEED_LIGHT = { bg: 0.965, bg2: 0.895, primary: 0.55, bgSat: 0.42, bg2Sat: 0.6 };
+const SEED_DARK = { bg: 0.15, bg2: 0.24, primary: 0.72, bgSat: 0.85, bg2Sat: 1.0 };
+const SEED_MIN_SAT = 0.14;   // 种子太灰（例如灰色工具栏）时的饱和度下限
+const SEED_BTN_SAT = 1.6;    // 按钮档的饱和度倍数
+const SEED_MAX_BTN_SAT = 0.62;
+const SEED_BTN_STEP = 0.15;  // 按钮副色与主色的明度阶（预设实测中位 0.21）
+
+export function themeColorsFromSeed(seed, opts = {}) {
+  const s0 = normalizeHex(seed);
+  if (!s0) return null;
+  const { h, s } = hslParts(s0);
+  // 浅色/深色【由吸到的那个色本身决定】：浅色种子 → 浅色主题（背景极淡），
+  // 深色种子 → 深色主题（背景极深）。**不看 prefers-color-scheme** ——
+  // 系统是深色、而 Chrome 主题是浅色时，跟随系统会得到与预期相反的结果（用户实测踩过：
+  // 吸了浅藕紫 #b7a4c2 却得到一个深色主题）。要强制指定就显式传 opts.dark。
+  const dark = typeof opts.dark === "boolean" ? opts.dark : !isLightColor(s0);
+  const L = dark ? SEED_DARK : SEED_LIGHT;
+  const sat = Math.max(s, SEED_MIN_SAT);
+  const btnSat = Math.min(SEED_MAX_BTN_SAT, sat * SEED_BTN_SAT);
+  // 背景副色往色相旁边挪 2%：页面渐变才有层次
+  const bg = withHsl(h, sat * L.bgSat, L.bg);
+  const bg2 = withHsl(h + 0.02, sat * L.bg2Sat, L.bg2);
+  const primary = withHsl(h, btnSat, L.primary);
+  const report = auditThemeColors({ bg, bg2, primary, primary2: primary });
+  const fixed = report.ok ? { bg, bg2, primary, primary2: primary } : report.fixed;
+  // 按钮副色必须按【最终的主色】重算：浅背景 + 高亮度色相（黄/青）时体检会把主色往深推，
+  // 若沿用初始档位，按钮两色会挨太近、渐变就平了（压力测试 612 组里抓到过）。
+  const p1 = hslParts(fixed.primary);
+  const step = dark ? -SEED_BTN_STEP : SEED_BTN_STEP;
+  return {
+    bg: fixed.bg,
+    bg2: fixed.bg2,
+    primary: fixed.primary,
+    primary2: withHsl(p1.h + 0.03, p1.s * 0.9, clamp01(p1.l + step))
+  };
+}
+
 // —— 下面几个只服务"老数据"：跟着旧版规则挑一个"像画布"的颜色当背景 ——
 // 彩度（max-min）：比 HSL 的 S 稳 —— HSL 的 S 在接近纯白/纯黑时会虚高到 1
 function chromaOf(hex) {
